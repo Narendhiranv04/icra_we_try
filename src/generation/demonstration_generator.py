@@ -85,7 +85,7 @@ class DemonstrationGenerator:
         Returns:
             Saved MP4 file path.
         """
-        start_pos = (-0.35, -0.20, 0.65)
+        start_pos = (-0.25, -0.30, 0.65)
         target_pos = (-0.10, -0.20, 0.65)
         objects = [{"name": obj_name, "type": obj_name, "pos": list(start_pos)}]
         model, data = self.scene_builder.create_environment(

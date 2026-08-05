@@ -5,6 +5,13 @@
   - `[x]` Bootstrap directory tree under `/home/naren/RA_iiith_new`
   - `[x]` Copy minimal MJCF assets and mesh files into `assets/copied_assets/`
   - `[x]` Create `pyproject.toml`, `requirements.txt`, and config files (`smoke.yaml`, `pilot.yaml`, `scenes.yaml`, `splits.yaml`)
+- `[x]` Phase 7 — Clean Pilot Run
+  - `[x]` Run pilot generation end-to-end (`run_pilot_generation.py` completed successfully in 77.7s)
+  - `[x]` Final dataset validation passed cleanly (120 pairs validated)
+- `[x]` Phase 1 — Physical Demonstration Correction
+  - `[x]` Fix `open_box.py`: Remove direct lid qpos/ctrl, add hinge-derived arc, state logging
+  - `[x]` Fix `place_object.py`: Add state logging, proximity check, valid reach execution
+  - `[x]` Create `demonstration_validator.py`: Validate demonstrations from state logs
 - `[x]` Phase 2: Environment Wrapper & State Predicates
   - `[x]` Implement `src/environment/scene_builder.py` and `model_loading.py`
   - `[x]` Implement `src/environment/renderer.py` for offscreen rendering (RGB, instance masks, culprit masks)

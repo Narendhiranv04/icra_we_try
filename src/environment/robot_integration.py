@@ -15,7 +15,7 @@ import gymnasium_robotics
 FETCH_ASSET_DIR = Path(gymnasium_robotics.__file__).parent / "envs" / "assets" / "fetch"
 
 FETCH_BASE_POSES = {
-    "home": {"pos": "0 -1.10 0", "quat": "0.7071068 0 0 0.7071068"},
+    "home": {"pos": "0 -0.95 0", "quat": "0.7071068 0 0 0.7071068"},
     "right_side": {"pos": "1.025 -0.10 0", "quat": "0.7071068 0 0 -0.7071068"},
 }
 
@@ -36,6 +36,8 @@ FETCH_HOME_QPOS = {
     "robot0:r_gripper_finger_joint": 0.035,
     "robot0:l_gripper_finger_joint": 0.035,
 }
+
+HOME_ARM_SEED = np.array((1.32, 1.40, -0.20, 1.72, 0.0, 1.66, 0.0))
 
 ARM_JOINTS = (
     "robot0:shoulder_pan_joint",
