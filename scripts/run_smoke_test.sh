@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-PYTHON_BIN="/home/naren/miniconda3/bin/python"
-export MUJOCO_GL=egl
+PYTHON_BIN="${PYTHON_BIN:-python}"
+export MUJOCO_GL=${MUJOCO_GL:-egl}
 export PYTHONPATH=.
 
 echo "======================================================="
@@ -36,11 +36,12 @@ print(f'Generated {len(records)} counterfactual query pair records.')
 echo "[Phase 4/5] Running Dataset Validator..."
 $PYTHON_BIN src/validation/dataset_validator.py data/manifests/smoke_manifest.jsonl
 
-# 5. Render HTML & Contact Sheet Previews
-echo "[Phase 5/5] Generating Previews..."
+# 5. Render HTML & Contact Sheet Previews & Tracked Smoke Artifacts
+echo "[Phase 5/5] Generating Previews & Tracked Artifacts..."
 $PYTHON_BIN -c "
 from src.preview.html_preview import HTMLPreviewGenerator
 from src.preview.contact_sheet import ContactSheetGenerator
+from src.preview.smoke_artifacts import TrackedSmokeArtifactsGenerator
 
 html_gen = HTMLPreviewGenerator(output_dir='data/previews')
 html_path = html_gen.generate_html_report('data/manifests/smoke_manifest.jsonl')
@@ -48,9 +49,13 @@ html_path = html_gen.generate_html_report('data/manifests/smoke_manifest.jsonl')
 cs_gen = ContactSheetGenerator(output_dir='data/previews')
 cs_path = cs_gen.generate_contact_sheet('data/manifests/smoke_manifest.jsonl')
 
-print(f'Previews generated successfully:')
+art_gen = TrackedSmokeArtifactsGenerator(artifacts_dir='artifacts/smoke')
+art_gen.generate_all_smoke_artifacts()
+
+print(f'Previews and tracked smoke artifacts generated successfully:')
 print(f'  HTML Report: {html_path}')
 print(f'  Contact Sheet: {cs_path}')
+print(f'  Tracked Smoke Artifacts: artifacts/smoke/')
 "
 
 echo "======================================================="

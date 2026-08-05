@@ -1,0 +1,292 @@
+{
+  "total_pairs_generated": 8,
+  "sample_task_1": {
+    "pair_id": "pair_task_1_001",
+    "task_id": "task_1",
+    "instruction": "Open the box.",
+    "blocker_type": "coffee_can",
+    "blocker_count": 1,
+    "split": "id",
+    "stop": {
+      "label": "STOP",
+      "is_occupied": true,
+      "culprits": [
+        "blocker1"
+      ],
+      "rgb_path": "data/queries/pair_task_1_001/stop_rgb.png",
+      "instance_segmentation_path": "data/queries/pair_task_1_001/stop_instance_segmentation.png",
+      "candidate_object_mask_path": "data/queries/pair_task_1_001/stop_candidate_object_mask.png",
+      "relation_target_mask_path": "data/queries/pair_task_1_001/stop_relation_target_mask.png",
+      "causal_violation_mask_path": "data/queries/pair_task_1_001/stop_causal_violation_mask.png",
+      "combined_visualization_path": "data/queries/pair_task_1_001/stop_combined_relation_visualization.png",
+      "culprit_mask_path": "data/queries/pair_task_1_001/stop_culprit_mask.png",
+      "region_mask_path": "data/queries/pair_task_1_001/stop_lid_mask.png",
+      "spec": {
+        "task_family": "task_1",
+        "sample_id": "pair_task_1_001_stop",
+        "pair_id": "pair_task_1_001",
+        "seed": 42,
+        "label": "STOP",
+        "goal_instruction": "Open the box.",
+        "background_id": "bg_default",
+        "lighting_id": "light_standard",
+        "object1_type": null,
+        "object1_start_pose": [
+          -0.35,
+          -0.2,
+          0.65
+        ],
+        "blocker_or_occupant_types": [
+          "coffee_can"
+        ],
+        "blocker_count": 1,
+        "blocker_position_bins": [
+          "centre"
+        ],
+        "occupant_position_bin": null,
+        "box_pose": [
+          0.52,
+          0.18,
+          0.58
+        ],
+        "target_pose": [
+          -0.1,
+          -0.2,
+          0.581
+        ],
+        "distractor_identities_and_poses": [],
+        "camera_configuration": "front_camera",
+        "split": "id",
+        "relation_before": "ON_TOP_OF(coffee_can, B1_lid)",
+        "relation_after": "BESIDE(coffee_can, box_B1)",
+        "base_scene_id": "kitchen_workstation",
+        "objects_to_spawn": [
+          {
+            "name": "blocker1",
+            "type": "coffee_can",
+            "pos": [
+              0.52,
+              0.18,
+              0.82
+            ]
+          }
+        ]
+      }
+    },
+    "proceed": {
+      "label": "PROCEED",
+      "is_occupied": false,
+      "culprits": [],
+      "rgb_path": "data/queries/pair_task_1_001/proceed_rgb.png",
+      "instance_segmentation_path": "data/queries/pair_task_1_001/proceed_instance_segmentation.png",
+      "candidate_object_mask_path": "data/queries/pair_task_1_001/proceed_candidate_object_mask.png",
+      "relation_target_mask_path": "data/queries/pair_task_1_001/proceed_relation_target_mask.png",
+      "causal_violation_mask_path": "data/queries/pair_task_1_001/proceed_causal_violation_mask.png",
+      "combined_visualization_path": "data/queries/pair_task_1_001/proceed_combined_relation_visualization.png",
+      "culprit_mask_path": "data/queries/pair_task_1_001/proceed_culprit_mask.png",
+      "region_mask_path": "data/queries/pair_task_1_001/proceed_lid_mask.png",
+      "spec": {
+        "task_family": "task_1",
+        "sample_id": "pair_task_1_001_proceed",
+        "pair_id": "pair_task_1_001",
+        "seed": 42,
+        "label": "PROCEED",
+        "goal_instruction": "Open the box.",
+        "background_id": "bg_default",
+        "lighting_id": "light_standard",
+        "object1_type": null,
+        "object1_start_pose": [
+          -0.35,
+          -0.2,
+          0.65
+        ],
+        "blocker_or_occupant_types": [
+          "coffee_can"
+        ],
+        "blocker_count": 1,
+        "blocker_position_bins": [
+          "centre"
+        ],
+        "occupant_position_bin": null,
+        "box_pose": [
+          0.52,
+          0.18,
+          0.58
+        ],
+        "target_pose": [
+          -0.1,
+          -0.2,
+          0.581
+        ],
+        "distractor_identities_and_poses": [],
+        "camera_configuration": "front_camera",
+        "split": "id",
+        "relation_before": "ON_TOP_OF(coffee_can, B1_lid)",
+        "relation_after": "BESIDE(coffee_can, box_B1)",
+        "base_scene_id": "kitchen_workstation",
+        "objects_to_spawn": [
+          {
+            "name": "blocker1",
+            "type": "coffee_can",
+            "pos": [
+              0.18,
+              0.18,
+              0.62
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "sample_task_2": {
+    "pair_id": "pair_task_2_001",
+    "task_id": "task_2",
+    "instruction": "Place object1 in the target region.",
+    "target_occupant_type": "sugar_box",
+    "split": "id",
+    "stop": {
+      "label": "STOP",
+      "is_occupied": true,
+      "culprits": [
+        "occupant"
+      ],
+      "rgb_path": "data/queries/pair_task_2_001/stop_rgb.png",
+      "instance_segmentation_path": "data/queries/pair_task_2_001/stop_instance_segmentation.png",
+      "candidate_object_mask_path": "data/queries/pair_task_2_001/stop_candidate_object_mask.png",
+      "relation_target_mask_path": "data/queries/pair_task_2_001/stop_relation_target_mask.png",
+      "causal_violation_mask_path": "data/queries/pair_task_2_001/stop_causal_violation_mask.png",
+      "combined_visualization_path": "data/queries/pair_task_2_001/stop_combined_relation_visualization.png",
+      "culprit_mask_path": "data/queries/pair_task_2_001/stop_culprit_mask.png",
+      "region_mask_path": "data/queries/pair_task_2_001/stop_target_mask.png",
+      "spec": {
+        "task_family": "task_2",
+        "sample_id": "pair_task_2_001_stop",
+        "pair_id": "pair_task_2_001",
+        "seed": 42,
+        "label": "STOP",
+        "goal_instruction": "Place object1 in the target region.",
+        "background_id": "bg_default",
+        "lighting_id": "light_standard",
+        "object1_type": "coffee_can",
+        "object1_start_pose": [
+          -0.35,
+          -0.2,
+          0.65
+        ],
+        "blocker_or_occupant_types": [
+          "sugar_box"
+        ],
+        "blocker_count": 0,
+        "blocker_position_bins": [],
+        "occupant_position_bin": "centre",
+        "box_pose": [
+          0.52,
+          0.18,
+          0.58
+        ],
+        "target_pose": [
+          -0.1,
+          -0.2,
+          0.581
+        ],
+        "distractor_identities_and_poses": [],
+        "camera_configuration": "front_camera",
+        "split": "id",
+        "relation_before": "OCCUPIES(sugar_box, target_region)",
+        "relation_after": "OUTSIDE(sugar_box, target_region)",
+        "base_scene_id": "kitchen_workstation",
+        "objects_to_spawn": [
+          {
+            "name": "coffee_can",
+            "type": "coffee_can",
+            "pos": [
+              -0.35,
+              -0.2,
+              0.65
+            ]
+          },
+          {
+            "name": "occupant",
+            "type": "sugar_box",
+            "pos": [
+              -0.1,
+              -0.2,
+              0.65
+            ]
+          }
+        ]
+      }
+    },
+    "proceed": {
+      "label": "PROCEED",
+      "is_occupied": false,
+      "culprits": [],
+      "rgb_path": "data/queries/pair_task_2_001/proceed_rgb.png",
+      "instance_segmentation_path": "data/queries/pair_task_2_001/proceed_instance_segmentation.png",
+      "candidate_object_mask_path": "data/queries/pair_task_2_001/proceed_candidate_object_mask.png",
+      "relation_target_mask_path": "data/queries/pair_task_2_001/proceed_relation_target_mask.png",
+      "causal_violation_mask_path": "data/queries/pair_task_2_001/proceed_causal_violation_mask.png",
+      "combined_visualization_path": "data/queries/pair_task_2_001/proceed_combined_relation_visualization.png",
+      "culprit_mask_path": "data/queries/pair_task_2_001/proceed_culprit_mask.png",
+      "region_mask_path": "data/queries/pair_task_2_001/proceed_target_mask.png",
+      "spec": {
+        "task_family": "task_2",
+        "sample_id": "pair_task_2_001_proceed",
+        "pair_id": "pair_task_2_001",
+        "seed": 42,
+        "label": "PROCEED",
+        "goal_instruction": "Place object1 in the target region.",
+        "background_id": "bg_default",
+        "lighting_id": "light_standard",
+        "object1_type": "coffee_can",
+        "object1_start_pose": [
+          -0.35,
+          -0.2,
+          0.65
+        ],
+        "blocker_or_occupant_types": [
+          "sugar_box"
+        ],
+        "blocker_count": 0,
+        "blocker_position_bins": [],
+        "occupant_position_bin": "centre",
+        "box_pose": [
+          0.52,
+          0.18,
+          0.58
+        ],
+        "target_pose": [
+          -0.1,
+          -0.2,
+          0.581
+        ],
+        "distractor_identities_and_poses": [],
+        "camera_configuration": "front_camera",
+        "split": "id",
+        "relation_before": "OCCUPIES(sugar_box, target_region)",
+        "relation_after": "OUTSIDE(sugar_box, target_region)",
+        "base_scene_id": "kitchen_workstation",
+        "objects_to_spawn": [
+          {
+            "name": "coffee_can",
+            "type": "coffee_can",
+            "pos": [
+              -0.35,
+              -0.2,
+              0.65
+            ]
+          },
+          {
+            "name": "occupant",
+            "type": "sugar_box",
+            "pos": [
+              0.25,
+              -0.2,
+              0.65
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

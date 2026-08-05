@@ -61,7 +61,11 @@ class DemonstrationGenerator:
             Saved MP4 file path.
         """
         # Task 1 PROCEED condition: lid is clear
-        model, data = self.scene_builder.create_environment(objects_to_spawn=None)
+        model, data = self.scene_builder.create_environment(
+            objects_to_spawn=None,
+            include_robot=True,
+            robot_base_pose="right_side",
+        )
         renderer = OffscreenRenderer(model, width=self.width, height=self.height)
         
         executor = BoxOpenExecutor(model, data)
@@ -81,13 +85,19 @@ class DemonstrationGenerator:
         Returns:
             Saved MP4 file path.
         """
-        # Task 2 PROCEED condition: target region empty, manipulation object outside
-        objects = [{"name": obj_name, "type": obj_name, "pos": [-0.2, 0.45, 0.85]}]
-        model, data = self.scene_builder.create_environment(objects_to_spawn=objects)
+        start_pos = (-0.35, -0.20, 0.65)
+        target_pos = (-0.10, -0.20, 0.65)
+        objects = [{"name": obj_name, "type": obj_name, "pos": list(start_pos)}]
+        model, data = self.scene_builder.create_environment(
+            objects_to_spawn=objects,
+            include_robot=True,
+            robot_base_pose="home",
+            weld_target_body=obj_name,
+        )
         renderer = OffscreenRenderer(model, width=self.width, height=self.height)
 
-        executor = PlaceObjectExecutor(model, data, object_name=obj_name)
-        frames = executor.run_demonstration(renderer, start_pos=(-0.2, 0.45, 0.85))
+        executor = PlaceObjectExecutor(model, data, object_name=obj_name, target_pos=target_pos)
+        frames = executor.run_demonstration(renderer, start_pos=start_pos)
         renderer.close()
 
         save_path = self.output_dir / f"{demo_id}.mp4"

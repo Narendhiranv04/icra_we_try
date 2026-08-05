@@ -3,31 +3,50 @@ Model loading utilities for MuJoCo scene construction.
 """
 
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 import mujoco
 
 
-def load_assets_from_dir(assets_dir: Union[str, Path]) -> Dict[str, bytes]:
+def load_assets_from_dir(assets_dir: Union[str, Path, List[Union[str, Path]]]) -> Dict[str, bytes]:
     """Load binary asset files (OBJ, STL, PNG, etc.) into a dictionary for MuJoCo XML string parsing.
     
     Args:
-        assets_dir: Path to directory containing assets.
+        assets_dir: Single path or list of paths to directories containing assets.
         
     Returns:
         Dict mapping relative file paths to raw bytes.
     """
-    assets_dir = Path(assets_dir)
     asset_dict = {}
-    if not assets_dir.exists():
-        return asset_dict
-        
-    for file_path in assets_dir.rglob("*"):
-        if file_path.is_file():
-            name = file_path.name
-            if name not in asset_dict:
-                with open(file_path, "rb") as f:
-                    asset_dict[name] = f.read()
+    dirs_to_search = []
+    
+    if isinstance(assets_dir, (list, tuple)):
+        dirs_to_search.extend([Path(d) for d in assets_dir])
+    else:
+        dirs_to_search.append(Path(assets_dir))
+
+    # Add gymnasium_robotics fetch assets if available
+    try:
+        import gymnasium_robotics
+        p_base = Path(gymnasium_robotics.__file__).parent / "envs" / "assets"
+        p_fetch = p_base / "fetch"
+        p_stls = p_base / "stls" / "fetch"
+        if p_fetch.exists():
+            dirs_to_search.append(p_fetch)
+        if p_stls.exists():
+            dirs_to_search.append(p_stls)
+    except ImportError:
+        pass
+
+    for d in dirs_to_search:
+        if d.exists():
+            for file_path in d.rglob("*"):
+                if file_path.is_file():
+                    name = file_path.name
+                    if name not in asset_dict:
+                        with open(file_path, "rb") as f:
+                            asset_dict[name] = f.read()
     return asset_dict
+
 
 
 def load_model_from_path(

@@ -39,23 +39,42 @@ class QueryGenerator:
             List of generated metadata dictionary records.
         """
         all_records = []
-        num_pairs = self.config["query_generation"].get("num_pairs_per_task", 2)
+        num_pairs = self.config["query_generation"].get("num_pairs_per_task", 4)
+        seed_base = self.config.get("seed", 42)
+
+        task1_pos_bins = ["centre", "front_left", "front_right", "rear_left", "rear_right", "opening_edge", "hinge_side"]
+        task2_pos_bins = ["centre", "left", "right", "front", "rear"]
+        splits = ["id", "unseen_object", "unseen_background", "compositional"]
 
         for task_cfg in self.config.get("tasks", []):
             task_id = task_cfg["id"]
-            blockers = task_cfg.get("blocker_objects", ["coffee_can", "sugar_box"])
+            blockers = task_cfg.get("blocker_objects", ["coffee_can", "sugar_box", "mug", "cup", "bowl"])
 
             for idx in range(num_pairs):
                 pair_id = f"pair_{task_id}_{idx+1:03d}"
                 blocker_obj = blockers[idx % len(blockers)]
+                split = splits[idx % len(splits)]
+                ep_seed = seed_base + idx * 17
 
                 if task_id == "task_1":
+                    b_count = 2 if (idx % 3 == 2) else 1
+                    pos_bin = task1_pos_bins[idx % len(task1_pos_bins)]
                     record = self.counterfactual_gen.generate_task1_pair(
-                        pair_id, blocker_type=blocker_obj
+                        pair_id=pair_id,
+                        blocker_type=blocker_obj,
+                        blocker_count=b_count,
+                        blocker_pos_bin=pos_bin,
+                        split=split,
+                        seed=ep_seed,
                     )
                 else:
+                    pos_bin = task2_pos_bins[idx % len(task2_pos_bins)]
                     record = self.counterfactual_gen.generate_task2_pair(
-                        pair_id, target_occupant_type=blocker_obj
+                        pair_id=pair_id,
+                        target_occupant_type=blocker_obj,
+                        occupant_pos_bin=pos_bin,
+                        split=split,
+                        seed=ep_seed,
                     )
                 all_records.append(record)
 

@@ -27,16 +27,18 @@ class SceneBuilder:
     def build_scene_xml(
         self,
         objects_to_spawn: Optional[List[Dict[str, Union[str, List[float]]]]] = None,
+        include_robot: bool = False,
+        robot_base_pose: str = "home",
+        weld_target_body: Optional[str] = None,
     ) -> str:
-        """Construct scene XML string by reading base XML and injecting object bodies.
+        """Construct scene XML string by reading base XML and injecting object bodies and robot.
         
         Args:
-            objects_to_spawn: List of dicts specifying:
-                - 'name': object instance name (e.g. 'obj1')
-                - 'type': catalog object type (e.g. 'coffee_can', 'sugar_box', 'mug')
-                - 'pos': [x, y, z] initial 3D position
-                - 'quat': [w, x, y, z] initial orientation (optional)
-                
+            objects_to_spawn: List of object dictionaries.
+            include_robot: Whether to inject Fetch manipulator.
+            robot_base_pose: Base placement pose ("home" or "right_side").
+            weld_target_body: Optional object body name to attach grasp weld equality constraint.
+            
         Returns:
             Complete MJCF XML string.
         """
@@ -109,29 +111,50 @@ class SceneBuilder:
                         density="300",
                     )
 
+        if include_robot:
+            from src.environment.robot_integration import inject_fetch_robot
+            inject_fetch_robot(root, base_pose_name=robot_base_pose, spawn_welds=True, weld_target_body=weld_target_body)
+
         return ET.tostring(root, encoding="unicode")
 
     def create_environment(
         self,
         objects_to_spawn: Optional[List[Dict[str, Union[str, List[float]]]]] = None,
         settle_steps: int = 200,
+        include_robot: bool = False,
+        robot_base_pose: str = "home",
+        weld_target_body: Optional[str] = None,
     ) -> Tuple[mujoco.MjModel, mujoco.MjData]:
+
         """Create and initialize MuJoCo MjModel and MjData with settling physics.
         
         Args:
             objects_to_spawn: List of object dictionaries to inject into scene.
-            settle_steps: Number of mj_step simulation calls to allow physics to settle.
+            settle_steps: Number of simulation steps to settle objects.
+            include_robot: Whether to inject Fetch robot.
+            robot_base_pose: Base placement pose ("home" or "right_side").
+            weld_target_body: Object body to attach grasp weld.
             
         Returns:
             Tuple of (MjModel, MjData).
         """
-        xml_string = self.build_scene_xml(objects_to_spawn)
+        xml_string = self.build_scene_xml(
+            objects_to_spawn=objects_to_spawn,
+            include_robot=include_robot,
+            robot_base_pose=robot_base_pose,
+            weld_target_body=weld_target_body,
+        )
         assets = load_assets_from_dir(self.assets_dir)
         model, data = load_model_from_string(xml_string, assets=assets)
         
+        if include_robot:
+            from src.environment.robot_integration import initialize_robot_qpos
+            initialize_robot_qpos(model, data)
+
         # Step physics to settle objects on surfaces
         if settle_steps > 0:
             for _ in range(settle_steps):
                 mujoco.mj_step(model, data)
                 
         return model, data
+

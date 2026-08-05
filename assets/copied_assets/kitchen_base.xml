@@ -316,6 +316,16 @@
     </body>
 
     <!-- ================================================================ -->
+    <!--                   TARGET REGION (Task 2 Single-Capacity)         -->
+    <!-- ================================================================ -->
+    <body name="target_region_body" pos="-0.10 -0.20 0.581">
+      <geom name="target_region_geom" type="box" size="0.10 0.10 0.001"
+            rgba="0.2 0.7 0.9 0.6" contype="0" conaffinity="0" group="1"/>
+      <site name="target_region_site" type="box" size="0.10 0.10 0.001"
+            rgba="0.2 0.7 0.9 0.3" group="4"/>
+    </body>
+
+    <!-- ================================================================ -->
     <!--         OBJECT ANCHOR SITES ON COUNTERTOP                        -->
     <!--   Objects are spawned at these positions via scene configs        -->
     <!-- ================================================================ -->

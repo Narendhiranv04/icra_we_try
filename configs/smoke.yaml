@@ -10,7 +10,7 @@ demo_generation:
   save_video: true
 
 query_generation:
-  num_pairs_per_task: 2 # 2 matched PROCEED/STOP pairs per task
+  num_pairs_per_task: 4 # 4 matched PROCEED/STOP pairs per task (8 total pairs)
   resolution: [640, 480]
   camera_name: "front_camera"
   save_instance_masks: true

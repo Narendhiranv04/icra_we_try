@@ -43,21 +43,31 @@ class ContactSheetGenerator:
             return ""
 
         rows = len(records)
-        cols = 4 # STOP RGB, STOP Mask, PROCEED RGB, PROCEED Mask
+        cols = 6 # STOP RGB, STOP Overlay, STOP Causal, PROCEED RGB, PROCEED Overlay, PROCEED Causal
         tw, th = thumb_size
         canvas = Image.new("RGB", (cols * tw, rows * th), color=(15, 23, 42))
 
         for r_idx, rec in enumerate(records):
             stop_rgb = Image.open(rec["stop"]["rgb_path"]).resize(thumb_size)
-            stop_mask = Image.open(rec["stop"]["culprit_mask_path"]).resize(thumb_size).convert("RGB")
+            stop_vis_p = rec["stop"].get("combined_visualization_path", rec["stop"]["rgb_path"])
+            stop_vis = Image.open(stop_vis_p).resize(thumb_size)
+            stop_caus_p = rec["stop"].get("causal_violation_mask_path", rec["stop"]["culprit_mask_path"])
+            stop_caus = Image.open(stop_caus_p).resize(thumb_size).convert("RGB")
+
             proceed_rgb = Image.open(rec["proceed"]["rgb_path"]).resize(thumb_size)
-            proceed_mask = Image.open(rec["proceed"]["culprit_mask_path"]).resize(thumb_size).convert("RGB")
+            proceed_vis_p = rec["proceed"].get("combined_visualization_path", rec["proceed"]["rgb_path"])
+            proceed_vis = Image.open(proceed_vis_p).resize(thumb_size)
+            proceed_caus_p = rec["proceed"].get("causal_violation_mask_path", rec["proceed"]["culprit_mask_path"])
+            proceed_caus = Image.open(proceed_caus_p).resize(thumb_size).convert("RGB")
 
             canvas.paste(stop_rgb, (0 * tw, r_idx * th))
-            canvas.paste(stop_mask, (1 * tw, r_idx * th))
-            canvas.paste(proceed_rgb, (2 * tw, r_idx * th))
-            canvas.paste(proceed_mask, (3 * tw, r_idx * th))
+            canvas.paste(stop_vis, (1 * tw, r_idx * th))
+            canvas.paste(stop_caus, (2 * tw, r_idx * th))
+            canvas.paste(proceed_rgb, (3 * tw, r_idx * th))
+            canvas.paste(proceed_vis, (4 * tw, r_idx * th))
+            canvas.paste(proceed_caus, (5 * tw, r_idx * th))
 
         out_path = self.output_dir / output_filename
         canvas.save(out_path)
         return str(out_path)
+

@@ -16,7 +16,7 @@ def test_target_occupancy_predicates():
     assert not is_occ_clear, "Target empty scene was falsely marked as occupied!"
 
     # 2. Target occupied scene
-    occupant_objs = [{"name": "occupant", "type": "sugar_box", "pos": [0.0, 0.20, 0.64]}]
+    occupant_objs = [{"name": "occupant", "type": "sugar_box", "pos": [-0.10, -0.20, 0.65]}]
     model_occ, data_occ = builder.create_environment(objects_to_spawn=occupant_objs, settle_steps=50)
     is_occ, culprits = check_target_occupancy(model_occ, data_occ, candidate_objects=["occupant"])
     assert is_occ, "Target occupied scene was not detected as occupied!"

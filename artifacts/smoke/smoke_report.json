@@ -1,0 +1,19 @@
+{
+  "profile": "smoke",
+  "status": "PASSED",
+  "unit_tests_passed": 4,
+  "demonstrations_generated": 2,
+  "counterfactual_pairs_generated": 8,
+  "tasks_covered": [
+    "task_1_open_box",
+    "task_2_place_object"
+  ],
+  "artifacts": [
+    "contact_sheet.png",
+    "demonstration_montage.png",
+    "smoke_report.json",
+    "smoke_report.md",
+    "representative_metadata.json",
+    "README.md"
+  ]
+}

@@ -4,13 +4,13 @@ seed: 100
 output_dir: "data"
 
 demo_generation:
-  num_demos_per_task: 50
+  num_demos_per_task: 3
   fps: 30
   resolution: [640, 480]
   save_video: true
 
 query_generation:
-  num_pairs_per_task: 100
+  num_pairs_per_task: 60 # 60 matched PROCEED/STOP pairs per task family (120 pairs = 240 query images)
   resolution: [640, 480]
   camera_name: "front_camera"
   save_instance_masks: true
