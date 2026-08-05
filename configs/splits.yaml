@@ -1,0 +1,15 @@
+# Dataset Splits & Holdout Configurations
+splits:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+
+split_rules:
+  stratify_by_task: true
+  balanced_labels: true # 50% PROCEED / 50% STOP
+  pair_integrity: true  # Counterfactual pair (PROCEED and STOP) MUST be in the same split
+
+holdout_distractors:
+  train: ["coffee_can", "sugar_box", "mug"]
+  val: ["cup"]
+  test: ["bowl"]

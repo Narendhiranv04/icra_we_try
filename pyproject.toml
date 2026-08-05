@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mujoco_relational_benchmark"
+version = "0.1.0"
+description = "MuJoCo Relational Precondition Benchmark & Data-Generation Pipeline"
+authors = [{ name = "AI Research Team" }]
+requires-python = ">=3.9"
+dependencies = [
+    "mujoco>=3.10.0",
+    "numpy>=1.24.0",
+    "Pillow>=10.0.0",
+    "pyyaml>=6.0",
+    "scipy>=1.10.0",
+    "opencv-python>=4.8.0",
+    "pytest>=7.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black",
+    "ruff",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

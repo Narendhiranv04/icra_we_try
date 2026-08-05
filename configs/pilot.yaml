@@ -1,0 +1,42 @@
+# Full Pilot Dataset Generation Profile
+profile_name: "pilot"
+seed: 100
+output_dir: "data"
+
+demo_generation:
+  num_demos_per_task: 50
+  fps: 30
+  resolution: [640, 480]
+  save_video: true
+
+query_generation:
+  num_pairs_per_task: 100
+  resolution: [640, 480]
+  camera_name: "front_camera"
+  save_instance_masks: true
+  save_culprit_masks: true
+  save_region_masks: true
+
+tasks:
+  - id: "task_1"
+    name: "open_box"
+    instruction: "Open the box."
+    container_id: "B1"
+    lid_surface: "B1_lid"
+    lid_handle: "B1_lid_handle_bar"
+    blocker_objects: ["coffee_can", "sugar_box", "mug", "cup", "bowl"]
+    beside_region: [-0.35, 0.45, 0.82]
+
+  - id: "task_2"
+    name: "place_object"
+    instruction: "Place object1 in the target region."
+    target_region: "target_region"
+    manipulation_object: "coffee_can"
+    blocker_objects: ["sugar_box", "mug", "cup", "bowl", "spoon"]
+    outside_region: [0.35, 0.45, 0.82]
+
+validation:
+  strict_mode: true
+  check_counterfactual_symmetry: true
+  verify_video_integrity: true
+  min_mask_pixels: 50

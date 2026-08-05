@@ -1,0 +1,27 @@
+# Implementation Tasks
+
+- `[x]` Phase 1: Workspace Bootstrap & Asset Management
+  - `[x]` Inspect reference project structure and dependencies
+  - `[x]` Bootstrap directory tree under `/home/naren/RA_iiith_new`
+  - `[x]` Copy minimal MJCF assets and mesh files into `assets/copied_assets/`
+  - `[x]` Create `pyproject.toml`, `requirements.txt`, and config files (`smoke.yaml`, `pilot.yaml`, `scenes.yaml`, `splits.yaml`)
+- `[x]` Phase 2: Environment Wrapper & State Predicates
+  - `[x]` Implement `src/environment/scene_builder.py` and `model_loading.py`
+  - `[x]` Implement `src/environment/renderer.py` for offscreen rendering (RGB, instance masks, culprit masks)
+  - `[x]` Implement privileged occupancy predicates in `src/validation/occupancy_checks.py`
+- `[x]` Phase 3: Task Executors & Demonstration Generator
+  - `[x]` Implement `src/tasks/open_box.py` (BoxOpenExecutor)
+  - `[x]` Implement `src/tasks/place_object.py` (Pick/Place Executors)
+  - `[x]` Implement `src/generation/demonstration_generator.py` for MP4 video clips
+- `[x]` Phase 4: Query Generator & Counterfactual Pair Generator
+  - `[x]` Implement `src/generation/query_generator.py` for Task 1 & Task 2
+  - `[x]` Implement `src/generation/counterfactual_generator.py` for matched PROCEED/STOP pairs
+  - `[x]` Implement `src/generation/background_randomization.py` and `object_randomization.py`
+- `[x]` Phase 5: Dataset Validator & Preview Utilities
+  - `[x]` Implement `src/validation/dataset_validator.py`
+  - `[x]` Implement `src/preview/html_preview.py` and `contact_sheet.py`
+  - `[x]` Implement metadata and JSON manifest generation
+- `[x]` Phase 6: Automated Unit Tests & Master Smoke Test Verification
+  - `[x]` Write unit test suite under `tests/`
+  - `[x]` Create `scripts/run_smoke_test.sh`
+  - `[x]` Run end-to-end smoke test, validate outputs, and render previews
