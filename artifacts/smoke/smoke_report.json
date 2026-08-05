@@ -1,9 +1,11 @@
 {
   "profile": "smoke",
   "status": "PASSED",
-  "unit_tests_passed": 4,
+  "unit_tests_passed": 14,
+  "unit_tests_total": 14,
   "demonstrations_generated": 2,
   "counterfactual_pairs_generated": 8,
+  "positive_controls_generated": 4,
   "tasks_covered": [
     "task_1_open_box",
     "task_2_place_object"

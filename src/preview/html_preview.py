@@ -1,5 +1,5 @@
 """
-HTML preview generator for visualizing benchmark query pairs, mask overlays, decision labels, and metadata.
+HTML preview generator for visualizing benchmark query pairs, positive controls, mask overlays, decision labels, and metadata.
 """
 
 from pathlib import Path
@@ -40,65 +40,89 @@ class HTMLPreviewGenerator:
 
         cards_html = []
         for rec in records:
-            pair_id = rec.get("pair_id", "Unknown")
             task_id = rec.get("task_id", "")
             instruction = rec.get("instruction", "")
             split = rec.get("split", "id")
 
-            # STOP images
-            stop_rgb_b64 = image_to_base64(rec["stop"]["rgb_path"])
-            stop_cand_b64 = image_to_base64(rec["stop"].get("candidate_object_mask_path", rec["stop"].get("culprit_mask_path")))
-            stop_target_b64 = image_to_base64(rec["stop"].get("relation_target_mask_path", rec["stop"].get("region_mask_path")))
-            stop_causal_b64 = image_to_base64(rec["stop"].get("causal_violation_mask_path", ""))
-            stop_vis_b64 = image_to_base64(rec["stop"].get("combined_visualization_path", rec["stop"]["rgb_path"]))
+            if rec.get("sample_type") == "positive_control":
+                ctrl_id = rec.get("control_id", "Unknown")
+                ctrl_rgb_b64 = image_to_base64(rec.get("rgb_path", ""))
+                ctrl_cand_b64 = image_to_base64(rec.get("candidate_object_mask_path", ""))
+                ctrl_target_b64 = image_to_base64(rec.get("relation_target_mask_path", ""))
 
-            # PROCEED images
-            proceed_rgb_b64 = image_to_base64(rec["proceed"]["rgb_path"])
-            proceed_cand_b64 = image_to_base64(rec["proceed"].get("candidate_object_mask_path", rec["proceed"].get("culprit_mask_path")))
-            proceed_target_b64 = image_to_base64(rec["proceed"].get("relation_target_mask_path", rec["proceed"].get("region_mask_path")))
-            proceed_causal_b64 = image_to_base64(rec["proceed"].get("causal_violation_mask_path", ""))
-            proceed_vis_b64 = image_to_base64(rec["proceed"].get("combined_visualization_path", rec["proceed"]["rgb_path"]))
-
-            stop_spec = rec["stop"].get("spec", {})
-            rel_before = stop_spec.get("relation_before", "")
-            rel_after = stop_spec.get("relation_after", "")
-
-            card = f"""
-            <div class="pair-card">
-                <div class="card-header">
-                    <h2>Pair ID: {pair_id} | Task: {task_id} | Split: <span class="split-tag">{split}</span></h2>
-                    <p class="instruction"><strong>Goal Instruction:</strong> "{instruction}"</p>
-                </div>
-                
-                <div class="comparison-grid">
-                    <!-- STOP COLUMN -->
-                    <div class="column stop-col">
-                        <span class="badge badge-stop">STOP (Precondition Violated)</span>
-                        <p class="rel-pred"><strong>Relation:</strong> <code>{rel_before}</code></p>
-                        <div class="image-grid">
-                            <div class="image-box"><p>RGB Query Image</p><img src="{stop_rgb_b64}" alt="STOP RGB" /></div>
-                            <div class="image-box"><p>Combined Relation Overlay</p><img src="{stop_vis_b64}" alt="STOP Overlay" /></div>
-                            <div class="image-box"><p>Candidate Object Mask</p><img src="{stop_cand_b64}" alt="STOP Candidate Mask" /></div>
-                            <div class="image-box"><p>Relation Target Mask</p><img src="{stop_target_b64}" alt="STOP Target Mask" /></div>
-                            <div class="image-box"><p>Causal Violation Mask (Union)</p><img src="{stop_causal_b64}" alt="STOP Causal Mask" /></div>
-                        </div>
+                card = f"""
+                <div class="pair-card">
+                    <div class="card-header">
+                        <h2>Control ID: {ctrl_id} | Task: {task_id} | Split: <span class="split-tag">{split}</span></h2>
+                        <p class="instruction"><strong>Goal Instruction:</strong> "{instruction}"</p>
                     </div>
-
-                    <!-- PROCEED COLUMN -->
                     <div class="column proceed-col">
-                        <span class="badge badge-proceed">PROCEED (Precondition Satisfied)</span>
-                        <p class="rel-pred"><strong>Relation:</strong> <code>{rel_after}</code></p>
+                        <span class="badge badge-proceed">PROCEED (Standalone Positive Control)</span>
                         <div class="image-grid">
-                            <div class="image-box"><p>RGB Counterfactual Image</p><img src="{proceed_rgb_b64}" alt="PROCEED RGB" /></div>
-                            <div class="image-box"><p>Combined Relation Overlay</p><img src="{proceed_vis_b64}" alt="PROCEED Overlay" /></div>
-                            <div class="image-box"><p>Candidate Object Mask</p><img src="{proceed_cand_b64}" alt="PROCEED Candidate Mask" /></div>
-                            <div class="image-box"><p>Relation Target Mask</p><img src="{proceed_target_b64}" alt="PROCEED Target Mask" /></div>
-                            <div class="image-box"><p>Causal Violation Mask (Empty)</p><img src="{proceed_causal_b64}" alt="PROCEED Causal Mask" /></div>
+                            <div class="image-box"><p>RGB Image</p><img src="{ctrl_rgb_b64}" alt="Control RGB" /></div>
+                            <div class="image-box"><p>Candidate Object Mask</p><img src="{ctrl_cand_b64}" alt="Candidate Mask" /></div>
+                            <div class="image-box"><p>Relation Target Mask</p><img src="{ctrl_target_b64}" alt="Target Mask" /></div>
                         </div>
                     </div>
                 </div>
-            </div>
-            """
+                """
+            else:
+                pair_id = rec.get("pair_id", "Unknown")
+                stop_meta = rec.get("stop", {})
+                proceed_meta = rec.get("proceed", {})
+
+                stop_rgb_b64 = image_to_base64(stop_meta.get("rgb_path", ""))
+                stop_cand_b64 = image_to_base64(stop_meta.get("candidate_object_mask_path") or stop_meta.get("culprit_mask_path", ""))
+                stop_target_b64 = image_to_base64(stop_meta.get("relation_target_mask_path") or stop_meta.get("region_mask_path", ""))
+                stop_causal_b64 = image_to_base64(stop_meta.get("causal_violation_mask_path", ""))
+                stop_vis_b64 = image_to_base64(stop_meta.get("combined_visualization_path") or stop_meta.get("rgb_path", ""))
+
+                proceed_rgb_b64 = image_to_base64(proceed_meta.get("rgb_path", ""))
+                proceed_cand_b64 = image_to_base64(proceed_meta.get("candidate_object_mask_path") or proceed_meta.get("culprit_mask_path", ""))
+                proceed_target_b64 = image_to_base64(proceed_meta.get("relation_target_mask_path") or proceed_meta.get("region_mask_path", ""))
+                proceed_causal_b64 = image_to_base64(proceed_meta.get("causal_violation_mask_path", ""))
+                proceed_vis_b64 = image_to_base64(proceed_meta.get("combined_visualization_path") or proceed_meta.get("rgb_path", ""))
+
+                stop_spec = stop_meta.get("spec", {})
+                rel_before = stop_spec.get("relation_before", "")
+                rel_after = stop_spec.get("relation_after", "")
+
+                card = f"""
+                <div class="pair-card">
+                    <div class="card-header">
+                        <h2>Pair ID: {pair_id} | Task: {task_id} | Split: <span class="split-tag">{split}</span></h2>
+                        <p class="instruction"><strong>Goal Instruction:</strong> "{instruction}"</p>
+                    </div>
+                    
+                    <div class="comparison-grid">
+                        <!-- STOP COLUMN -->
+                        <div class="column stop-col">
+                            <span class="badge badge-stop">STOP (Precondition Violated)</span>
+                            <p class="rel-pred"><strong>Relation:</strong> <code>{rel_before}</code></p>
+                            <div class="image-grid">
+                                <div class="image-box"><p>RGB Query Image</p><img src="{stop_rgb_b64}" alt="STOP RGB" /></div>
+                                <div class="image-box"><p>Combined Relation Overlay</p><img src="{stop_vis_b64}" alt="STOP Overlay" /></div>
+                                <div class="image-box"><p>Candidate Object Mask</p><img src="{stop_cand_b64}" alt="STOP Candidate Mask" /></div>
+                                <div class="image-box"><p>Relation Target Mask</p><img src="{stop_target_b64}" alt="STOP Target Mask" /></div>
+                                <div class="image-box"><p>Causal Violation Mask (Union)</p><img src="{stop_causal_b64}" alt="STOP Causal Mask" /></div>
+                            </div>
+                        </div>
+
+                        <!-- PROCEED COLUMN -->
+                        <div class="column proceed-col">
+                            <span class="badge badge-proceed">PROCEED (Precondition Satisfied)</span>
+                            <p class="rel-pred"><strong>Relation:</strong> <code>{rel_after}</code></p>
+                            <div class="image-grid">
+                                <div class="image-box"><p>RGB Counterfactual Image</p><img src="{proceed_rgb_b64}" alt="PROCEED RGB" /></div>
+                                <div class="image-box"><p>Combined Relation Overlay</p><img src="{proceed_vis_b64}" alt="PROCEED Overlay" /></div>
+                                <div class="image-box"><p>Candidate Object Mask</p><img src="{proceed_cand_b64}" alt="PROCEED Candidate Mask" /></div>
+                                <div class="image-box"><p>Relation Target Mask</p><img src="{proceed_target_b64}" alt="PROCEED Target Mask" /></div>
+                                <div class="image-box"><p>Causal Violation Mask (Empty)</p><img src="{proceed_causal_b64}" alt="PROCEED Causal Mask" /></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                """
             cards_html.append(card)
 
         full_html = f"""<!DOCTYPE html>

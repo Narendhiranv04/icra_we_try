@@ -1,5 +1,5 @@
 """
-Demonstration video generator for rendering MP4 demonstration clips of successful task executions.
+Demonstration video generator for rendering MP4 demonstration clips and full structured demonstration artifacts.
 """
 
 from pathlib import Path
@@ -11,15 +11,17 @@ from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
 from src.tasks.open_box import BoxOpenExecutor
 from src.tasks.place_object import PlaceObjectExecutor
+from src.validation.demonstration_validator import DemonstrationValidator
+from src.generation.demonstration_writer import DemonstrationWriter
 
 
 class DemonstrationGenerator:
-    """Generator for producing MP4 demonstration videos of successful task executions."""
+    """Generator for producing structured demonstration data directories of successful task executions."""
 
     def __init__(
         self,
         output_dir: Union[str, Path] = "data/demos",
-        fps: int = 30,
+        fps: int = 15,
         resolution: tuple[int, int] = (640, 480),
     ):
         self.output_dir = Path(output_dir)
@@ -27,71 +29,73 @@ class DemonstrationGenerator:
         self.fps = fps
         self.width, self.height = resolution
         self.scene_builder = SceneBuilder()
+        self.writer = DemonstrationWriter(base_dir=self.output_dir)
 
-    def save_mp4(self, frames: List[np.ndarray], output_path: Union[str, Path]) -> str:
-        """Save a list of RGB numpy frames as an MP4 video file.
-        
-        Args:
-            frames: List of (height, width, 3) uint8 RGB arrays.
-            output_path: Path to output MP4 file.
-            
-        Returns:
-            Path string to saved MP4 file.
-        """
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # OpenCV uses BGR ordering
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        out = cv2.VideoWriter(
-            str(output_path), fourcc, self.fps, (self.width, self.height)
-        )
-
-        for frame in frames:
-            bgr_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            out.write(bgr_frame)
-
-        out.release()
-        return str(output_path)
-
-    def generate_task_1_demo(self, demo_id: str = "demo_task1_001") -> str:
-        """Generate demonstration clip for Task 1 (Open Box).
-        
-        Returns:
-            Saved MP4 file path.
-        """
-        # Task 1 PROCEED condition: lid is clear
+    def generate_task_1_demo(
+        self,
+        demo_id: str = "demo_task1_001",
+        robot_base_pose: str = "right_side",
+        background_id: str = "bg_neutral_wood",
+        seed: int = 42,
+    ) -> str:
+        """Generate full structured demonstration for Task 1 (Open Box)."""
         model, data = self.scene_builder.create_environment(
             objects_to_spawn=None,
             include_robot=True,
-            robot_base_pose="right_side",
+            robot_base_pose=robot_base_pose,
         )
         renderer = OffscreenRenderer(model, width=self.width, height=self.height)
-        
+
         executor = BoxOpenExecutor(model, data)
         frames = executor.run_demonstration(renderer)
         renderer.close()
 
-        save_path = self.output_dir / f"{demo_id}.mp4"
-        return self.save_mp4(frames, save_path)
+        # Validate demonstration state log
+        is_valid, issues = DemonstrationValidator.validate_open_box(executor.state_log)
+        val_result = {
+            "is_valid": is_valid,
+            "issues": issues,
+            "demo_id": demo_id,
+            "task_family": "open_box",
+        }
+
+        scene_spec = {
+            "demo_id": demo_id,
+            "task_family": "open_box",
+            "seed": seed,
+            "robot_base_pose": robot_base_pose,
+            "background_id": background_id,
+            "instruction": "Open the box.",
+        }
+
+        demo_dir = self.writer.save_demonstration(
+            task_family="open_box",
+            demo_id=demo_id,
+            frames=frames,
+            state_log=executor.state_log,
+            scene_spec=scene_spec,
+            validation_result=val_result,
+            fps=self.fps,
+        )
+
+        return str(demo_dir / "rgb.mp4")
 
     def generate_task_2_demo(
         self,
         demo_id: str = "demo_task2_001",
         obj_name: str = "coffee_can",
+        start_pos: tuple[float, float, float] = (-0.30, -0.20, 0.65),
+        target_pos: tuple[float, float, float] = (-0.10, -0.20, 0.65),
+        robot_base_pose: str = "home",
+        background_id: str = "bg_neutral_wood",
+        seed: int = 42,
     ) -> str:
-        """Generate demonstration clip for Task 2 (Place Object).
-        
-        Returns:
-            Saved MP4 file path.
-        """
-        start_pos = (-0.25, -0.30, 0.65)
-        target_pos = (-0.10, -0.20, 0.65)
+        """Generate full structured demonstration for Task 2 (Place Object)."""
         objects = [{"name": obj_name, "type": obj_name, "pos": list(start_pos)}]
         model, data = self.scene_builder.create_environment(
             objects_to_spawn=objects,
             include_robot=True,
-            robot_base_pose="home",
+            robot_base_pose=robot_base_pose,
             weld_target_body=obj_name,
         )
         renderer = OffscreenRenderer(model, width=self.width, height=self.height)
@@ -100,5 +104,34 @@ class DemonstrationGenerator:
         frames = executor.run_demonstration(renderer, start_pos=start_pos)
         renderer.close()
 
-        save_path = self.output_dir / f"{demo_id}.mp4"
-        return self.save_mp4(frames, save_path)
+        is_valid, issues = DemonstrationValidator.validate_place_object(executor.state_log)
+        val_result = {
+            "is_valid": is_valid,
+            "issues": issues,
+            "demo_id": demo_id,
+            "task_family": "place_object",
+        }
+
+        scene_spec = {
+            "demo_id": demo_id,
+            "task_family": "place_object",
+            "seed": seed,
+            "object_name": obj_name,
+            "start_pos": list(start_pos),
+            "target_pos": list(target_pos),
+            "robot_base_pose": robot_base_pose,
+            "background_id": background_id,
+            "instruction": "Place object1 in the target region.",
+        }
+
+        demo_dir = self.writer.save_demonstration(
+            task_family="place_object",
+            demo_id=demo_id,
+            frames=frames,
+            state_log=executor.state_log,
+            scene_spec=scene_spec,
+            validation_result=val_result,
+            fps=self.fps,
+        )
+
+        return str(demo_dir / "rgb.mp4")

@@ -1,12 +1,14 @@
 """
-Matched counterfactual scene generator producing paired PROCEED / STOP benchmark query scenes.
+Matched counterfactual scene generator producing paired PROCEED / STOP query scenes and standalone positive controls.
 
-Uses dynamic scene_utils geometry, background profiles, and lossless uint16 instance segmentation.
+Uses dynamic scene_utils geometry, SplitPlanner, episode RNG seeding, spec diffs,
+detailed occupancy measurements, and lossless uint16 instance segmentation.
 """
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import json
+import math
 import numpy as np
 import PIL.Image as Image
 import mujoco
@@ -15,13 +17,24 @@ from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
 from src.validation.occupancy_checks import check_lid_occupancy, check_target_occupancy
 from src.generation.scene_config import EpisodeSpec
-from src.generation.background_randomization import apply_background_profile, SPLIT_BACKGROUNDS
+from src.generation.background_randomization import apply_background_profile, randomize_lights, SPLIT_BACKGROUNDS
+from src.generation.split_planner import SplitPlanner
 from src.environment.scene_utils import (
     get_lid_center,
     get_lid_frame,
     get_target_center,
     get_target_frame,
+    sample_position_on_lid,
+    sample_position_beside_box,
+    sample_position_in_target,
+    sample_position_outside_target,
 )
+
+
+def _yaw_quat(yaw: float) -> List[float]:
+    """Return quaternion [w, x, y, z] for a Z-axis yaw rotation."""
+    half = yaw / 2.0
+    return [float(math.cos(half)), 0.0, 0.0, float(math.sin(half))]
 
 
 class CounterfactualPairGenerator:
@@ -38,6 +51,7 @@ class CounterfactualPairGenerator:
         self.width, self.height = resolution
         self.camera_name = camera_name
         self.scene_builder = SceneBuilder()
+        self.split_planner = SplitPlanner()
 
     def _generate_masks_and_visualizations(
         self,
@@ -48,12 +62,7 @@ class CounterfactualPairGenerator:
         target_geoms: List[str],
         is_stop: bool,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, Dict[int, str]]:
-        """Generate all required benchmark masks, lossless uint16 instance maps, and overlays.
-        
-        Returns:
-            (instance_preview_uint8, instance_uint16, candidate_mask, relation_target_mask,
-             causal_violation_mask, vis_rgb, instance_id_to_name_map)
-        """
+        """Generate all required benchmark masks, lossless uint16 instance maps, and overlays."""
         # 1. Instance segmentation
         seg_mask = renderer.render_segmentation(data)
         geom_id_map = seg_mask[:, :, 0].astype(np.uint16)
@@ -81,10 +90,8 @@ class CounterfactualPairGenerator:
         # 5. Combined relation visualization overlay
         rgb = renderer.render_rgb(data)
         vis = rgb.copy()
-        # Cyan overlay for relation target
         target_mask_bool = relation_target_mask > 0
         vis[target_mask_bool] = (0.6 * vis[target_mask_bool] + 0.4 * np.array([0, 255, 255])).astype(np.uint8)
-        # Red overlay for candidate culprit object
         candidate_mask_bool = candidate_mask > 0
         vis[candidate_mask_bool] = (0.5 * vis[candidate_mask_bool] + 0.5 * np.array([255, 50, 50])).astype(np.uint8)
 
@@ -102,11 +109,16 @@ class CounterfactualPairGenerator:
         """Generate matched STOP/PROCEED counterfactual pair for Task 1 (Open Box)."""
         pair_dir = self.output_dir / pair_id
         pair_dir.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(seed)
 
-        # Query reference scene to get dynamic lid position
+        # Query dynamic lid center
         ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
         lid_center = get_lid_center(ref_model, ref_data).tolist()
 
+        # Randomize background and light jitter via rng seed
+        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+
+        # Position offsets on lid
         pos_offsets = {
             "centre": [0.0, 0.0, 0.08],
             "front_left": [-0.05, -0.03, 0.08],
@@ -116,46 +128,39 @@ class CounterfactualPairGenerator:
             "opening_edge": [0.0, -0.04, 0.08],
             "hinge_side": [0.0, 0.04, 0.08],
         }
-        offset = pos_offsets.get(blocker_pos_bin, [0.0, 0.0, 0.08])
+        base_offset = pos_offsets.get(blocker_pos_bin, [0.0, 0.0, 0.08])
+        jitter_xy = rng.uniform(-0.015, 0.015, size=2)
 
-        stop_objects = [
-            {
-                "name": "blocker1",
-                "type": blocker_type,
-                "pos": [lid_center[0] + offset[0], lid_center[1] + offset[1], lid_center[2] + offset[2]],
-            }
+        stop_b1_pos = [
+            lid_center[0] + base_offset[0] + jitter_xy[0],
+            lid_center[1] + base_offset[1] + jitter_xy[1],
+            lid_center[2] + base_offset[2],
         ]
+        stop_b1_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
+
+        stop_objects = [{"name": "blocker1", "type": blocker_type, "pos": stop_b1_pos, "quat": stop_b1_quat}]
         if blocker_count == 2:
+            stop_b2_pos = [
+                lid_center[0] - base_offset[0] + 0.04,
+                lid_center[1] - base_offset[1] - 0.02,
+                lid_center[2] + base_offset[2],
+            ]
             stop_objects.append(
-                {
-                    "name": "blocker2",
-                    "type": "sugar_box" if blocker_type != "sugar_box" else "mug",
-                    "pos": [lid_center[0] - offset[0] + 0.04, lid_center[1] - offset[1] - 0.02, lid_center[2] + offset[2]],
-                }
+                {"name": "blocker2", "type": "sugar_box" if blocker_type != "sugar_box" else "mug", "pos": stop_b2_pos}
             )
 
         # PROCEED objects: placed beside the box (off the lid)
-        proceed_objects = [
-            {
-                "name": "blocker1",
-                "type": blocker_type,
-                "pos": [lid_center[0] - 0.30, lid_center[1] - 0.15, 0.65],
-            }
-        ]
+        proc_b1_pos = [lid_center[0] - 0.30, lid_center[1] - 0.15 + jitter_xy[1], 0.65]
+        proceed_objects = [{"name": "blocker1", "type": blocker_type, "pos": proc_b1_pos, "quat": stop_b1_quat}]
         if blocker_count == 2:
             proceed_objects.append(
-                {
-                    "name": "blocker2",
-                    "type": "sugar_box" if blocker_type != "sugar_box" else "mug",
-                    "pos": [lid_center[0] - 0.30, lid_center[1] + 0.05, 0.65],
-                }
+                {"name": "blocker2", "type": "sugar_box" if blocker_type != "sugar_box" else "mug", "pos": [lid_center[0] - 0.30, lid_center[1] + 0.05, 0.65]}
             )
-
-        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
 
         # ── Render STOP scene ──────────────────────────────────────────
         model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=20)
         apply_background_profile(model_stop, profile_name=bg_profile)
+        randomize_lights(model_stop, rng)
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -169,12 +174,15 @@ class CounterfactualPairGenerator:
         )
 
         blocker_names = ["blocker1"] + (["blocker2"] if blocker_count == 2 else [])
-        is_occ_stop, active_culprits_stop = check_lid_occupancy(model_stop, data_stop, blocker_names=blocker_names)
+        is_occ_stop, active_culprits_stop, measurements_stop = check_lid_occupancy(
+            model_stop, data_stop, blocker_names=blocker_names
+        )
         renderer_stop.close()
 
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=20)
         apply_background_profile(model_proceed, profile_name=bg_profile)
+        randomize_lights(model_proceed, rng)
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -186,7 +194,9 @@ class CounterfactualPairGenerator:
             )
         )
 
-        is_occ_proceed, active_culprits_proceed = check_lid_occupancy(model_proceed, data_proceed, blocker_names=blocker_names)
+        is_occ_proceed, active_culprits_proceed, measurements_proceed = check_lid_occupancy(
+            model_proceed, data_proceed, blocker_names=blocker_names
+        )
         renderer_proceed.close()
 
         # Save query images & masks
@@ -216,7 +226,7 @@ class CounterfactualPairGenerator:
 
         Image.fromarray(rgb_proceed).save(proceed_rgb_path)
         Image.fromarray(inst_proceed_8).save(proceed_inst_path)
-        np.save(proceed_inst_npy, inst_proceed_16)
+        np.save(proceed_inst_npy, proceed_inst_npy)
         Image.fromarray(cand_proceed).save(proceed_cand_path)
         Image.fromarray(target_proceed).save(proceed_target_path)
         Image.fromarray(causal_proceed).save(proceed_causal_path)
@@ -227,6 +237,25 @@ class CounterfactualPairGenerator:
         Image.fromarray(target_stop).save(pair_dir / "stop_lid_mask.png")
         Image.fromarray(cand_proceed).save(pair_dir / "proceed_culprit_mask.png")
         Image.fromarray(target_proceed).save(pair_dir / "proceed_lid_mask.png")
+
+        # Record spec diff and intervention/invariant variables
+        intervention_vars = {
+            "blocker1_pos": {"stop": stop_b1_pos, "proceed": proc_b1_pos},
+        }
+        invariant_vars = {
+            "task_id": "task_1",
+            "instruction": "Open the box.",
+            "blocker_type": blocker_type,
+            "blocker_count": blocker_count,
+            "split": split,
+            "background_id": bg_profile,
+            "seed": seed,
+            "lid_center": lid_center,
+        }
+        spec_diff = {
+            "intervention": intervention_vars,
+            "invariants": invariant_vars,
+        }
 
         stop_spec = EpisodeSpec(
             task_family="task_1",
@@ -264,16 +293,20 @@ class CounterfactualPairGenerator:
 
         pair_meta = {
             "pair_id": pair_id,
+            "sample_type": "matched_pair",
             "task_id": "task_1",
             "instruction": "Open the box.",
             "blocker_type": blocker_type,
             "blocker_count": blocker_count,
             "split": split,
+            "seed": seed,
             "background_id": bg_profile,
+            "spec_diff": spec_diff,
             "stop": {
                 "label": "STOP",
                 "is_occupied": is_occ_stop,
                 "culprits": active_culprits_stop,
+                "measurements": measurements_stop,
                 "rgb_path": str(stop_rgb_path),
                 "instance_segmentation_path": str(stop_inst_path),
                 "instance_uint16_path": str(stop_inst_npy),
@@ -290,6 +323,7 @@ class CounterfactualPairGenerator:
                 "label": "PROCEED",
                 "is_occupied": is_occ_proceed,
                 "culprits": active_culprits_proceed,
+                "measurements": measurements_proceed,
                 "rgb_path": str(proceed_rgb_path),
                 "instance_segmentation_path": str(proceed_inst_path),
                 "instance_uint16_path": str(proceed_inst_npy),
@@ -320,10 +354,12 @@ class CounterfactualPairGenerator:
         """Generate matched STOP/PROCEED counterfactual pair for Task 2 (Place Object)."""
         pair_dir = self.output_dir / pair_id
         pair_dir.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(seed)
 
-        # Query reference scene to get dynamic target center
         ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
         target_center = get_target_center(ref_model, ref_data).tolist()
+
+        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
 
         pos_offsets = {
             "centre": [0.0, 0.0, 0.08],
@@ -332,39 +368,32 @@ class CounterfactualPairGenerator:
             "front": [0.0, -0.04, 0.08],
             "rear": [0.0, 0.04, 0.08],
         }
-        offset = pos_offsets.get(occupant_pos_bin, [0.0, 0.0, 0.08])
+        base_offset = pos_offsets.get(occupant_pos_bin, [0.0, 0.0, 0.08])
+        jitter_xy = rng.uniform(-0.015, 0.015, size=2)
+
+        stop_occ_pos = [
+            target_center[0] + base_offset[0] + jitter_xy[0],
+            target_center[1] + base_offset[1] + jitter_xy[1],
+            target_center[2] + base_offset[2],
+        ]
+        stop_occ_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
+
+        proc_occ_pos = [target_center[0] + 0.30, target_center[1] + jitter_xy[1], 0.65]
 
         stop_objects = [
-            {
-                "name": "coffee_can",
-                "type": "coffee_can",
-                "pos": [-0.30, -0.20, 0.65],
-            },
-            {
-                "name": "occupant",
-                "type": target_occupant_type,
-                "pos": [target_center[0] + offset[0], target_center[1] + offset[1], target_center[2] + offset[2]],
-            },
+            {"name": "coffee_can", "type": "coffee_can", "pos": [-0.30, -0.20, 0.65]},
+            {"name": "occupant", "type": target_occupant_type, "pos": stop_occ_pos, "quat": stop_occ_quat},
         ]
 
         proceed_objects = [
-            {
-                "name": "coffee_can",
-                "type": "coffee_can",
-                "pos": [-0.30, -0.20, 0.65],
-            },
-            {
-                "name": "occupant",
-                "type": target_occupant_type,
-                "pos": [target_center[0] + 0.30, target_center[1], 0.65],
-            },
+            {"name": "coffee_can", "type": "coffee_can", "pos": [-0.30, -0.20, 0.65]},
+            {"name": "occupant", "type": target_occupant_type, "pos": proc_occ_pos, "quat": stop_occ_quat},
         ]
-
-        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
 
         # ── Render STOP scene ──────────────────────────────────────────
         model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=20)
         apply_background_profile(model_stop, profile_name=bg_profile)
+        randomize_lights(model_stop, rng)
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -376,7 +405,7 @@ class CounterfactualPairGenerator:
             )
         )
 
-        is_occ_stop, active_culprits_stop = check_target_occupancy(
+        is_occ_stop, active_culprits_stop, measurements_stop = check_target_occupancy(
             model_stop, data_stop, candidate_objects=["occupant"]
         )
         renderer_stop.close()
@@ -384,6 +413,7 @@ class CounterfactualPairGenerator:
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=20)
         apply_background_profile(model_proceed, profile_name=bg_profile)
+        randomize_lights(model_proceed, rng)
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -395,7 +425,7 @@ class CounterfactualPairGenerator:
             )
         )
 
-        is_occ_proceed, active_culprits_proceed = check_target_occupancy(
+        is_occ_proceed, active_culprits_proceed, measurements_proceed = check_target_occupancy(
             model_proceed, data_proceed, candidate_objects=["occupant"]
         )
         renderer_proceed.close()
@@ -439,6 +469,23 @@ class CounterfactualPairGenerator:
         Image.fromarray(cand_proceed).save(pair_dir / "proceed_culprit_mask.png")
         Image.fromarray(target_proceed).save(pair_dir / "proceed_target_mask.png")
 
+        intervention_vars = {
+            "occupant_pos": {"stop": stop_occ_pos, "proceed": proc_occ_pos},
+        }
+        invariant_vars = {
+            "task_id": "task_2",
+            "instruction": "Place object1 in the target region.",
+            "target_occupant_type": target_occupant_type,
+            "split": split,
+            "background_id": bg_profile,
+            "seed": seed,
+            "target_center": target_center,
+        }
+        spec_diff = {
+            "intervention": intervention_vars,
+            "invariants": invariant_vars,
+        }
+
         stop_spec = EpisodeSpec(
             task_family="task_2",
             sample_id=f"{pair_id}_stop",
@@ -475,15 +522,19 @@ class CounterfactualPairGenerator:
 
         pair_meta = {
             "pair_id": pair_id,
+            "sample_type": "matched_pair",
             "task_id": "task_2",
             "instruction": "Place object1 in the target region.",
             "target_occupant_type": target_occupant_type,
             "split": split,
+            "seed": seed,
             "background_id": bg_profile,
+            "spec_diff": spec_diff,
             "stop": {
                 "label": "STOP",
                 "is_occupied": is_occ_stop,
                 "culprits": active_culprits_stop,
+                "measurements": measurements_stop,
                 "rgb_path": str(stop_rgb_path),
                 "instance_segmentation_path": str(stop_inst_path),
                 "instance_uint16_path": str(stop_inst_npy),
@@ -500,6 +551,7 @@ class CounterfactualPairGenerator:
                 "label": "PROCEED",
                 "is_occupied": is_occ_proceed,
                 "culprits": active_culprits_proceed,
+                "measurements": measurements_proceed,
                 "rgb_path": str(proceed_rgb_path),
                 "instance_segmentation_path": str(proceed_inst_path),
                 "instance_uint16_path": str(proceed_inst_npy),
@@ -518,3 +570,187 @@ class CounterfactualPairGenerator:
             json.dump(pair_meta, f, indent=2)
 
         return pair_meta
+
+    def generate_task1_control(
+        self,
+        control_id: str,
+        object_type: Optional[str] = None,
+        split: str = "id",
+        seed: int = 42,
+    ) -> Dict[str, dict]:
+        """Generate standalone positive control for Task 1 (Open Box)."""
+        ctrl_dir = self.output_dir / control_id
+        ctrl_dir.mkdir(parents=True, exist_ok=True)
+
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        lid_center = get_lid_center(ref_model, ref_data).tolist()
+        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+
+        objects = []
+        if object_type:
+            objects.append({"name": "blocker1", "type": object_type, "pos": [lid_center[0] - 0.30, lid_center[1] - 0.15, 0.65]})
+
+        model, data = self.scene_builder.create_environment(objects, settle_steps=20)
+        apply_background_profile(model, profile_name=bg_profile)
+        mujoco.mj_forward(model, data)
+
+        renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
+        rgb = renderer.render_rgb(data)
+
+        candidate_geoms = ["blocker1_geom"] if object_type else []
+        inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
+            renderer, model, data, candidate_geoms, ["B1_lid_panel"], is_stop=False
+        )
+
+        is_occ, active_culprits, measurements = check_lid_occupancy(
+            model, data, blocker_names=["blocker1"] if object_type else []
+        )
+        renderer.close()
+
+        rgb_path = ctrl_dir / "control_rgb.png"
+        inst_path = ctrl_dir / "control_instance_segmentation.png"
+        inst_npy = ctrl_dir / "control_instance_uint16.npy"
+        cand_path = ctrl_dir / "control_candidate_object_mask.png"
+        target_path = ctrl_dir / "control_relation_target_mask.png"
+
+        Image.fromarray(rgb).save(rgb_path)
+        Image.fromarray(inst_8).save(inst_path)
+        np.save(inst_npy, inst_16)
+        Image.fromarray(cand).save(cand_path)
+        Image.fromarray(target).save(target_path)
+
+        meta = {
+            "control_id": control_id,
+            "sample_type": "positive_control",
+            "task_id": "task_1",
+            "instruction": "Open the box.",
+            "label": "PROCEED",
+            "split": split,
+            "seed": seed,
+            "background_id": bg_profile,
+            "is_occupied": is_occ,
+            "culprits": active_culprits,
+            "measurements": measurements,
+            "rgb_path": str(rgb_path),
+            "instance_segmentation_path": str(inst_path),
+            "instance_uint16_path": str(inst_npy),
+            "candidate_object_mask_path": str(cand_path),
+            "relation_target_mask_path": str(target_path),
+            "instance_id_to_name_map": id_map,
+        }
+
+        with open(ctrl_dir / "metadata.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+
+        return meta
+
+    def generate_task2_control(
+        self,
+        control_id: str,
+        occupant_type: Optional[str] = None,
+        split: str = "id",
+        seed: int = 42,
+    ) -> Dict[str, dict]:
+        """Generate standalone positive control for Task 2 (Place Object)."""
+        ctrl_dir = self.output_dir / control_id
+        ctrl_dir.mkdir(parents=True, exist_ok=True)
+
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        target_center = get_target_center(ref_model, ref_data).tolist()
+        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+
+        objects = [{"name": "coffee_can", "type": "coffee_can", "pos": [-0.30, -0.20, 0.65]}]
+        if occupant_type:
+            objects.append({"name": "occupant", "type": occupant_type, "pos": [target_center[0] + 0.30, target_center[1], 0.65]})
+
+        model, data = self.scene_builder.create_environment(objects, settle_steps=20)
+        apply_background_profile(model, profile_name=bg_profile)
+        mujoco.mj_forward(model, data)
+
+        renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
+        rgb = renderer.render_rgb(data)
+
+        candidate_geoms = ["occupant_geom"] if occupant_type else []
+        inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
+            renderer, model, data, candidate_geoms, ["target_region_geom"], is_stop=False
+        )
+
+        is_occ, active_culprits, measurements = check_target_occupancy(
+            model, data, candidate_objects=["occupant"] if occupant_type else []
+        )
+        renderer.close()
+
+        rgb_path = ctrl_dir / "control_rgb.png"
+        inst_path = ctrl_dir / "control_instance_segmentation.png"
+        inst_npy = ctrl_dir / "control_instance_uint16.npy"
+        cand_path = ctrl_dir / "control_candidate_object_mask.png"
+        target_path = ctrl_dir / "control_relation_target_mask.png"
+
+        Image.fromarray(rgb).save(rgb_path)
+        Image.fromarray(inst_8).save(inst_path)
+        np.save(inst_npy, inst_16)
+        Image.fromarray(cand).save(cand_path)
+        Image.fromarray(target).save(target_path)
+
+        meta = {
+            "control_id": control_id,
+            "sample_type": "positive_control",
+            "task_id": "task_2",
+            "instruction": "Place object1 in the target region.",
+            "label": "PROCEED",
+            "split": split,
+            "seed": seed,
+            "background_id": bg_profile,
+            "is_occupied": is_occ,
+            "culprits": active_culprits,
+            "measurements": measurements,
+            "rgb_path": str(rgb_path),
+            "instance_segmentation_path": str(inst_path),
+            "instance_uint16_path": str(inst_npy),
+            "candidate_object_mask_path": str(cand_path),
+            "relation_target_mask_path": str(target_path),
+            "instance_id_to_name_map": id_map,
+        }
+
+        with open(ctrl_dir / "metadata.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+
+        return meta
+
+
+def regenerate_from_metadata(
+    meta: Dict[str, Any],
+    output_dir: Union[str, Path],
+    resolution: Tuple[int, int] = (640, 480),
+) -> Dict[str, Any]:
+    """Reconstruct exact scene RGB, masks, and privileged labels deterministically from saved metadata."""
+    gen = CounterfactualPairGenerator(output_dir=output_dir, resolution=resolution)
+
+    task_id = meta.get("task_id")
+    sample_type = meta.get("sample_type", "matched_pair")
+    split = meta.get("split", "id")
+    seed = meta.get("seed", 42)
+
+    if sample_type == "matched_pair":
+        pair_id = meta.get("pair_id", "regen_pair")
+        if task_id == "task_1":
+            return gen.generate_task1_pair(
+                pair_id=pair_id,
+                blocker_type=meta.get("blocker_type", "coffee_can"),
+                blocker_count=meta.get("blocker_count", 1),
+                split=split,
+                seed=seed,
+            )
+        else:
+            return gen.generate_task2_pair(
+                pair_id=pair_id,
+                target_occupant_type=meta.get("target_occupant_type", "sugar_box"),
+                split=split,
+                seed=seed,
+            )
+    else:
+        control_id = meta.get("control_id", "regen_control")
+        if task_id == "task_1":
+            return gen.generate_task1_control(control_id=control_id, split=split, seed=seed)
+        else:
+            return gen.generate_task2_control(control_id=control_id, split=split, seed=seed)
