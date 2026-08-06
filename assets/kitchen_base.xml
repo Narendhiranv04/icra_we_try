@@ -363,6 +363,8 @@
             mode="targetbody" target="side_camera_target" fovy="58"/>
     <camera name="front_camera" pos="0.20 -3.00 1.85"
             mode="targetbody" target="camera_target" fovy="60"/>
+    <camera name="robot0:ego_camera" pos="-0.02 -0.7822 1.2442"
+            xyaxes="1 0 0 0 0.5494 -0.8356" fovy="65"/>
 
     <body name="wrist_camera_mount" pos="-0.12 -0.62 1.10">
       <camera name="wrist_camera" pos="0 0.02 0"

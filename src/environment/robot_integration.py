@@ -24,7 +24,7 @@ FETCH_HOME_QPOS = {
     "robot0:base_lateral_joint": 0.0,
     "robot0:base_yaw_joint": 0.0,
     "robot0:torso_lift_joint": 0.20,
-    "robot0:head_pan_joint": 0.0,
+    "robot0:head_pan_joint": -0.25,
     "robot0:head_tilt_joint": 0.35,
     "robot0:shoulder_pan_joint": 1.32,
     "robot0:shoulder_lift_joint": 1.40,
@@ -166,6 +166,24 @@ def inject_fetch_robot(
     for camera in robot_body.iter("camera"):
         if camera.get("name") == "gripper_camera_rgb":
             camera.set("name", "robot0:gripper_camera_rgb_legacy")
+
+    # Inject canonical egocentric camera into Fetch head optical frame
+    head_optical_frame = None
+    for body in robot_body.iter("body"):
+        if body.get("name") == "robot0:head_camera_rgb_optical_frame":
+            head_optical_frame = body
+            break
+    if head_optical_frame is not None:
+        ET.SubElement(
+            head_optical_frame,
+            "camera",
+            {
+                "name": "robot0:ego_camera",
+                "pos": "0 0 0",
+                "euler": "2.85 0 0",
+                "fovy": "65",
+            },
+        )
 
     gripper_body = None
     for body in robot_body.iter("body"):

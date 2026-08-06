@@ -51,7 +51,7 @@ class CounterfactualPairGenerator:
         self,
         output_dir: Union[str, Path] = "data/queries",
         resolution: Tuple[int, int] = (640, 480),
-        camera_name: str = "front_camera",
+        camera_name: str = "robot0:ego_camera",
     ):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -120,7 +120,9 @@ class CounterfactualPairGenerator:
         pair_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, box_pose=box_pose, box_quat=box_quat)
+        ref_model, ref_data = self.scene_builder.create_environment(
+            settle_steps=0, include_robot=True, robot_base_pose="home", box_pose=box_pose, box_quat=box_quat
+        )
         lid_center = get_lid_center(ref_model, ref_data).tolist()
         box_pos = get_box_pos(ref_model, ref_data).tolist()
 
@@ -169,7 +171,9 @@ class CounterfactualPairGenerator:
             proceed_objects.append({"name": "blocker2", "type": b2_type, "pos": proc_b2_pos, "quat": stop_b2_quat})
 
         # ── Render STOP scene ──────────────────────────────────────────
-        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=100, box_pose=box_pose, box_quat=box_quat)
+        model_stop, data_stop = self.scene_builder.create_environment(
+            stop_objects, settle_steps=100, include_robot=True, robot_base_pose="home", box_pose=box_pose, box_quat=box_quat
+        )
         apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
@@ -194,7 +198,9 @@ class CounterfactualPairGenerator:
             raise ValueError(f"Task 1 STOP scene for pair {pair_id} was not occupied after settling!")
 
         # ── Render PROCEED scene ───────────────────────────────────────
-        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100, box_pose=box_pose, box_quat=box_quat)
+        model_proceed, data_proceed = self.scene_builder.create_environment(
+            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose="home", box_pose=box_pose, box_quat=box_quat
+        )
         apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
 
@@ -412,7 +418,7 @@ class CounterfactualPairGenerator:
         rng = np.random.default_rng(seed)
 
         ref_model, ref_data = self.scene_builder.create_environment(
-            settle_steps=0, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+            settle_steps=0, include_robot=True, robot_base_pose="home", target_region_pos=target_region_pos, target_region_quat=target_region_quat
         )
         target_center = get_target_center(ref_model, ref_data).tolist()
 
@@ -446,7 +452,7 @@ class CounterfactualPairGenerator:
 
         # ── Render STOP scene ──────────────────────────────────────────
         model_stop, data_stop = self.scene_builder.create_environment(
-            stop_objects, settle_steps=100, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+            stop_objects, settle_steps=100, include_robot=True, robot_base_pose="home", target_region_pos=target_region_pos, target_region_quat=target_region_quat
         )
         apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
@@ -470,7 +476,7 @@ class CounterfactualPairGenerator:
 
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(
-            proceed_objects, settle_steps=100, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose="home", target_region_pos=target_region_pos, target_region_quat=target_region_quat
         )
         apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
@@ -679,7 +685,7 @@ class CounterfactualPairGenerator:
         ctrl_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, include_robot=True, robot_base_pose="home")
         lid_center = get_lid_center(ref_model, ref_data).tolist()
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
@@ -704,7 +710,7 @@ class CounterfactualPairGenerator:
             pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.21, offset_y=0.0, height_above_table=0.04).tolist()
             objects.append({"name": "blocker1", "type": obj_t, "pos": pos})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=100)
+        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose="home")
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 
@@ -809,7 +815,7 @@ class CounterfactualPairGenerator:
         ctrl_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, include_robot=True, robot_base_pose="home")
         target_center = get_target_center(ref_model, ref_data).tolist()
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
@@ -836,7 +842,7 @@ class CounterfactualPairGenerator:
             objects.append({"name": "occupant1", "type": occ1_t, "pos": pos1})
             objects.append({"name": "occupant2", "type": occ2_t, "pos": pos2})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=100)
+        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose="home")
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 

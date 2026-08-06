@@ -139,6 +139,11 @@ class SceneBuilder:
                     )
 
         if include_robot:
+            # Remove fallback virtual camera if present before injecting robot-attached ego camera
+            for parent in root.iter():
+                for elem in list(parent):
+                    if elem.tag == "camera" and elem.get("name") == "robot0:ego_camera":
+                        parent.remove(elem)
             from src.environment.robot_integration import inject_fetch_robot
             inject_fetch_robot(root, base_pose_name=robot_base_pose, spawn_welds=True, weld_target_body=weld_target_body)
 

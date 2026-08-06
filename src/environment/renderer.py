@@ -21,7 +21,7 @@ class OffscreenRenderer:
         model: mujoco.MjModel,
         width: int = 640,
         height: int = 480,
-        camera_name: str = "front_camera",
+        camera_name: str = "robot0:ego_camera",
     ):
         self.model = model
         self.width = width
@@ -32,6 +32,117 @@ class OffscreenRenderer:
             raise KeyError(f"Missing required camera '{camera_name}' in MuJoCo model")
             
         self.renderer = mujoco.Renderer(model, height=height, width=width)
+
+    def get_camera_metadata(self, data: mujoco.MjData) -> Dict[str, Union[str, int, float, list]]:
+        """Extract complete camera calibration and extrinsic metadata.
+        
+        Returns:
+            Dictionary with camera specs, extrinsics, fovy, and resolution.
+        """
+        cam_pos = data.cam_xpos[self.camera_id].copy().tolist()
+        cam_mat = data.cam_xmat[self.camera_id].copy().reshape(3, 3)
+        
+        # Convert rotation matrix to quaternion [w, x, y, z]
+        tr = np.trace(cam_mat)
+        if tr > 0:
+            S = np.sqrt(tr + 1.0) * 2
+            qw = 0.25 * S
+            qx = (cam_mat[2, 1] - cam_mat[1, 2]) / S
+            qy = (cam_mat[0, 2] - cam_mat[2, 0]) / S
+            qz = (cam_mat[1, 0] - cam_mat[0, 1]) / S
+        elif (cam_mat[0, 0] > cam_mat[1, 1]) and (cam_mat[0, 0] > cam_mat[2, 2]):
+            S = np.sqrt(1.0 + cam_mat[0, 0] - cam_mat[1, 1] - cam_mat[2, 2]) * 2
+            qw = (cam_mat[2, 1] - cam_mat[1, 2]) / S
+            qx = 0.25 * S
+            qy = (cam_mat[0, 1] + cam_mat[1, 0]) / S
+            qz = (cam_mat[0, 2] + cam_mat[2, 0]) / S
+        elif cam_mat[1, 1] > cam_mat[2, 2]:
+            S = np.sqrt(1.0 + cam_mat[1, 1] - cam_mat[0, 0] - cam_mat[2, 2]) * 2
+            qw = (cam_mat[0, 2] - cam_mat[2, 0]) / S
+            qx = (cam_mat[0, 1] + cam_mat[1, 0]) / S
+            qy = 0.25 * S
+            qz = (cam_mat[1, 2] + cam_mat[2, 1]) / S
+        else:
+            S = np.sqrt(1.0 + cam_mat[2, 2] - cam_mat[0, 0] - cam_mat[1, 1]) * 2
+            qw = (cam_mat[1, 0] - cam_mat[0, 1]) / S
+            qx = (cam_mat[0, 2] + cam_mat[2, 0]) / S
+            qy = (cam_mat[1, 2] + cam_mat[2, 1]) / S
+            qz = 0.25 * S
+
+        cam_body_id = self.model.cam_bodyid[self.camera_id]
+        body_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_BODY, cam_body_id) or "world"
+        local_pos = self.model.cam_pos0[self.camera_id].copy().tolist() if hasattr(self.model, "cam_pos0") else [0.0, 0.0, 0.0]
+
+        return {
+            "camera_name": self.camera_name,
+            "camera_id": int(self.camera_id),
+            "camera_parent_body": body_name,
+            "camera_local_position": local_pos,
+            "camera_world_extrinsic": {
+                "position": [float(x) for x in cam_pos],
+                "quaternion_wxyz": [float(qw), float(qx), float(qy), float(qz)],
+            },
+            "field_of_view": float(self.model.cam_fovy[self.camera_id]),
+            "resolution": [int(self.width), int(self.height)],
+        }
+
+    def validate_view_quality(
+        self,
+        data: mujoco.MjData,
+        target_geom_names: list[str],
+        candidate_geom_names: list[str],
+        min_target_pixels: int = 50,
+        min_candidate_pixels: int = 50,
+        max_torso_fraction: float = 0.25,
+    ) -> Dict[str, Union[bool, int, float, list]]:
+        """Validate that the canonical egocentric camera frame meets quality standards.
+        
+        Returns:
+            Dictionary with visibility metrics and validation status.
+        """
+        seg_mask = self.render_segmentation(data)
+        geom_ids_in_view = seg_mask[:, :, 0]
+
+        # Target / region pixels
+        target_ids = [
+            mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, name)
+            for name in target_geom_names
+        ]
+        target_ids = [g for g in target_ids if g != -1]
+        target_px = int(np.isin(geom_ids_in_view, target_ids).sum()) if target_ids else 0
+
+        # Candidate object pixels
+        cand_ids = [
+            mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, name)
+            for name in candidate_geom_names
+        ]
+        cand_ids = [g for g in cand_ids if g != -1]
+        cand_px = int(np.isin(geom_ids_in_view, cand_ids).sum()) if cand_ids else 0
+
+        # Torso body pixels
+        torso_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "robot0:torso_lift_link")
+        torso_geom_ids = []
+        if torso_body_id != -1:
+            torso_geom_ids = [g for g in range(self.model.ngeom) if self.model.geom_bodyid[g] == torso_body_id]
+        torso_px = int(np.isin(geom_ids_in_view, torso_geom_ids).sum()) if torso_geom_ids else 0
+        total_px = self.width * self.height
+        torso_frac = float(torso_px / total_px)
+
+        is_valid = bool(
+            target_px >= min_target_pixels
+            and (cand_px >= min_candidate_pixels if candidate_geom_names else True)
+            and torso_frac <= max_torso_fraction
+        )
+
+        return {
+            "is_valid": is_valid,
+            "target_pixels": target_px,
+            "candidate_pixels": cand_px,
+            "torso_fraction": torso_frac,
+            "target_visible": target_px >= min_target_pixels,
+            "candidate_visible": cand_px >= min_candidate_pixels if candidate_geom_names else True,
+            "torso_acceptable": torso_frac <= max_torso_fraction,
+        }
 
     def render_rgb(self, data: mujoco.MjData) -> np.ndarray:
         """Render RGB image from current camera perspective.
