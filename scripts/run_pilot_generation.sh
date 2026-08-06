@@ -30,7 +30,7 @@ demo_gen = DemonstrationGenerator(output_dir='data/demos')
 
 bgs = ['bg_neutral_wood', 'bg_blue_counter', 'bg_granite_dark']
 objs = ['coffee_can', 'sugar_box', 'mug']
-start_bins = ['pick_left', 'pick_front', 'pick_rear']
+start_bins = ['pick_left', 'pick_right', 'pick_far_left']
 target_bins = ['centre', 'left', 'right']
 
 demos_t1 = []
