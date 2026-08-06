@@ -1,5 +1,6 @@
 {
-  "commit_hash": "d35a0cd829b5bf4353b61996ee78bc96a3fe6922",
+  "tested_code_commit": "4d11c118652fd8182429d277f56211285c07c700",
+  "report_generation_commit": "4d11c118652fd8182429d277f56211285c07c700",
   "total_records_generated": 12,
   "matched_pairs_count": 8,
   "positive_controls_count": 4,
