@@ -59,9 +59,10 @@ class DemonstrationGenerator:
         frames = executor.run_demonstration(renderer)
         renderer.close()
 
-        is_valid, issues = DemonstrationValidator.validate_open_box(executor.state_log)
+        is_valid, metrics, issues = DemonstrationValidator.validate_open_box(executor.state_log)
         val_result = {
             "is_valid": is_valid,
+            "metrics": metrics,
             "issues": issues,
             "demo_id": demo_id,
             "task_family": "open_box",
@@ -141,9 +142,10 @@ class DemonstrationGenerator:
         frames = executor.run_demonstration(renderer, start_pos=tuple(start_pos))
         renderer.close()
 
-        is_valid, issues = DemonstrationValidator.validate_place_object(executor.state_log)
+        is_valid, metrics, issues = DemonstrationValidator.validate_place_object(executor.state_log)
         val_result = {
             "is_valid": is_valid,
+            "metrics": metrics,
             "issues": issues,
             "demo_id": demo_id,
             "task_family": "place_object",

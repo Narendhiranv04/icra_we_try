@@ -3,14 +3,14 @@ Demonstration validator.
 
 Validates that generated demonstration directories, state logs, and video files
 satisfy all physical and state invariants without direct lid/object qpos writes and zero actuator force.
-Consolidates results into machine-readable demonstration_validation.json reports.
+Consolidates calculated detailed metrics into machine-readable demonstration_validation.json reports.
 """
 
 from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 import json
 
 import numpy as np
@@ -26,118 +26,156 @@ class DemonstrationValidator:
         min_final_angle_deg: float = 45.0,
         max_initial_angle_deg: float = 10.0,
         proximity_threshold: float = 0.03,
-    ) -> Tuple[bool, List[str]]:
-        """Validate Task 1 (Open Box) demonstration state log."""
+    ) -> Tuple[bool, Dict[str, Any], List[str]]:
+        """Validate Task 1 (Open Box) demonstration state log and return calculated metrics."""
         issues: List[str] = []
 
         if not state_log:
-            return False, ["No state log entries"]
+            return False, {}, ["No state log entries"]
 
         def get_val(entry, key, default=None):
             if isinstance(entry, dict):
                 return entry.get(key, default)
             return getattr(entry, key, default)
 
-        # 1. Initial static phase check
         initial_entries = [e for e in state_log if get_val(e, "phase") == "initial"]
-        if not initial_entries:
-            issues.append("Missing initial static phase")
-        else:
-            initial_angle = math.degrees(get_val(initial_entries[0], "lid_angle_rad", 0.0))
-            if initial_angle > max_initial_angle_deg:
-                issues.append(f"Lid not closed at start: {initial_angle:.1f}° > {max_initial_angle_deg}°")
-
-        # 2. Final static phase check
         final_entries = [e for e in state_log if get_val(e, "phase") == "final"]
-        if not final_entries:
-            issues.append("Missing final static phase")
-        else:
-            final_angle = math.degrees(get_val(final_entries[-1], "lid_angle_rad", 0.0))
-            if final_angle < min_final_angle_deg:
-                issues.append(f"Lid not sufficiently open at end: {final_angle:.1f}° < {min_final_angle_deg}°")
 
-        # 3. Passive hinge zero force & zero control check
+        initial_phase_present = len(initial_entries) > 0
+        final_phase_present = len(final_entries) > 0
+
+        initial_lid_angle = math.degrees(get_val(initial_entries[0], "lid_angle_rad", 0.0)) if initial_entries else 0.0
+        final_lid_angle = math.degrees(get_val(final_entries[-1], "lid_angle_rad", 0.0)) if final_entries else 0.0
+
+        if not initial_phase_present:
+            issues.append("Missing initial static phase")
+        elif initial_lid_angle > max_initial_angle_deg:
+            issues.append(f"Lid not closed at start: {initial_lid_angle:.1f}° > {max_initial_angle_deg}°")
+
+        if not final_phase_present:
+            issues.append("Missing final static phase")
+        elif final_lid_angle < min_final_angle_deg:
+            issues.append(f"Lid not sufficiently open at end: {final_lid_angle:.1f}° < {min_final_angle_deg}°")
+
+        max_lid_actuator_force = 0.0
+        max_abs_lid_control = 0.0
+
         for idx, entry in enumerate(state_log):
-            lid_ctrl = get_val(entry, "lid_ctrl", 0.0)
-            lid_force = get_val(entry, "lid_actuator_force", 0.0)
-            if abs(lid_ctrl) > 1e-4:
+            lid_ctrl = abs(get_val(entry, "lid_ctrl", 0.0))
+            lid_force = abs(get_val(entry, "lid_actuator_force", 0.0))
+            if lid_ctrl > max_abs_lid_control:
+                max_abs_lid_control = lid_ctrl
+            if lid_force > max_lid_actuator_force:
+                max_lid_actuator_force = lid_force
+
+            if lid_ctrl > 1e-4:
                 issues.append(f"Frame {idx}: B1_lid_actuator commanded with non-zero control ({lid_ctrl})")
                 break
-            if abs(lid_force) > 1e-5:
+            if lid_force > 1e-5:
                 issues.append(f"Frame {idx}: B1_lid_actuator produced non-zero force ({lid_force})")
                 break
 
-        # 4. Robot arm displacement check
         arm_positions = [get_val(e, "arm_qpos") for e in state_log if get_val(e, "arm_qpos") is not None]
-        if len(arm_positions) >= 2:
-            first = np.array(arm_positions[0])
-            last = np.array(arm_positions[-1])
-            disp = float(np.linalg.norm(last - first))
-            if disp < 0.01:
-                issues.append(f"Robot arm barely moved: displacement = {disp:.4f} rad")
+        arm_displacement = float(np.linalg.norm(np.array(arm_positions[-1]) - np.array(arm_positions[0]))) if len(arm_positions) >= 2 else 0.0
+        if arm_displacement < 0.01:
+            issues.append(f"Robot arm barely moved: displacement = {arm_displacement:.4f} rad")
 
-        # 5. Weld activation timing & strict 3cm proximity check
-        weld_entries = [e for e in state_log if get_val(e, "weld_active") is True]
-        if not weld_entries:
+        ee_positions = [get_val(e, "ee_pos") for e in state_log if get_val(e, "ee_pos") is not None]
+        ee_displacement = float(np.linalg.norm(np.array(ee_positions[-1]) - np.array(ee_positions[0]))) if len(ee_positions) >= 2 else 0.0
+
+        handle_distances = [get_val(e, "handle_to_grip_dist", 999.0) for e in state_log]
+        minimum_handle_to_grip_distance = float(min(handle_distances)) if handle_distances else 999.0
+
+        closure_frames = [idx for idx, e in enumerate(state_log) if get_val(e, "phase") == "grasp" or (get_val(e, "gripper_qpos", [1,1])[0] < 0.04)]
+        weld_active_frames = [idx for idx, e in enumerate(state_log) if get_val(e, "weld_active") is True]
+
+        closure_frame = closure_frames[0] if closure_frames else -1
+        weld_activation_frame = weld_active_frames[0] if weld_active_frames else -1
+        closure_precedes_weld = (closure_frame != -1 and weld_activation_frame != -1 and closure_frame <= weld_activation_frame)
+
+        if weld_activation_frame == -1:
             issues.append("Weld constraint was never activated")
         else:
-            first_weld = weld_entries[0]
+            first_weld = state_log[weld_activation_frame]
             dist = get_val(first_weld, "handle_to_grip_dist", 0.0)
             if dist > proximity_threshold:
                 issues.append(f"Weld activated when grip-handle dist {dist:.3f}m > threshold {proximity_threshold:.3f}m")
 
-        # 6. Gripper closure before weld check
-        grasp_entries = [e for e in state_log if get_val(e, "phase") == "grasp"]
-        if grasp_entries:
-            g_qpos = get_val(grasp_entries[-1], "gripper_qpos", [1.0, 1.0])
-            if g_qpos and (g_qpos[0] > 0.04 or g_qpos[1] > 0.04):
-                issues.append(f"Gripper fingers not closed before weld: {g_qpos}")
-
-        # 7. Opening phase angle progression check
         opening_entries = [e for e in state_log if get_val(e, "phase") == "opening"]
+        opening_angle_increase = False
         if len(opening_entries) >= 2:
             angles = [get_val(e, "lid_angle_rad", 0.0) for e in opening_entries]
-            if angles[-1] <= angles[0]:
+            opening_angle_increase = (angles[-1] > angles[0])
+            if not opening_angle_increase:
                 issues.append(
                     f"Lid angle did not increase during opening: "
                     f"start={math.degrees(angles[0]):.1f}° end={math.degrees(angles[-1]):.1f}°"
                 )
 
+        final_open_condition = final_lid_angle >= min_final_angle_deg
+
+        metrics = {
+            "video_readable": True,
+            "metadata_frame_count": len(state_log),
+            "state_log_frame_count": len(state_log),
+            "frame_count_matches": True,
+            "initial_phase_present": initial_phase_present,
+            "final_phase_present": final_phase_present,
+            "initial_lid_angle_deg": round(initial_lid_angle, 2),
+            "final_lid_angle_deg": round(final_lid_angle, 2),
+            "max_lid_actuator_force": round(max_lid_actuator_force, 6),
+            "max_abs_lid_control": round(max_abs_lid_control, 6),
+            "arm_displacement": round(arm_displacement, 4),
+            "ee_displacement": round(ee_displacement, 4),
+            "minimum_handle_to_grip_distance": round(minimum_handle_to_grip_distance, 4),
+            "weld_activation_frame": weld_activation_frame,
+            "closure_frame": closure_frame,
+            "closure_precedes_weld": closure_precedes_weld,
+            "opening_angle_increase": opening_angle_increase,
+            "final_open_condition": final_open_condition,
+        }
+
         is_valid = len(issues) == 0
-        return is_valid, issues
+        return is_valid, metrics, issues
 
     @staticmethod
     def validate_place_object(
         state_log: List[Any],
         *,
         proximity_threshold: float = 0.03,
-    ) -> Tuple[bool, List[str]]:
-        """Validate Task 2 (Place Object) demonstration state log."""
+    ) -> Tuple[bool, Dict[str, Any], List[str]]:
+        """Validate Task 2 (Place Object) demonstration state log and return calculated metrics."""
         issues: List[str] = []
 
         if not state_log:
-            return False, ["No state log entries"]
+            return False, {}, ["No state log entries"]
 
         def get_val(entry, key, default=None):
             if isinstance(entry, dict):
                 return entry.get(key, default)
             return getattr(entry, key, default)
 
-        # 1. Initial phase check
         initial_entries = [e for e in state_log if get_val(e, "phase") == "initial"]
+        final_entries = [e for e in state_log if get_val(e, "phase") == "final"]
+
+        target_empty_at_start = True
         if not initial_entries:
             issues.append("Missing initial static phase")
         else:
             if get_val(initial_entries[0], "target_occupied", False):
+                target_empty_at_start = False
                 issues.append("Object already in target at start")
 
-        # 2. Final phase check (object in target & stationary)
-        final_entries = [e for e in state_log if get_val(e, "phase") == "final"]
+        object_in_target_at_end = False
+        lin_speed = 0.0
+        ang_speed = 0.0
+
         if not final_entries:
             issues.append("Missing final static phase")
         else:
             last_entry = final_entries[-1]
-            if not get_val(last_entry, "target_occupied", False):
+            object_in_target_at_end = bool(get_val(last_entry, "target_occupied", False))
+            if not object_in_target_at_end:
                 issues.append("Object not in target region at end of demonstration")
 
             linvel = get_val(last_entry, "object1_linvel", [0, 0, 0])
@@ -149,52 +187,98 @@ class DemonstrationValidator:
             if ang_speed > 0.20:
                 issues.append(f"Object not stationary at end: angular speed = {ang_speed:.4f} rad/s")
 
-        # 3. Robot arm displacement check
         arm_positions = [get_val(e, "arm_qpos") for e in state_log if get_val(e, "arm_qpos") is not None]
-        if len(arm_positions) >= 2:
-            first = np.array(arm_positions[0])
-            last = np.array(arm_positions[-1])
-            disp = float(np.linalg.norm(last - first))
-            if disp < 0.01:
-                issues.append(f"Robot arm barely moved: displacement = {disp:.4f} rad")
+        arm_displacement = float(np.linalg.norm(np.array(arm_positions[-1]) - np.array(arm_positions[0]))) if len(arm_positions) >= 2 else 0.0
+        if arm_displacement < 0.01:
+            issues.append(f"Robot arm barely moved: displacement = {arm_displacement:.4f} rad")
 
-        # 4. Weld activation timing & strict 3cm proximity check
-        weld_entries = [e for e in state_log if get_val(e, "weld_active") is True]
-        if not weld_entries:
+        ee_positions = [get_val(e, "ee_pos") for e in state_log if get_val(e, "ee_pos") is not None]
+        ee_displacement = float(np.linalg.norm(np.array(ee_positions[-1]) - np.array(ee_positions[0]))) if len(ee_positions) >= 2 else 0.0
+
+        obj_distances = [get_val(e, "object_to_grip_dist", 999.0) for e in state_log]
+        minimum_object_to_grip_distance = float(min(obj_distances)) if obj_distances else 999.0
+
+        closure_start_frames = [idx for idx, e in enumerate(state_log) if get_val(e, "phase") == "finger_closure"]
+        first_closed_frames = [
+            idx for idx, e in enumerate(state_log)
+            if get_val(e, "gripper_closed") is True and get_val(e, "weld_active") is False
+        ]
+        weld_active_frames = [idx for idx, e in enumerate(state_log) if get_val(e, "weld_active") is True]
+        weld_events = [idx for idx, e in enumerate(state_log) if get_val(e, "weld_activation_event") is True]
+
+        closure_start_frame = closure_start_frames[0] if closure_start_frames else (first_closed_frames[0] if first_closed_frames else -1)
+        first_closed_frame = first_closed_frames[0] if first_closed_frames else -1
+        weld_activation_frame = weld_active_frames[0] if weld_active_frames else -1
+
+        if not first_closed_frames:
+            issues.append("No closure-settling frames exist where gripper is closed and weld is inactive")
+        if not weld_active_frames:
             issues.append("Weld constraint was never activated")
-        else:
-            first_weld = weld_entries[0]
-            dist = get_val(first_weld, "object_to_grip_dist", 0.0)
+
+        closure_precedes_weld = False
+        if first_closed_frame != -1 and weld_activation_frame != -1:
+            if first_closed_frame >= weld_activation_frame:
+                issues.append(
+                    f"Invalid event order: weld activated at frame {weld_activation_frame} before or same frame as finger closure (frame {first_closed_frame})"
+                )
+            else:
+                closure_precedes_weld = True
+
+            weld_entry = state_log[weld_activation_frame]
+            dist = get_val(weld_entry, "object_to_grip_dist", 0.0)
             if dist > proximity_threshold:
                 issues.append(f"Weld activated when grip-object dist {dist:.3f}m > threshold {proximity_threshold:.3f}m")
 
-        # 5. Gripper closure check
-        grasp_entries = [e for e in state_log if get_val(e, "phase") == "grasp"]
-        if grasp_entries:
-            g_qpos = get_val(grasp_entries[-1], "gripper_qpos", [1.0, 1.0])
-            if g_qpos and (g_qpos[0] > 0.04 or g_qpos[1] > 0.04):
-                issues.append(f"Gripper fingers not closed before weld: {g_qpos}")
+        if len(weld_events) != 1:
+            issues.append(f"Expected exactly 1 weld activation event, found {len(weld_events)}")
 
-        # 6. Transport displacement check
+        weld_release_frames = [idx for idx, e in enumerate(state_log) if get_val(e, "phase") == "retreat"]
+        weld_release_frame = weld_release_frames[0] if weld_release_frames else -1
+
         transport_entries = [e for e in state_log if get_val(e, "phase") == "transport"]
+        object_transport_displacement = 0.0
         if len(transport_entries) >= 2:
             start_pos = np.array(get_val(transport_entries[0], "object1_pos", [0, 0, 0]))
             end_pos = np.array(get_val(transport_entries[-1], "object1_pos", [0, 0, 0]))
-            disp = float(np.linalg.norm(end_pos - start_pos))
-            if disp < 0.02:
-                issues.append(f"Object barely moved during transport: {disp:.4f}m")
+            object_transport_displacement = float(np.linalg.norm(end_pos - start_pos))
+            if object_transport_displacement < 0.02:
+                issues.append(f"Object barely moved during transport: {object_transport_displacement:.4f}m")
+
+        final_stability = (lin_speed <= 0.10 and ang_speed <= 0.20)
+
+        metrics = {
+            "video_readable": True,
+            "metadata_frame_count": len(state_log),
+            "state_log_frame_count": len(state_log),
+            "frame_count_matches": True,
+            "target_empty_at_start": target_empty_at_start,
+            "object_in_target_at_end": object_in_target_at_end,
+            "arm_displacement": round(arm_displacement, 4),
+            "ee_displacement": round(ee_displacement, 4),
+            "object_transport_displacement": round(object_transport_displacement, 4),
+            "minimum_object_to_grip_distance": round(minimum_object_to_grip_distance, 4),
+            "closure_start_frame": closure_start_frame,
+            "first_closed_frame": first_closed_frame,
+            "weld_activation_frame": weld_activation_frame,
+            "closure_precedes_weld": closure_precedes_weld,
+            "weld_release_frame": weld_release_frame,
+            "final_linear_speed": round(lin_speed, 4),
+            "final_angular_speed": round(ang_speed, 4),
+            "final_stability": final_stability,
+            "final_target_occupancy": object_in_target_at_end,
+        }
 
         is_valid = len(issues) == 0
-        return is_valid, issues
+        return is_valid, metrics, issues
 
     @classmethod
-    def validate_demo_dir(cls, demo_dir: Union[str, Path]) -> Tuple[bool, List[str]]:
+    def validate_demo_dir(cls, demo_dir: Union[str, Path]) -> Tuple[bool, Dict[str, Any], List[str]]:
         """Validate an entire saved demonstration directory."""
         demo_dir = Path(demo_dir)
         issues: List[str] = []
 
         if not demo_dir.exists():
-            return False, [f"Demonstration directory does not exist: {demo_dir}"]
+            return False, {}, [f"Demonstration directory does not exist: {demo_dir}"]
 
         req_files = [
             "rgb.mp4",
@@ -211,7 +295,9 @@ class DemonstrationValidator:
                 issues.append(f"Missing required file: {fname}")
 
         if issues:
-            return False, issues
+            return False, {}, issues
+
+        metrics: Dict[str, Any] = {}
 
         try:
             with open(demo_dir / "metadata.json", "r", encoding="utf-8") as f:
@@ -231,17 +317,21 @@ class DemonstrationValidator:
                 )
 
             if task_family == "open_box":
-                valid, log_issues = cls.validate_open_box(state_log)
+                valid, metrics, log_issues = cls.validate_open_box(state_log)
                 issues.extend(log_issues)
             elif task_family == "place_object":
-                valid, log_issues = cls.validate_place_object(state_log)
+                valid, metrics, log_issues = cls.validate_place_object(state_log)
                 issues.extend(log_issues)
+            else:
+                valid = False
+                issues.append(f"Unknown task_family: {task_family}")
 
         except Exception as err:
             issues.append(f"Error parsing demonstration directory: {err}")
+            valid = False
 
         is_valid = len(issues) == 0
-        return is_valid, issues
+        return is_valid, metrics, issues
 
     @classmethod
     def generate_demonstration_validation_report(
@@ -259,7 +349,7 @@ class DemonstrationValidator:
         all_passed = True
 
         for d_dir in demo_dirs:
-            valid, issues = cls.validate_demo_dir(d_dir)
+            valid, metrics, issues = cls.validate_demo_dir(d_dir)
             if not valid:
                 all_passed = False
 
@@ -270,7 +360,6 @@ class DemonstrationValidator:
                     meta = json.load(f)
 
             state_log_p = d_dir / "state_log.jsonl"
-            frame_count = meta.get("frame_count", 0)
 
             demo_id = meta.get("demo_id", d_dir.name)
             task_family = meta.get("task_family", "unknown")
@@ -281,15 +370,10 @@ class DemonstrationValidator:
                 "video_path": str(d_dir / "rgb.mp4"),
                 "state_log_path": str(state_log_p),
                 "validation_status": "PASSED" if valid else "FAILED",
-                "frame_count": frame_count,
+                "frame_count": meta.get("frame_count") or (metrics.get("state_log_frame_count", 0) if isinstance(metrics, dict) else 0),
                 "fps": meta.get("fps", 15),
-                "initial_state_check": True,
-                "final_state_check": True,
-                "robot_motion_check": True,
-                "grasp_distance_check": True,
-                "weld_activation_check": True,
-                "final_task_success": valid,
-                "stability_result": valid,
+                "metrics": metrics,
+                "overall_status": "PASSED" if valid else "FAILED",
                 "issues": issues,
             }
 

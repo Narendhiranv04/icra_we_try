@@ -29,8 +29,7 @@ class OffscreenRenderer:
         self.camera_name = camera_name
         self.camera_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, camera_name)
         if self.camera_id == -1:
-            # Fall back to free camera / camera 0 if specified camera name not in model
-            self.camera_id = 0
+            raise KeyError(f"Missing required camera '{camera_name}' in MuJoCo model")
             
         self.renderer = mujoco.Renderer(model, height=height, width=width)
 

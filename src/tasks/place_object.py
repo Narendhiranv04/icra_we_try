@@ -2,7 +2,7 @@
 Task executor for Task 2: "Place object1 in the target region."
 Executes genuine Fetch robot arm pick-and-place manipulation.
 
-The object is picked via weld constraint after finger closure and strict 3cm surface-aware grasp proximity checks,
+The object is picked via weld constraint ONLY AFTER finger closure and strict 3cm surface-aware grasp proximity checks,
 and transported along a parabolic arc to the target region. No direct object qpos assignment is ever performed.
 """
 
@@ -11,7 +11,6 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, asdict
 from typing import List, Tuple
-
 import numpy as np
 import mujoco
 
@@ -37,6 +36,9 @@ class Task2StateLog:
     object1_angvel: List[float]
     object_to_grip_dist: float
     weld_active: bool
+    weld_activation_event: bool
+    gripper_closed: bool
+    ik_position_error: float
     robot_ctrl: List[float]
     object_local_target_pos: List[float]
     target_occupied: bool
@@ -66,8 +68,17 @@ class PlaceObjectExecutor:
             self.target_pos = get_target_center(model, data)
 
         self.obj_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, object_name)
+        if self.obj_body_id == -1:
+            raise KeyError(f"Missing required object body '{object_name}' in MuJoCo model")
+
         self.gripper_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "robot0:gripper_link")
+        if self.gripper_body_id == -1:
+            raise KeyError("Missing required body 'robot0:gripper_link' in MuJoCo model")
+
         self.grip_site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "robot0:grip")
+        if self.grip_site_id == -1:
+            raise KeyError("Missing required site 'robot0:grip' in MuJoCo model")
+
         self.weld_eq_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_EQUALITY, "robot0:grasp_weld_target")
 
         self.r_finger_act = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "robot0:r_gripper_finger_actuator")
@@ -92,6 +103,10 @@ class PlaceObjectExecutor:
         r_val = float(self.data.qpos[self.model.jnt_qposadr[rf]]) if rf != -1 else 0.0
         l_val = float(self.data.qpos[self.model.jnt_qposadr[lf]]) if lf != -1 else 0.0
         return [r_val, l_val]
+
+    def _is_gripper_closed(self) -> bool:
+        g_qpos = self._get_gripper_qpos()
+        return g_qpos[0] < 0.045 and g_qpos[1] < 0.045
 
     def _close_gripper_fingers(self) -> None:
         """Close gripper fingers to clamp the object."""
@@ -165,19 +180,27 @@ class PlaceObjectExecutor:
         obj_grasp_target = self._get_object_grasp_target()
         return float(np.linalg.norm(grip - obj_grasp_target))
 
-    def _object_in_target(self) -> bool:
-        """Check if object center is within target region XY footprint using local frame."""
-        obj_pos = self.data.xpos[self.obj_body_id]
-        try:
-            t_center, t_rot, t_extent = get_target_frame(self.model, self.data)
-            local_pos = t_rot.T @ (obj_pos - t_center)
-            return abs(local_pos[0]) < t_extent[0] + 0.02 and abs(local_pos[1]) < t_extent[1] + 0.02
-        except KeyError:
-            dx = abs(obj_pos[0] - self.target_pos[0])
-            dy = abs(obj_pos[1] - self.target_pos[1])
-            return dx < 0.10 and dy < 0.10
+    def _get_ik_position_error(self, target_ee_pos: np.ndarray) -> float:
+        mujoco.mj_forward(self.model, self.data)
+        grip_pos = self.data.site_xpos[self.grip_site_id]
+        return float(np.linalg.norm(grip_pos - target_ee_pos))
 
-    def _log_state(self, frame_idx: int, phase: str) -> None:
+    def _object_in_target(self) -> bool:
+        """Check if object center is within target region XY footprint using local frame.
+        No silent world-coordinate fallback; raises KeyError if target frame missing."""
+        obj_pos = self.data.xpos[self.obj_body_id]
+        t_center, t_rot, t_extent = get_target_frame(self.model, self.data)
+        local_pos = t_rot.T @ (obj_pos - t_center)
+        return abs(local_pos[0]) < t_extent[0] + 0.02 and abs(local_pos[1]) < t_extent[1] + 0.02
+
+    def _log_state(
+        self,
+        frame_idx: int,
+        phase: str,
+        *,
+        weld_activation_event: bool = False,
+        target_ee_pos: np.ndarray = None,
+    ) -> None:
         mujoco.mj_forward(self.model, self.data)
         obj_pos = self.data.xpos[self.obj_body_id].tolist() if self.obj_body_id != -1 else [0, 0, 0]
         c_vel = np.zeros(6)
@@ -189,12 +212,11 @@ class PlaceObjectExecutor:
         grip_pos = self.data.site_xpos[self.grip_site_id].tolist() if self.grip_site_id != -1 else [0, 0, 0]
         grip_rot = self.data.site_xmat[self.grip_site_id].flatten().tolist() if self.grip_site_id != -1 else [0]*9
 
-        try:
-            t_center, t_rot, _ = get_target_frame(self.model, self.data)
-            rel_p = t_rot.T @ (np.array(obj_pos) - t_center)
-            local_target_p = rel_p.tolist()
-        except KeyError:
-            local_target_p = (np.array(obj_pos) - self.target_pos).tolist()
+        t_center, t_rot, _ = get_target_frame(self.model, self.data)
+        rel_p = t_rot.T @ (np.array(obj_pos) - t_center)
+        local_target_p = rel_p.tolist()
+
+        ik_err = self._get_ik_position_error(target_ee_pos) if target_ee_pos is not None else 0.0
 
         self.state_log.append(Task2StateLog(
             frame_idx=frame_idx,
@@ -208,6 +230,9 @@ class PlaceObjectExecutor:
             object1_angvel=ang_vel,
             object_to_grip_dist=self._grip_object_distance(),
             weld_active=self._is_weld_active(),
+            weld_activation_event=weld_activation_event,
+            gripper_closed=self._is_gripper_closed(),
+            ik_position_error=ik_err,
             robot_ctrl=[float(c) for c in self.data.ctrl[self.arm_actuators]],
             object_local_target_pos=local_target_p,
             target_occupied=self._object_in_target(),
@@ -218,7 +243,7 @@ class PlaceObjectExecutor:
         renderer: OffscreenRenderer,
         start_pos: Tuple[float, float, float] = None,
     ) -> List[np.ndarray]:
-        """Execute genuine robot pick and place demonstration and return RGB video frames."""
+        """Execute genuine robot pick and place demonstration with explicit finger-closure-before-weld ordering."""
         initialize_robot_qpos(self.model, self.data)
         mujoco.mj_forward(self.model, self.data)
 
@@ -243,12 +268,12 @@ class PlaceObjectExecutor:
             self.data.ctrl[self.torso_actuator] = 0.20
         mujoco.mj_forward(self.model, self.data)
 
-        # 1. Initial Static Frames (10 frames)
+        # 1. Initial Static Phase (10 frames)
         for _ in range(10):
             self._set_arm_ctrl(hover_qpos)
             mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
-            self._log_state(frame_idx, "initial")
+            self._log_state(frame_idx, "initial", weld_activation_event=False, target_ee_pos=hover_start)
             frame_idx += 1
 
         # 2. Approach Phase (30 frames)
@@ -256,31 +281,50 @@ class PlaceObjectExecutor:
         for step in range(approach_steps):
             frac = (step + 1) / approach_steps
             curr_qpos = (1 - frac) * hover_qpos + frac * pick_qpos
+            curr_target_ee = (1 - frac) * hover_start + frac * pick_pos
             self._set_arm_ctrl(curr_qpos)
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
-            self._log_state(frame_idx, "approach")
+            self._log_state(frame_idx, "approach", weld_activation_event=False, target_ee_pos=curr_target_ee)
             frame_idx += 1
 
-        # Settle before grasp (15 frames)
+        # 3. Pregrasp Phase (15 frames: reach pick_qpos & verify proximity)
+        ik_err = self._get_ik_position_error(pick_pos)
+        dist = self._grip_object_distance()
+        if ik_err > 0.02 or dist > PROXIMITY_THRESHOLD:
+            raise RuntimeError(f"Pregrasp validation failed: ik_err={ik_err:.4f}m dist={dist:.4f}m > threshold {PROXIMITY_THRESHOLD}m")
+
         for _ in range(15):
             self._set_arm_ctrl(pick_qpos)
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
+            frames.append(renderer.render_rgb(self.data))
+            self._log_state(frame_idx, "pregrasp", weld_activation_event=False, target_ee_pos=pick_pos)
+            frame_idx += 1
 
-        # 3. Close Gripper & Activate Weld
-        self._activate_grasp_weld()
+        # 4. Finger Closure Phase (10 frames: command fingers closed while weld remains inactive)
         self._close_gripper_fingers()
         for _ in range(10):
             self._set_arm_ctrl(pick_qpos)
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
-            self._log_state(frame_idx, "grasp")
+            self._log_state(frame_idx, "finger_closure", weld_activation_event=False, target_ee_pos=pick_pos)
             frame_idx += 1
 
-        # 4. Transport Phase (50 frames): Lift -> Move -> Place
+        # Recompute closure & proximity criteria after closure-settling
+        post_closure_dist = self._grip_object_distance()
+        if not self._is_gripper_closed() or post_closure_dist > PROXIMITY_THRESHOLD:
+            raise RuntimeError(f"Finger closure verification failed: closed={self._is_gripper_closed()} dist={post_closure_dist:.4f}m")
+
+        # 5. Weld Activation Phase (1 frame: activate weld only after successful closure)
+        self._activate_grasp_weld()
+        frames.append(renderer.render_rgb(self.data))
+        self._log_state(frame_idx, "weld_activation", weld_activation_event=True, target_ee_pos=pick_pos)
+        frame_idx += 1
+
+        # 6. Transport Phase (50 frames)
         transport_steps = 50
         curr_q = pick_qpos.copy()
         for step in range(transport_steps):
@@ -293,10 +337,10 @@ class PlaceObjectExecutor:
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
-            self._log_state(frame_idx, "transport")
+            self._log_state(frame_idx, "transport", weld_activation_event=False, target_ee_pos=curr_ee_pos)
             frame_idx += 1
 
-        # 5. Release & Retreat Phase (15 frames)
+        # 7. Release & Retreat Phase (15 frames)
         self._deactivate_grasp_weld()
         self._open_gripper_fingers()
         retreat_pos = target_place + np.array([0.0, 0.0, 0.25])
@@ -305,22 +349,23 @@ class PlaceObjectExecutor:
         for step in range(15):
             frac = (step + 1) / 15
             curr_qpos = (1 - frac) * curr_q + frac * retreat_qpos
+            curr_target_ee = (1 - frac) * target_place + frac * retreat_pos
             self._set_arm_ctrl(curr_qpos)
             self._open_gripper_fingers()
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
-            self._log_state(frame_idx, "retreat")
+            self._log_state(frame_idx, "retreat", weld_activation_event=False, target_ee_pos=curr_target_ee)
             frame_idx += 1
 
-        # 6. Final Static Frames (15 frames)
+        # 8. Final Static Phase (15 frames)
         for _ in range(15):
             self._set_arm_ctrl(retreat_qpos)
             self._open_gripper_fingers()
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
-            self._log_state(frame_idx, "final")
+            self._log_state(frame_idx, "final", weld_activation_event=False, target_ee_pos=retreat_pos)
             frame_idx += 1
 
         return frames

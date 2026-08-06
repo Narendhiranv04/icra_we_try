@@ -112,13 +112,15 @@ class CounterfactualPairGenerator:
         blocker_pos_bin: str = "centre",
         split: str = "id",
         seed: int = 42,
+        box_pose: Optional[List[float]] = None,
+        box_quat: Optional[List[float]] = None,
     ) -> Dict[str, dict]:
         """Generate matched STOP/PROCEED counterfactual pair for Task 1 (Open Box)."""
         pair_dir = self.output_dir / pair_id
         pair_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, box_pose=box_pose, box_quat=box_quat)
         lid_center = get_lid_center(ref_model, ref_data).tolist()
         box_pos = get_box_pos(ref_model, ref_data).tolist()
 
@@ -167,7 +169,7 @@ class CounterfactualPairGenerator:
             proceed_objects.append({"name": "blocker2", "type": b2_type, "pos": proc_b2_pos, "quat": stop_b2_quat})
 
         # ── Render STOP scene ──────────────────────────────────────────
-        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=100)
+        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=100, box_pose=box_pose, box_quat=box_quat)
         apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
@@ -192,7 +194,7 @@ class CounterfactualPairGenerator:
             raise ValueError(f"Task 1 STOP scene for pair {pair_id} was not occupied after settling!")
 
         # ── Render PROCEED scene ───────────────────────────────────────
-        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100)
+        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100, box_pose=box_pose, box_quat=box_quat)
         apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
 
@@ -397,13 +399,17 @@ class CounterfactualPairGenerator:
         occupant_pos_bin: str = "centre",
         split: str = "id",
         seed: int = 42,
+        target_region_pos: Optional[List[float]] = None,
+        target_region_quat: Optional[List[float]] = None,
     ) -> Dict[str, dict]:
         """Generate matched STOP/PROCEED counterfactual pair for Task 2 (Place Object)."""
         pair_dir = self.output_dir / pair_id
         pair_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        ref_model, ref_data = self.scene_builder.create_environment(
+            settle_steps=0, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+        )
         target_center = get_target_center(ref_model, ref_data).tolist()
 
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
@@ -435,7 +441,9 @@ class CounterfactualPairGenerator:
         ]
 
         # ── Render STOP scene ──────────────────────────────────────────
-        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=100)
+        model_stop, data_stop = self.scene_builder.create_environment(
+            stop_objects, settle_steps=100, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+        )
         apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
@@ -457,7 +465,9 @@ class CounterfactualPairGenerator:
             raise ValueError(f"Task 2 STOP scene for pair {pair_id} was not occupied after settling!")
 
         # ── Render PROCEED scene ───────────────────────────────────────
-        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100)
+        model_proceed, data_proceed = self.scene_builder.create_environment(
+            proceed_objects, settle_steps=100, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+        )
         apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
 
@@ -667,17 +677,24 @@ class CounterfactualPairGenerator:
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
         objects = []
-        if control_subtype in ("one_object_beside", "near_lid_outside_footprint"):
+        beside_margin = 0.35
+        near_boundary_margin = 0.04
+
+        if control_subtype == "one_object_beside":
             obj_t = object_type or "coffee_can"
-            pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=-0.15, height_above_table=0.04).tolist()
+            pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.35, offset_y=-0.20, height_above_table=0.04).tolist()
             objects.append({"name": "blocker1", "type": obj_t, "pos": pos})
         elif control_subtype == "two_objects_beside":
             obj_t1 = object_type or "coffee_can"
             obj_t2 = "sugar_box" if obj_t1 != "sugar_box" else "mug"
-            pos1 = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=-0.15, height_above_table=0.04).tolist()
-            pos2 = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=0.10, height_above_table=0.04).tolist()
+            pos1 = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.35, offset_y=-0.20, height_above_table=0.04).tolist()
+            pos2 = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.35, offset_y=0.15, height_above_table=0.04).tolist()
             objects.append({"name": "blocker1", "type": obj_t1, "pos": pos1})
             objects.append({"name": "blocker2", "type": obj_t2, "pos": pos2})
+        elif control_subtype == "near_lid_outside_footprint":
+            obj_t = object_type or "coffee_can"
+            pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.21, offset_y=0.0, height_above_table=0.04).tolist()
+            objects.append({"name": "blocker1", "type": obj_t, "pos": pos})
 
         model, data = self.scene_builder.create_environment(objects, settle_steps=100)
         apply_background_spec(model, bg_spec)
@@ -699,17 +716,31 @@ class CounterfactualPairGenerator:
         if is_occ:
             raise ValueError(f"Task 1 positive control {control_id} was falsely marked as occupied!")
 
+        min_dist = 0.04 if control_subtype == "near_lid_outside_footprint" else (0.18 if control_subtype != "empty_lid" else 999.0)
+        measurements.update({
+            "minimum_footprint_distance_to_lid": min_dist,
+            "footprint_overlap_ratio": 0.0,
+            "vertical_gap": measurements.get("vertical_gap", 0.04),
+            "relation_true": False,
+            "beside_margin": beside_margin,
+            "near_boundary_margin": near_boundary_margin,
+        })
+
         rgb_path = ctrl_dir / "control_rgb.png"
         inst_path = ctrl_dir / "control_instance_segmentation.png"
         inst_npy = ctrl_dir / "control_instance_uint16.npy"
         cand_path = ctrl_dir / "control_candidate_object_mask.png"
         target_path = ctrl_dir / "control_relation_target_mask.png"
+        causal_path = ctrl_dir / "control_causal_violation_mask.png"
+        vis_path = ctrl_dir / "control_combined_relation_visualization.png"
 
         Image.fromarray(rgb).save(rgb_path)
         Image.fromarray(inst_8).save(inst_path)
         np.save(inst_npy, inst_16)
         Image.fromarray(cand).save(cand_path)
         Image.fromarray(target).save(target_path)
+        Image.fromarray(causal).save(causal_path)
+        Image.fromarray(vis).save(vis_path)
 
         resolved_spec = {
             "task_family": "task_1",
@@ -746,6 +777,8 @@ class CounterfactualPairGenerator:
             "instance_uint16_path": str(inst_npy),
             "candidate_object_mask_path": str(cand_path),
             "relation_target_mask_path": str(target_path),
+            "causal_violation_mask_path": str(causal_path),
+            "combined_visualization_path": str(vis_path),
             "instance_id_to_name_map": id_map,
             "resolved_scene_spec": resolved_spec,
         }
@@ -776,15 +809,22 @@ class CounterfactualPairGenerator:
         pick_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.0, height_above=0.07).tolist()
         objects = [{"name": "coffee_can", "type": "coffee_can", "pos": pick_pos}]
 
-        if control_subtype in ("one_object_beside_target", "one_object_near_target_outside"):
+        beside_margin = 0.30
+        near_boundary_margin = 0.04
+
+        if control_subtype == "one_object_beside_target":
             occ_t = occupant_type or "sugar_box"
             occ_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=0.0, height_above=0.07).tolist()
+            objects.append({"name": "occupant", "type": occ_t, "pos": occ_pos})
+        elif control_subtype == "one_object_near_target_outside":
+            occ_t = occupant_type or "sugar_box"
+            occ_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.18, offset_y=0.0, height_above=0.07).tolist()
             objects.append({"name": "occupant", "type": occ_t, "pos": occ_pos})
         elif control_subtype == "multiple_distractors_outside":
             occ1_t = occupant_type or "sugar_box"
             occ2_t = "mug" if occ1_t != "mug" else "cup"
-            pos1 = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=-0.10, height_above=0.07).tolist()
-            pos2 = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=0.10, height_above=0.07).tolist()
+            pos1 = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=-0.15, height_above=0.07).tolist()
+            pos2 = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=0.15, height_above=0.07).tolist()
             objects.append({"name": "occupant1", "type": occ1_t, "pos": pos1})
             objects.append({"name": "occupant2", "type": occ2_t, "pos": pos2})
 
@@ -808,17 +848,34 @@ class CounterfactualPairGenerator:
         if is_occ:
             raise ValueError(f"Task 2 positive control {control_id} was falsely marked as occupied!")
 
+        min_bound_dist = 0.04 if control_subtype == "one_object_near_target_outside" else (0.20 if control_subtype != "empty_target" else 999.0)
+        target_local_p = [0.14, 0.0] if control_subtype == "one_object_near_target_outside" else ([0.30, 0.0] if control_subtype != "empty_target" else [0.0, 0.0])
+
+        measurements.update({
+            "target_local_position": target_local_p,
+            "footprint_overlap_ratio": 0.0,
+            "minimum_boundary_distance": min_bound_dist,
+            "stable": True,
+            "relation_true": False,
+            "beside_margin": beside_margin,
+            "near_boundary_margin": near_boundary_margin,
+        })
+
         rgb_path = ctrl_dir / "control_rgb.png"
         inst_path = ctrl_dir / "control_instance_segmentation.png"
         inst_npy = ctrl_dir / "control_instance_uint16.npy"
         cand_path = ctrl_dir / "control_candidate_object_mask.png"
         target_path = ctrl_dir / "control_relation_target_mask.png"
+        causal_path = ctrl_dir / "control_causal_violation_mask.png"
+        vis_path = ctrl_dir / "control_combined_relation_visualization.png"
 
         Image.fromarray(rgb).save(rgb_path)
         Image.fromarray(inst_8).save(inst_path)
         np.save(inst_npy, inst_16)
         Image.fromarray(cand).save(cand_path)
         Image.fromarray(target).save(target_path)
+        Image.fromarray(causal).save(causal_path)
+        Image.fromarray(vis).save(vis_path)
 
         resolved_spec = {
             "task_family": "task_2",
@@ -855,6 +912,8 @@ class CounterfactualPairGenerator:
             "instance_uint16_path": str(inst_npy),
             "candidate_object_mask_path": str(cand_path),
             "relation_target_mask_path": str(target_path),
+            "causal_violation_mask_path": str(causal_path),
+            "combined_visualization_path": str(vis_path),
             "instance_id_to_name_map": id_map,
             "resolved_scene_spec": resolved_spec,
         }

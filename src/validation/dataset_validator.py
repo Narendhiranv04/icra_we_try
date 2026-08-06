@@ -116,7 +116,7 @@ class DatasetValidator:
         return len(issues) == 0, issues
 
     def run_reproducibility_validation(self, sample_count: int = None) -> Tuple[bool, Dict[str, Any]]:
-        """Perform actual reconstruction validation comparing STOP and PROCEED for all selected records."""
+        """Perform actual reconstruction validation comparing STOP, PROCEED, and Positive Controls across ALL required masks."""
         if not self.records:
             return False, {"status": "FAILED", "reason": "No records in manifest"}
 
@@ -167,6 +167,12 @@ class DatasetValidator:
                         regen_stop_causal = np.array(Image.open(regen_meta["stop"]["causal_violation_mask_path"]))
                         stop_causal_mismatch = int(np.count_nonzero(orig_stop_causal != regen_stop_causal))
 
+                        stop_vis_mismatch = 0
+                        if "combined_visualization_path" in orig_meta["stop"]:
+                            orig_stop_vis = np.array(Image.open(orig_meta["stop"]["combined_visualization_path"]))
+                            regen_stop_vis = np.array(Image.open(regen_meta["stop"]["combined_visualization_path"]))
+                            stop_vis_mismatch = int(np.count_nonzero(orig_stop_vis != regen_stop_vis))
+
                         # Compare PROCEED member
                         proc_orig_spec = orig_meta["proceed"].get("resolved_scene_spec") or orig_meta["proceed"].get("spec")
                         proc_regen_spec = regen_meta["proceed"].get("resolved_scene_spec") or regen_meta["proceed"].get("spec")
@@ -193,8 +199,31 @@ class DatasetValidator:
                         regen_proc_causal = np.array(Image.open(regen_meta["proceed"]["causal_violation_mask_path"]))
                         proc_causal_mismatch = int(np.count_nonzero(orig_proc_causal != regen_proc_causal))
 
-                        stop_passed = (stop_max_diff <= 5 and stop_inst_mismatch == 0 and len(stop_meta_diffs) == 0)
-                        proc_passed = (proc_max_diff <= 5 and proc_inst_mismatch == 0 and len(proc_meta_diffs) == 0)
+                        proc_vis_mismatch = 0
+                        if "combined_visualization_path" in orig_meta["proceed"]:
+                            orig_proc_vis = np.array(Image.open(orig_meta["proceed"]["combined_visualization_path"]))
+                            regen_proc_vis = np.array(Image.open(regen_meta["proceed"]["combined_visualization_path"]))
+                            proc_vis_mismatch = int(np.count_nonzero(orig_proc_vis != regen_proc_vis))
+
+                        # Strict 100% deterministic requirement: any non-zero mask mismatch makes sample FAIL!
+                        stop_passed = (
+                            stop_max_diff <= 5
+                            and stop_inst_mismatch == 0
+                            and stop_cand_mismatch == 0
+                            and stop_target_mismatch == 0
+                            and stop_causal_mismatch == 0
+                            and stop_vis_mismatch == 0
+                            and len(stop_meta_diffs) == 0
+                        )
+                        proc_passed = (
+                            proc_max_diff <= 5
+                            and proc_inst_mismatch == 0
+                            and proc_cand_mismatch == 0
+                            and proc_target_mismatch == 0
+                            and proc_causal_mismatch == 0
+                            and proc_vis_mismatch == 0
+                            and len(proc_meta_diffs) == 0
+                        )
                         sample_passed = stop_passed and proc_passed
                         if not sample_passed:
                             overall_passed = False
@@ -212,6 +241,7 @@ class DatasetValidator:
                                 "candidate_mask_mismatch_count": stop_cand_mismatch,
                                 "target_mask_mismatch_count": stop_target_mismatch,
                                 "causal_mask_mismatch_count": stop_causal_mismatch,
+                                "visualization_mismatch_count": stop_vis_mismatch,
                             },
                             "proceed": {
                                 "metadata_differences": proc_meta_diffs,
@@ -221,6 +251,7 @@ class DatasetValidator:
                                 "candidate_mask_mismatch_count": proc_cand_mismatch,
                                 "target_mask_mismatch_count": proc_target_mismatch,
                                 "causal_mask_mismatch_count": proc_causal_mismatch,
+                                "visualization_mismatch_count": proc_vis_mismatch,
                             },
                         })
 
@@ -247,7 +278,27 @@ class DatasetValidator:
                         regen_ctrl_target = np.array(Image.open(regen_meta["relation_target_mask_path"]))
                         ctrl_target_mismatch = int(np.count_nonzero(orig_ctrl_target != regen_ctrl_target))
 
-                        sample_passed = (ctrl_max_diff <= 5 and ctrl_inst_mismatch == 0 and len(ctrl_meta_diffs) == 0)
+                        ctrl_causal_mismatch = 0
+                        if "causal_violation_mask_path" in orig_meta:
+                            orig_ctrl_causal = np.array(Image.open(orig_meta["causal_violation_mask_path"]))
+                            regen_ctrl_causal = np.array(Image.open(regen_meta["causal_violation_mask_path"]))
+                            ctrl_causal_mismatch = int(np.count_nonzero(orig_ctrl_causal != regen_ctrl_causal))
+
+                        ctrl_vis_mismatch = 0
+                        if "combined_visualization_path" in orig_meta:
+                            orig_ctrl_vis = np.array(Image.open(orig_meta["combined_visualization_path"]))
+                            regen_ctrl_vis = np.array(Image.open(regen_meta["combined_visualization_path"]))
+                            ctrl_vis_mismatch = int(np.count_nonzero(orig_ctrl_vis != regen_ctrl_vis))
+
+                        sample_passed = (
+                            ctrl_max_diff <= 5
+                            and ctrl_inst_mismatch == 0
+                            and ctrl_cand_mismatch == 0
+                            and ctrl_target_mismatch == 0
+                            and ctrl_causal_mismatch == 0
+                            and ctrl_vis_mismatch == 0
+                            and len(ctrl_meta_diffs) == 0
+                        )
                         if not sample_passed:
                             overall_passed = False
 
@@ -264,6 +315,8 @@ class DatasetValidator:
                                 "instance_mismatch_count": ctrl_inst_mismatch,
                                 "candidate_mask_mismatch_count": ctrl_cand_mismatch,
                                 "target_mask_mismatch_count": ctrl_target_mismatch,
+                                "causal_mask_mismatch_count": ctrl_causal_mismatch,
+                                "visualization_mismatch_count": ctrl_vis_mismatch,
                             },
                         })
 
@@ -290,19 +343,24 @@ class DatasetValidator:
         return overall_passed, rep_report
 
     def validate_splits(self) -> Tuple[bool, Dict[str, Any]]:
-        """Validate holdout split sets, factor tuples, and leakage for pure compositional split."""
+        """Validate holdout split sets, explicit factor tuples, and leakage for pure compositional split."""
         dev_objects: Set[str] = set()
         dev_backgrounds: Set[str] = set()
         dev_pos_bins: Set[str] = set()
         dev_blocker_counts: Set[int] = set()
+        dev_start_bins: Set[str] = set()
+        dev_lighting_families: Set[str] = set()
         dev_factor_tuples: Set[Tuple] = set()
 
         unseen_obj_objects: Set[str] = set()
         unseen_bg_backgrounds: Set[str] = set()
+
         comp_objects: Set[str] = set()
         comp_backgrounds: Set[str] = set()
         comp_pos_bins: Set[str] = set()
         comp_blocker_counts: Set[int] = set()
+        comp_start_bins: Set[str] = set()
+        comp_lighting_families: Set[str] = set()
         comp_factor_tuples: Set[Tuple] = set()
 
         splits_count: Dict[str, int] = {}
@@ -319,14 +377,18 @@ class DatasetValidator:
             bg = rec.get("background_id", "bg_neutral_wood")
             pos_bin = rec.get("blocker_pos_bin") or rec.get("occupant_pos_bin") or "centre"
             b_count = rec.get("blocker_count", 1)
+            start_bin = rec.get("object1_start_bin", "pick_left")
+            lighting_fam = rec.get("lighting_family", "default_lighting")
 
-            factor_tuple = (task_id, obj, bg, pos_bin, b_count)
+            factor_tuple = (task_id, obj, bg, pos_bin, b_count, start_bin, lighting_fam)
 
             if sp == "id":
                 dev_objects.add(obj)
                 dev_backgrounds.add(bg)
                 dev_pos_bins.add(pos_bin)
                 dev_blocker_counts.add(b_count)
+                dev_start_bins.add(start_bin)
+                dev_lighting_families.add(lighting_fam)
                 dev_factor_tuples.add(factor_tuple)
             elif sp == "unseen_object":
                 unseen_obj_objects.add(obj)
@@ -337,6 +399,8 @@ class DatasetValidator:
                 comp_backgrounds.add(bg)
                 comp_pos_bins.add(pos_bin)
                 comp_blocker_counts.add(b_count)
+                comp_start_bins.add(start_bin)
+                comp_lighting_families.add(lighting_fam)
                 comp_factor_tuples.add(factor_tuple)
 
         # Pure compositional validation rules:
@@ -344,20 +408,38 @@ class DatasetValidator:
         obj_intersection = sorted(list(dev_objects.intersection(unseen_obj_objects)))
         # 2. unseen_backgrounds ∩ dev_backgrounds == ∅
         bg_intersection = sorted(list(dev_backgrounds.intersection(unseen_bg_backgrounds)))
-        # 3. compositional_objects ⊆ dev_objects
-        comp_obj_non_fam = sorted(list(comp_objects - dev_objects))
-        # 4. compositional_backgrounds ⊆ dev_backgrounds
-        comp_bg_non_fam = sorted(list(comp_backgrounds - dev_backgrounds))
-        # 5. compositional_tuples ∩ dev_tuples == ∅
+        # 3. compositional components MUST be subsets of dev components (100% familiar!)
+        comp_obj_unfam = sorted(list(comp_objects - dev_objects))
+        comp_bg_unfam = sorted(list(comp_backgrounds - dev_backgrounds))
+        comp_pos_unfam = sorted(list(comp_pos_bins - dev_pos_bins))
+        comp_cnt_unfam = sorted(list(comp_blocker_counts - dev_blocker_counts))
+        comp_start_unfam = sorted(list(comp_start_bins - dev_start_bins))
+        comp_light_unfam = sorted(list(comp_lighting_families - dev_lighting_families))
+
+        # 4. compositional_tuples ∩ dev_tuples == ∅ (complete tuple novel!)
         comp_intersection = [list(t) for t in dev_factor_tuples.intersection(comp_factor_tuples)]
 
         has_obj_leak = len(obj_intersection) > 0
         has_bg_leak = len(bg_intersection) > 0
-        has_comp_obj_unfam = len(comp_obj_non_fam) > 0
-        has_comp_bg_unfam = len(comp_bg_non_fam) > 0
+        has_comp_obj_unfam = len(comp_obj_unfam) > 0
+        has_comp_bg_unfam = len(comp_bg_unfam) > 0
+        has_comp_pos_unfam = len(comp_pos_unfam) > 0
+        has_comp_cnt_unfam = len(comp_cnt_unfam) > 0
+        has_comp_start_unfam = len(comp_start_unfam) > 0
+        has_comp_light_unfam = len(comp_light_unfam) > 0
         has_comp_leak = len(comp_intersection) > 0
 
-        overall_valid = not (has_obj_leak or has_bg_leak or has_comp_obj_unfam or has_comp_bg_unfam or has_comp_leak)
+        overall_valid = not (
+            has_obj_leak
+            or has_bg_leak
+            or has_comp_obj_unfam
+            or has_comp_bg_unfam
+            or has_comp_pos_unfam
+            or has_comp_cnt_unfam
+            or has_comp_start_unfam
+            or has_comp_light_unfam
+            or has_comp_leak
+        )
 
         split_rep = {
             "status": "PASSED" if overall_valid else "FAILED",
@@ -369,9 +451,15 @@ class DatasetValidator:
             "unseen_backgrounds": sorted(list(unseen_bg_backgrounds)),
             "background_intersection": bg_intersection,
             "compositional_objects": sorted(list(comp_objects)),
-            "compositional_unfamiliar_objects": comp_obj_non_fam,
+            "compositional_unfamiliar_objects": comp_obj_unfam,
             "compositional_backgrounds": sorted(list(comp_backgrounds)),
-            "compositional_unfamiliar_backgrounds": comp_bg_non_fam,
+            "compositional_unfamiliar_backgrounds": comp_bg_unfam,
+            "compositional_position_bins": sorted(list(comp_pos_bins)),
+            "compositional_unfamiliar_position_bins": comp_pos_unfam,
+            "compositional_blocker_counts": sorted(list(comp_blocker_counts)),
+            "compositional_unfamiliar_blocker_counts": comp_cnt_unfam,
+            "compositional_start_bins": sorted(list(comp_start_bins)),
+            "compositional_unfamiliar_start_bins": comp_start_unfam,
             "development_factor_tuples": [list(t) for t in dev_factor_tuples],
             "compositional_factor_tuples": [list(t) for t in comp_factor_tuples],
             "compositional_intersection": comp_intersection,
@@ -380,6 +468,10 @@ class DatasetValidator:
                 "background_leakage": has_bg_leak,
                 "compositional_unfamiliar_object": has_comp_obj_unfam,
                 "compositional_unfamiliar_background": has_comp_bg_unfam,
+                "compositional_unfamiliar_position_bin": has_comp_pos_unfam,
+                "compositional_unfamiliar_blocker_count": has_comp_cnt_unfam,
+                "compositional_unfamiliar_start_bin": has_comp_start_unfam,
+                "compositional_unfamiliar_lighting": has_comp_light_unfam,
                 "compositional_tuple_leakage": has_comp_leak,
             },
         }
@@ -436,6 +528,8 @@ class DatasetValidator:
                 inst_p = sub.get("instance_uint16_path")
                 cand_p = sub.get("candidate_object_mask_path") or sub.get("culprit_mask_path")
                 target_p = sub.get("relation_target_mask_path") or sub.get("region_mask_path")
+                causal_p = sub.get("causal_violation_mask_path")
+                vis_p = sub.get("combined_visualization_path")
 
                 if not rgb_p or not Path(rgb_p).exists():
                     mask_issues.append(f"Record {sample_id}: missing RGB file '{rgb_p}'")
@@ -460,6 +554,8 @@ class DatasetValidator:
                         mask_issues.append(f"Record {sample_id}: matched candidate mask is empty")
                     elif is_control and rec.get("control_subtype") not in ("empty_lid", "empty_target") and np.count_nonzero(cand_arr) == 0:
                         mask_issues.append(f"Record {sample_id}: non-empty control candidate mask is zero")
+                    elif is_control and rec.get("control_subtype") in ("empty_lid", "empty_target") and np.count_nonzero(cand_arr) != 0:
+                        mask_issues.append(f"Record {sample_id}: empty control candidate mask is not zero")
 
                 if not target_p or not Path(target_p).exists():
                     mask_issues.append(f"Record {sample_id}: missing relation target mask path '{target_p}'")
@@ -471,7 +567,6 @@ class DatasetValidator:
                         mask_issues.append(f"Record {sample_id}: target mask covers over 50% of image area")
 
                 if label_name == "stop":
-                    causal_p = sub.get("causal_violation_mask_path")
                     if not causal_p or not Path(causal_p).exists():
                         mask_issues.append(f"Record {sample_id}: missing STOP causal violation mask path '{causal_p}'")
                     else:
@@ -488,7 +583,6 @@ class DatasetValidator:
                                 mask_issues.append(f"Record {sample_id}: STOP culprit '{culprit_name}' did not succeed settling")
 
                 elif label_name == "proceed":
-                    causal_p = sub.get("causal_violation_mask_path")
                     if not causal_p or not Path(causal_p).exists():
                         mask_issues.append(f"Record {sample_id}: missing PROCEED causal violation mask path '{causal_p}'")
                     else:
@@ -497,6 +591,16 @@ class DatasetValidator:
                             mask_issues.append(f"Record {sample_id}: PROCEED causal violation mask is not zero")
 
                 elif is_control:
+                    if not causal_p or not Path(causal_p).exists():
+                        mask_issues.append(f"Positive control {sample_id}: missing causal violation mask path '{causal_p}'")
+                    else:
+                        causal_arr = np.array(Image.open(causal_p))
+                        if np.count_nonzero(causal_arr) != 0:
+                            mask_issues.append(f"Positive control {sample_id}: causal violation mask is not zero")
+
+                    if not vis_p or not Path(vis_p).exists():
+                        mask_issues.append(f"Positive control {sample_id}: missing combined visualization path '{vis_p}'")
+
                     if sub.get("is_occupied", False):
                         mask_issues.append(f"Positive control record {sample_id} was falsely marked as occupied")
 
