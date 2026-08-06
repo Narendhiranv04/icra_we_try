@@ -1,4 +1,40 @@
 {
-"tested_code_commit": "81bcaf60910f37e578bda55321819f1a820198b7",
-  "report_generation_commit": "81bcaf60910f37e578bda55321819f1a820198b7"
+  "tested_code_commit": "88f7d17563dfe41c33f6f9c7c9589b30a5585744",
+  "report_generation_commit": "88f7d17563dfe41c33f6f9c7c9589b30a5585744",
+  "profile": "smoke",
+  "status": "PASSED",
+  "test_summary": {
+    "status": "PASSED",
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "runtime_seconds": 11.733
+  },
+  "required_report_statuses": {
+    "dataset_validation.json": "PASSED",
+    "split_validation.json": "PASSED",
+    "reproducibility_report.json": "PASSED",
+    "demonstration_validation.json": "PASSED",
+    "demonstration_distinctness.json": "PASSED",
+    "control_distribution.json": "PASSED"
+  },
+  "missing_or_failed_reports": [],
+  "unit_tests_passed": 19,
+  "unit_tests_total": 19,
+  "counterfactual_pairs_generated": 8,
+  "positive_controls_generated": 8,
+  "tasks_covered": [
+    "task_1_open_box",
+    "task_2_place_object"
+  ],
+  "artifacts": [
+    "contact_sheet.png",
+    "demonstration_montage.png",
+    "smoke_report.json",
+    "smoke_report.md",
+    "representative_metadata.json",
+    "README.md"
+  ]
 }
