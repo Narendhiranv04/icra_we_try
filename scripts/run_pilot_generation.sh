@@ -65,12 +65,10 @@ print('All 6 pilot demonstration directories generated and validated cleanly!')
 # 3. Run Query & Counterfactual Pair Generation
 echo "[Phase 3/5] Generating Full Pilot Matched Pairs & Standalone Controls..."
 $PYTHON_BIN -c "
-import shutil
 from src.generation.query_generator import QueryGenerator
 gen = QueryGenerator(config_path='configs/pilot.yaml')
 records = gen.run_generation()
 print(f'Generated {len(records)} total pilot query records.')
-shutil.copy('data/reports/pilot_control_distribution.json', 'data/reports/pilot_control_distribution.json')
 "
 
 # 4. Run Dataset Validator (including Deep Diff, Split Holdouts, Actual Reproducibility)
