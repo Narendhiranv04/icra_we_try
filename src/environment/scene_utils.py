@@ -1,14 +1,14 @@
 """
-Single source of truth for scene geometry queries.
+Single source of truth for scene geometry queries and local frame transforms.
 
 All task logic, occupancy checks, counterfactual generators, and demonstration
-executors must derive spatial positions from these utilities rather than
+executors derive spatial positions from these utilities rather than
 duplicating world-coordinate constants.
 """
 
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Tuple, List
 
 import mujoco
 import numpy as np
@@ -185,10 +185,7 @@ def sample_position_on_lid(
     y_frac: float = 0.0,
     height_above: float = 0.06,
 ) -> np.ndarray:
-    """Sample a world position on the lid surface.
-    
-    x_frac, y_frac in [-1, 1] map to the lid's local extent.
-    """
+    """Sample a world position on the lid surface using the lid's local frame transform."""
     mujoco.mj_forward(model, data)
     center, rot, ext = get_lid_frame(model, data)
     local = np.array([x_frac * ext[0] * 0.7, y_frac * ext[1] * 0.7, ext[2] + height_above])
@@ -199,13 +196,16 @@ def sample_position_beside_box(
     model: mujoco.MjModel,
     data: mujoco.MjData,
     rng: np.random.Generator,
+    offset_x: float = -0.30,
     offset_y: float = -0.15,
     height_above_table: float = 0.04,
 ) -> np.ndarray:
-    """Sample a world position beside the box (off the lid)."""
+    """Sample a world position beside the box (off the lid) in the box's local frame."""
     mujoco.mj_forward(model, data)
-    box_pos = get_box_pos(model, data)
-    return np.array([box_pos[0] - 0.30, box_pos[1] + offset_y, box_pos[2] + height_above_table])
+    center = get_box_pos(model, data)
+    rot = get_body_world_mat(model, data, "box_B1")
+    local = np.array([offset_x, offset_y, height_above_table])
+    return center + rot @ local
 
 
 def sample_position_in_target(
@@ -216,7 +216,7 @@ def sample_position_in_target(
     y_frac: float = 0.0,
     height_above: float = 0.07,
 ) -> np.ndarray:
-    """Sample a world position inside the target region."""
+    """Sample a world position inside the target region using the target's local frame transform."""
     mujoco.mj_forward(model, data)
     center, rot, ext = get_target_frame(model, data)
     local = np.array([x_frac * ext[0] * 0.5, y_frac * ext[1] * 0.5, ext[2] + height_above])
@@ -227,10 +227,12 @@ def sample_position_outside_target(
     model: mujoco.MjModel,
     data: mujoco.MjData,
     rng: np.random.Generator,
-    offset_x: float = 0.35,
+    offset_x: float = 0.30,
+    offset_y: float = 0.0,
     height_above: float = 0.07,
 ) -> np.ndarray:
-    """Sample a world position outside the target region."""
+    """Sample a world position outside the target region in the target's local frame."""
     mujoco.mj_forward(model, data)
-    center = get_target_center(model, data)
-    return np.array([center[0] + offset_x, center[1], center[2] + height_above])
+    center, rot, _ = get_target_frame(model, data)
+    local = np.array([offset_x, offset_y, height_above])
+    return center + rot @ local

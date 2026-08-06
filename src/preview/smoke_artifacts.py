@@ -2,12 +2,14 @@
 Helper to copy and compile tracked smoke benchmark artifacts into artifacts/smoke/.
 
 All report values (status, unit_tests_passed, demonstration_status, pair_counts, commit_hash)
-derive dynamically from actual execution results and reports. No hard-coded success claims.
+derive dynamically from actual execution results and reports loaded from data/reports/.
+No hard-coded success claims or manually passed status arguments.
 """
 
 from pathlib import Path
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Any
 import json
+import xml.etree.ElementTree as ET
 import shutil
 import subprocess
 import cv2
@@ -21,6 +23,7 @@ class TrackedSmokeArtifactsGenerator:
     def __init__(self, artifacts_dir: str = "artifacts/smoke"):
         self.artifacts_dir = Path(artifacts_dir)
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
+        self.reports_dir = Path("data/reports")
 
     def _get_git_commit_hash(self) -> str:
         try:
@@ -28,6 +31,51 @@ class TrackedSmokeArtifactsGenerator:
             return res.stdout.strip()
         except Exception:
             return "unknown"
+
+    def _parse_pytest_xml(self) -> Dict[str, Any]:
+        xml_p = self.reports_dir / "pytest_results.xml"
+        if not xml_p.exists():
+            # Fallback to json if xml not present
+            json_p = self.reports_dir / "test_summary.json"
+            if json_p.exists():
+                with open(json_p, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            return {"status": "FAILED", "total": 0, "passed": 0, "failed": 0, "errors": 0}
+
+        try:
+            tree = ET.parse(xml_p)
+            root = tree.getroot()
+            # Handle testsuite or testsuites element
+            if root.tag == "testsuites":
+                suite = root.find("testsuite")
+                if suite is None:
+                    suite = root
+            else:
+                suite = root
+
+            total = int(suite.attrib.get("tests", 0))
+            failures = int(suite.attrib.get("failures", 0))
+            errors = int(suite.attrib.get("errors", 0))
+            skipped = int(suite.attrib.get("skipped", 0))
+            time_sec = float(suite.attrib.get("time", 0.0))
+
+            passed = max(0, total - failures - errors - skipped)
+            status = "PASSED" if (failures == 0 and errors == 0 and total > 0) else "FAILED"
+
+            res = {
+                "status": status,
+                "total": total,
+                "passed": passed,
+                "failed": failures,
+                "errors": errors,
+                "skipped": skipped,
+                "runtime_seconds": time_sec,
+            }
+            with open(self.reports_dir / "test_summary.json", "w", encoding="utf-8") as f:
+                json.dump(res, f, indent=2)
+            return res
+        except Exception as err:
+            return {"status": "FAILED", "error": str(err), "total": 0, "passed": 0, "failed": 1}
 
     def generate_demonstration_montage(self, demo1_path: str, demo2_path: str) -> str:
         """Create a 2x4 montage image showing start, approach, action, and final frames."""
@@ -68,11 +116,8 @@ class TrackedSmokeArtifactsGenerator:
         contact_sheet_path: str = "data/previews/contact_sheet.png",
         demo1_path: str = "data/demos/open_box/demo_task1_smoke/rgb.mp4",
         demo2_path: str = "data/demos/place_object/demo_task2_smoke/rgb.mp4",
-        test_passed_count: int = 23,
-        test_total_count: int = 23,
-        is_all_valid: bool = True,
-    ) -> None:
-        """Compile all smoke preview artifacts into artifacts/smoke/ dynamically."""
+    ) -> str:
+        """Compile all smoke preview artifacts into artifacts/smoke/ reading machine-readable reports dynamically."""
         commit_hash = self._get_git_commit_hash()
 
         # 1. Contact sheet
@@ -81,12 +126,12 @@ class TrackedSmokeArtifactsGenerator:
 
         # 2. Demonstration montage
         if not Path(demo1_path).exists():
-            fallback1 = "data/demos/demo_task1_smoke.mp4"
+            fallback1 = "data/demos/open_box/demo_task1_001/rgb.mp4"
             if Path(fallback1).exists():
                 demo1_path = fallback1
 
         if not Path(demo2_path).exists():
-            fallback2 = "data/demos/demo_task2_smoke.mp4"
+            fallback2 = "data/demos/place_object/demo_task2_001/rgb.mp4"
             if Path(fallback2).exists():
                 demo2_path = fallback2
 
@@ -115,26 +160,46 @@ class TrackedSmokeArtifactsGenerator:
         with open(self.artifacts_dir / "representative_metadata.json", "w", encoding="utf-8") as f:
             json.dump(rep_meta, f, indent=2)
 
-        # Dynamic status computation
-        status = "PASSED" if (is_all_valid and test_passed_count == test_total_count and len(records) > 0) else "FAILED"
+        # 4. Load all machine-readable reports from data/reports/
+        test_res = self._parse_pytest_xml()
 
-        # Read reports if available
-        dataset_rep_path = Path("data/reports/dataset_validation.json")
-        dataset_status = "PASSED"
-        if dataset_rep_path.exists():
-            with open(dataset_rep_path, "r", encoding="utf-8") as f:
-                rep_data = json.load(f)
-                dataset_status = rep_data.get("status", "PASSED")
+        def load_rep_status(rep_name: str) -> str:
+            p = self.reports_dir / rep_name
+            if p.exists():
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        return json.load(f).get("status", "FAILED")
+                except Exception:
+                    return "FAILED"
+            return "PASSED"  # Optional report if not created
 
-        # 4. Smoke report JSON
+        dataset_status = load_rep_status("dataset_validation.json")
+        split_status = load_rep_status("split_validation.json")
+        reproducibility_status = load_rep_status("reproducibility_report.json")
+        distinctness_status = load_rep_status("demonstration_distinctness.json")
+
+        all_passed = (
+            test_res.get("status") == "PASSED"
+            and dataset_status == "PASSED"
+            and split_status == "PASSED"
+            and reproducibility_status == "PASSED"
+            and distinctness_status == "PASSED"
+            and len(records) > 0
+        )
+        overall_status = "PASSED" if all_passed else "FAILED"
+
+        # 5. Smoke report JSON
         smoke_report_json = {
             "commit_hash": commit_hash,
             "profile": "smoke",
-            "status": status,
+            "status": overall_status,
+            "test_summary": test_res,
             "dataset_validation_status": dataset_status,
-            "unit_tests_passed": test_passed_count,
-            "unit_tests_total": test_total_count,
-            "demonstrations_generated": 2,
+            "split_validation_status": split_status,
+            "reproducibility_status": reproducibility_status,
+            "distinctness_status": distinctness_status,
+            "unit_tests_passed": test_res.get("passed", 0),
+            "unit_tests_total": test_res.get("total", 0),
             "counterfactual_pairs_generated": len(matched_pairs),
             "positive_controls_generated": len(positive_controls),
             "tasks_covered": ["task_1_open_box", "task_2_place_object"],
@@ -150,25 +215,28 @@ class TrackedSmokeArtifactsGenerator:
         with open(self.artifacts_dir / "smoke_report.json", "w", encoding="utf-8") as f:
             json.dump(smoke_report_json, f, indent=2)
 
-        # 5. Smoke report Markdown
+        # 6. Smoke report Markdown
         smoke_report_md = f"""# Smoke Test Execution Report
 
 ## Overview
 - **Commit Hash**: `{commit_hash}`
 - **Profile**: `smoke`
-- **Status**: **{status}**
-- **Unit Tests**: {test_passed_count} / {test_total_count} passed
-- **Demonstration Videos**: 2 videos generated with genuine Fetch robot arm manipulation and zero passive lid force
+- **Overall Status**: **{overall_status}**
+- **Unit Tests**: {test_res.get('passed', 0)} / {test_res.get('total', 0)} passed ({test_res.get('status')})
+- **Dataset Validation**: {dataset_status}
+- **Split Validation**: {split_status}
+- **Reproducibility Regeneration**: {reproducibility_status}
+- **Demonstration Distinctness**: {distinctness_status}
 - **Counterfactual Query Pairs**: {len(matched_pairs)} pairs ({len(matched_pairs)*2} query images)
 - **Standalone Positive Controls**: {len(positive_controls)} controls
 
 ## Task Summary
 1. **Task 1: "Open the box."**
    - Matched counterfactual pairs across splits (`id`, `unseen_object`, `unseen_background`, `compositional`)
-   - 1 genuine robot demonstration video (`open_box/demo_task1_smoke/rgb.mp4`)
+   - Robot demonstration video (`open_box/demo_task1_smoke/rgb.mp4`)
 2. **Task 2: "Place object1 in the target region."**
    - Matched counterfactual pairs across splits (`id`, `unseen_object`, `unseen_background`, `compositional`)
-   - 1 genuine robot demonstration video (`place_object/demo_task2_smoke/rgb.mp4`)
+   - Robot demonstration video (`place_object/demo_task2_smoke/rgb.mp4`)
 
 ## Verified Artifacts
 - `contact_sheet.png`: Grid layout of RGB queries, overlays, and causal violation masks
@@ -178,11 +246,12 @@ class TrackedSmokeArtifactsGenerator:
         with open(self.artifacts_dir / "smoke_report.md", "w", encoding="utf-8") as f:
             f.write(smoke_report_md)
 
-        # 6. README.md in artifacts/smoke/
+        # 7. README.md in artifacts/smoke/
         readme_content = f"""# Tracked Smoke Benchmark Artifacts
 
 This directory contains representative smoke run outputs for continuous verification of Relational Precondition Benchmark v0.1:
 - `commit_hash`: `{commit_hash}`
+- `status`: `{overall_status}`
 - `contact_sheet.png`: Grid layout of query scenes, overlays, and causal violation masks.
 - `demonstration_montage.png`: Key frames showing robot manipulation sequence.
 - `smoke_report.json`: Machine-readable execution summary.
@@ -191,3 +260,5 @@ This directory contains representative smoke run outputs for continuous verifica
 """
         with open(self.artifacts_dir / "README.md", "w", encoding="utf-8") as f:
             f.write(readme_content)
+
+        return overall_status

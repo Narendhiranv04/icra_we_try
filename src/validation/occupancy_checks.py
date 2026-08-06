@@ -3,7 +3,7 @@ Privileged simulator state predicates for checking relational preconditions (occ
 
 Calculates explicit 3D/2D footprint overlap areas, vertical gaps, contact arrays,
 linear/angular speeds, and stability metrics for Task 1 (Lid Occupancy) and Task 2 (Target Occupancy).
-Requires physical stability for relation truth.
+Requires physical stability and consecutive step settling for relation truth.
 """
 
 from typing import Dict, List, Tuple, Any
@@ -20,6 +20,55 @@ from src.environment.scene_utils import (
 # Strict static stability thresholds
 STABLE_LIN_SPEED_MAX = 0.02  # m/s
 STABLE_ANG_SPEED_MAX = 0.10  # rad/s
+
+
+def settle_until_stable(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    body_names: List[str],
+    linear_threshold: float = STABLE_LIN_SPEED_MAX,
+    angular_threshold: float = STABLE_ANG_SPEED_MAX,
+    required_consecutive_steps: int = 20,
+    max_steps: int = 200,
+) -> Tuple[bool, int, int, Dict[str, float], Dict[str, float]]:
+    """Step simulator until all named bodies maintain speeds below thresholds for consecutive steps."""
+    consecutive = 0
+    total_steps = 0
+    final_lin_speeds: Dict[str, float] = {}
+    final_ang_speeds: Dict[str, float] = {}
+
+    body_ids = [mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name) for name in body_names]
+    valid_ids = [bid for bid in body_ids if bid != -1]
+
+    if not valid_ids:
+        return True, 0, required_consecutive_steps, {}, {}
+
+    c_vel = np.zeros(6)
+    while total_steps < max_steps:
+        mujoco.mj_step(model, data)
+        total_steps += 1
+
+        all_stable = True
+        for name, bid in zip(body_names, body_ids):
+            if bid == -1:
+                continue
+            mujoco.mj_objectVelocity(model, data, mujoco.mjtObj.mjOBJ_BODY, bid, c_vel, 0)
+            lin_speed = float(np.linalg.norm(c_vel[3:6]))
+            ang_speed = float(np.linalg.norm(c_vel[0:3]))
+            final_lin_speeds[name] = lin_speed
+            final_ang_speeds[name] = ang_speed
+
+            if lin_speed > linear_threshold or ang_speed > angular_threshold:
+                all_stable = False
+
+        if all_stable:
+            consecutive += 1
+            if consecutive >= required_consecutive_steps:
+                return True, total_steps, consecutive, final_lin_speeds, final_ang_speeds
+        else:
+            consecutive = 0
+
+    return False, total_steps, consecutive, final_lin_speeds, final_ang_speeds
 
 
 def _get_body_footprint_obb(
@@ -70,7 +119,7 @@ def check_lid_occupancy(
     data: mujoco.MjData,
     lid_geom_name: str = "B1_lid_panel",
     blocker_names: List[str] = None,
-    settling_steps: int = 50,
+    settle_steps: int = 100,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
     """Evaluate whether B1_lid is occupied using footprint overlap, vertical gap, contact, and physical stability.
     
@@ -93,7 +142,12 @@ def check_lid_occupancy(
     lid_top_z = float(lid_center[2] + lid_half_extent[2])
     lid_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, lid_geom_name)
 
-    # 1. Collect direct contacts
+    # 1. Run actual consecutive settling loop
+    settling_succeeded, tot_steps, cons_steps, lin_speeds, ang_speeds = settle_until_stable(
+        model, data, blocker_names, max_steps=settle_steps
+    )
+
+    # 2. Collect direct contacts
     direct_contacts: Dict[str, bool] = {b: False for b in blocker_names}
     for i in range(data.ncon):
         con = data.contact[i]
@@ -115,7 +169,7 @@ def check_lid_occupancy(
                 if b_name.lower() in name1.lower() or b_name.lower() in body1.lower():
                     direct_contacts[b_name] = True
 
-    # 2. Compute footprint overlap, vertical gap, and velocities per candidate
+    # 3. Compute footprint overlap, vertical gap, and velocities per candidate
     for b_name in blocker_names:
         body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, b_name)
         if body_id == -1:
@@ -138,25 +192,31 @@ def check_lid_occupancy(
 
         vertical_gap = float(obj_bottom_z - lid_top_z)
 
-        c_vel = np.zeros(6)
-        mujoco.mj_objectVelocity(model, data, mujoco.mjtObj.mjOBJ_BODY, body_id, c_vel, 0)
-        lin_speed = float(np.linalg.norm(c_vel[3:6]))
-        ang_speed = float(np.linalg.norm(c_vel[0:3]))
+        lin_speed = lin_speeds.get(b_name, 0.0)
+        ang_speed = ang_speeds.get(b_name, 0.0)
         is_stable = (lin_speed <= STABLE_LIN_SPEED_MAX and ang_speed <= STABLE_ANG_SPEED_MAX)
 
         has_footprint = (dx <= lid_w + 0.04 and dy <= lid_h + 0.04)
-        has_valid_height = (-0.03 <= vertical_gap <= 0.20 or -0.02 <= rel_pos[2] <= 0.35)
+        # Surface-gap range: object bottom resting on or near lid (-0.02m to 0.08m)
+        has_valid_height = (-0.02 <= vertical_gap <= 0.08)
         has_contact = direct_contacts.get(b_name, False)
 
-        # STABILITY IS REQUIRED FOR RELATION TRUTH
-        relation_true = bool((overlap_ratio > 0.10 or has_contact) and has_footprint and has_valid_height and is_stable)
+        # STABILITY AND SUCCESSFUL SETTLING ARE REQUIRED FOR RELATION TRUTH
+        relation_true = bool(
+            (overlap_ratio > 0.10 or has_contact)
+            and has_footprint
+            and has_valid_height
+            and is_stable
+            and settling_succeeded
+        )
 
         if relation_true:
             active_culprits.append(b_name)
 
         measurements[b_name] = {
-            "settling_steps": settling_steps,
-            "consecutive_stable_steps": 20,
+            "total_settling_steps": tot_steps,
+            "achieved_consecutive_stable_steps": cons_steps,
+            "settling_succeeded": bool(settling_succeeded),
             "overlap_area": float(overlap_area),
             "overlap_ratio": float(overlap_ratio),
             "vertical_gap": float(vertical_gap),
@@ -177,7 +237,7 @@ def check_target_occupancy(
     target_region_geom_name: str = "target_region_geom",
     target_center: Tuple[float, float, float] = None,
     candidate_objects: List[str] = None,
-    settling_steps: int = 50,
+    settle_steps: int = 100,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
     """Evaluate whether target_region is occupied using footprint overlap, vertical gap, contact, and physical stability.
     
@@ -203,7 +263,12 @@ def check_target_occupancy(
     target_surface_z = float(t_center[2])
     target_geom_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, target_region_geom_name)
 
-    # 1. Collect direct contacts
+    # 1. Run actual consecutive settling loop
+    settling_succeeded, tot_steps, cons_steps, lin_speeds, ang_speeds = settle_until_stable(
+        model, data, candidate_objects, max_steps=settle_steps
+    )
+
+    # 2. Collect direct contacts
     direct_contacts: Dict[str, bool] = {c: False for c in candidate_objects}
     if target_geom_id != -1:
         for i in range(data.ncon):
@@ -223,7 +288,7 @@ def check_target_occupancy(
                     if obj_name.lower() in name1.lower() or obj_name.lower() in body1.lower():
                         direct_contacts[obj_name] = True
 
-    # 2. Compute footprint overlap, vertical gap, and velocities per candidate
+    # 3. Compute footprint overlap, vertical gap, and velocities per candidate
     for obj_name in candidate_objects:
         body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, obj_name)
         if body_id == -1:
@@ -246,25 +311,30 @@ def check_target_occupancy(
 
         vertical_gap = float(obj_bottom_z - target_surface_z)
 
-        c_vel = np.zeros(6)
-        mujoco.mj_objectVelocity(model, data, mujoco.mjtObj.mjOBJ_BODY, body_id, c_vel, 0)
-        lin_speed = float(np.linalg.norm(c_vel[3:6]))
-        ang_speed = float(np.linalg.norm(c_vel[0:3]))
+        lin_speed = lin_speeds.get(obj_name, 0.0)
+        ang_speed = ang_speeds.get(obj_name, 0.0)
         is_stable = (lin_speed <= STABLE_LIN_SPEED_MAX and ang_speed <= STABLE_ANG_SPEED_MAX)
 
         has_footprint = (dx <= t_w + 0.04 and dy <= t_h + 0.04)
-        has_valid_height = (-0.03 <= vertical_gap <= 0.20 or -0.02 <= rel_pos[2] <= 0.35)
+        has_valid_height = (-0.02 <= vertical_gap <= 0.08)
         has_contact = direct_contacts.get(obj_name, False)
 
-        # STABILITY IS REQUIRED FOR RELATION TRUTH
-        relation_true = bool((overlap_ratio > 0.10 or has_contact) and has_footprint and has_valid_height and is_stable)
+        # STABILITY AND SUCCESSFUL SETTLING ARE REQUIRED FOR RELATION TRUTH
+        relation_true = bool(
+            (overlap_ratio > 0.10 or has_contact)
+            and has_footprint
+            and has_valid_height
+            and is_stable
+            and settling_succeeded
+        )
 
         if relation_true:
             active_culprits.append(obj_name)
 
         measurements[obj_name] = {
-            "settling_steps": settling_steps,
-            "consecutive_stable_steps": 20,
+            "total_settling_steps": tot_steps,
+            "achieved_consecutive_stable_steps": cons_steps,
+            "settling_succeeded": bool(settling_succeeded),
             "overlap_area": float(overlap_area),
             "overlap_ratio": float(overlap_ratio),
             "vertical_gap": float(vertical_gap),

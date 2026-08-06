@@ -1,8 +1,8 @@
 """
 Matched counterfactual scene generator producing paired PROCEED / STOP query scenes and standalone positive controls.
 
-Uses dynamic scene_utils geometry, SplitPlanner, episode RNG seeding, BackgroundSpec/LightSpec for 100% identical pair lighting,
-spec diffs, detailed occupancy measurements, and lossless uint16 instance segmentation.
+Uses dynamic scene_utils local geometry, SplitPlanner, episode RNG seeding, BackgroundSpec/LightSpec for 100% identical pair lighting,
+resolved scene specs, deep diff invariant declarations, detailed occupancy measurements, and lossless uint16 instance segmentation.
 """
 
 from pathlib import Path
@@ -29,6 +29,8 @@ from src.environment.scene_utils import (
     get_lid_frame,
     get_target_center,
     get_target_frame,
+    get_box_pos,
+    get_body_world_mat,
     sample_position_on_lid,
     sample_position_beside_box,
     sample_position_in_target,
@@ -118,48 +120,51 @@ class CounterfactualPairGenerator:
 
         ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
         lid_center = get_lid_center(ref_model, ref_data).tolist()
+        box_pos = get_box_pos(ref_model, ref_data).tolist()
 
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
-        # Sample background and light spec ONCE per pair
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
-        pos_offsets = {
-            "centre": [0.0, 0.0, 0.08],
-            "front_left": [-0.05, -0.03, 0.08],
-            "front_right": [0.05, -0.03, 0.08],
-            "rear_left": [-0.05, 0.03, 0.08],
-            "rear_right": [0.05, 0.03, 0.08],
-            "opening_edge": [0.0, -0.04, 0.08],
-            "hinge_side": [0.0, 0.04, 0.08],
+        # Normalized lid local fractions for position bins
+        pos_fracs = {
+            "centre": (0.0, 0.0),
+            "front_left": (-0.6, -0.5),
+            "front_right": (0.6, -0.5),
+            "rear_left": (-0.6, 0.5),
+            "rear_right": (0.6, 0.5),
+            "opening_edge": (0.0, -0.6),
+            "hinge_side": (0.0, 0.6),
         }
-        base_offset = pos_offsets.get(blocker_pos_bin, [0.0, 0.0, 0.08])
-        jitter_xy = rng.uniform(-0.015, 0.015, size=2)
-
-        stop_b1_pos = [
-            lid_center[0] + base_offset[0] + jitter_xy[0],
-            lid_center[1] + base_offset[1] + jitter_xy[1],
-            lid_center[2] + base_offset[2],
-        ]
+        x_frac, y_frac = pos_fracs.get(blocker_pos_bin, (0.0, 0.0))
         stop_b1_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
 
-        stop_objects = [{"name": "blocker1", "type": blocker_type, "pos": stop_b1_pos, "quat": stop_b1_quat}]
         if blocker_count == 2:
-            stop_b2_pos = [
-                lid_center[0] - base_offset[0] + 0.04,
-                lid_center[1] - base_offset[1] - 0.02,
-                lid_center[2] + base_offset[2],
-            ]
-            stop_objects.append(
-                {"name": "blocker2", "type": "sugar_box" if blocker_type != "sugar_box" else "mug", "pos": stop_b2_pos}
-            )
+            if abs(x_frac) + abs(y_frac) < 0.1:
+                xf1, yf1 = -0.35, 0.0
+                xf2, yf2 = 0.35, 0.0
+            else:
+                xf1, yf1 = x_frac, y_frac
+                xf2, yf2 = -x_frac, -y_frac
+            stop_b1_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf1, y_frac=yf1, height_above=0.06).tolist()
+            stop_b2_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf2, y_frac=yf2, height_above=0.06).tolist()
+            stop_b2_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
 
-        # PROCEED objects: placed beside the box (off the lid)
-        proc_b1_pos = [lid_center[0] - 0.30, lid_center[1] - 0.15 + jitter_xy[1], 0.65]
+            b2_type = "sugar_box" if blocker_type != "sugar_box" else "mug"
+            stop_objects = [
+                {"name": "blocker1", "type": blocker_type, "pos": stop_b1_pos, "quat": stop_b1_quat},
+                {"name": "blocker2", "type": b2_type, "pos": stop_b2_pos, "quat": stop_b2_quat},
+            ]
+        else:
+            stop_b1_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=x_frac, y_frac=y_frac, height_above=0.06).tolist()
+            stop_objects = [{"name": "blocker1", "type": blocker_type, "pos": stop_b1_pos, "quat": stop_b1_quat}]
+
+        # PROCEED objects: placed beside the box in box local frame
+        proc_b1_pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=-0.15, height_above_table=0.04).tolist()
         proceed_objects = [{"name": "blocker1", "type": blocker_type, "pos": proc_b1_pos, "quat": stop_b1_quat}]
+        
         if blocker_count == 2:
-            proceed_objects.append(
-                {"name": "blocker2", "type": "sugar_box" if blocker_type != "sugar_box" else "mug", "pos": [lid_center[0] - 0.30, lid_center[1] + 0.05, 0.65]}
-            )
+            proc_b2_pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=0.10, height_above_table=0.04).tolist()
+            proceed_objects.append({"name": "blocker2", "type": b2_type, "pos": proc_b2_pos, "quat": stop_b2_quat})
 
         # ── Render STOP scene ──────────────────────────────────────────
         model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=100)
@@ -182,6 +187,10 @@ class CounterfactualPairGenerator:
         )
         renderer_stop.close()
 
+        # Enforce that intended label matches verified label
+        if not is_occ_stop:
+            raise ValueError(f"Task 1 STOP scene for pair {pair_id} was not occupied after settling!")
+
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100)
         apply_background_spec(model_proceed, bg_spec)
@@ -200,6 +209,9 @@ class CounterfactualPairGenerator:
             model_proceed, data_proceed, blocker_names=blocker_names
         )
         renderer_proceed.close()
+
+        if is_occ_proceed:
+            raise ValueError(f"Task 1 PROCEED scene for pair {pair_id} was falsely marked as occupied!")
 
         # Save query images & masks
         stop_rgb_path = pair_dir / "stop_rgb.png"
@@ -228,7 +240,6 @@ class CounterfactualPairGenerator:
 
         Image.fromarray(rgb_proceed).save(proceed_rgb_path)
         Image.fromarray(inst_proceed_8).save(proceed_inst_path)
-        # FIX Phase 3 uint16 saving bug: Save inst_proceed_16
         np.save(proceed_inst_npy, inst_proceed_16)
         Image.fromarray(cand_proceed).save(proceed_cand_path)
         Image.fromarray(target_proceed).save(proceed_target_path)
@@ -241,29 +252,53 @@ class CounterfactualPairGenerator:
         Image.fromarray(cand_proceed).save(pair_dir / "proceed_culprit_mask.png")
         Image.fromarray(target_proceed).save(pair_dir / "proceed_lid_mask.png")
 
-        intervention_vars = {
-            "blocker1_pos": {"stop": stop_b1_pos, "proceed": proc_b1_pos},
-        }
-        invariant_vars = {
-            "pair_id": pair_id,
-            "task_id": "task_1",
-            "instruction": "Open the box.",
-            "blocker_type": blocker_type,
-            "blocker_count": blocker_count,
-            "blocker_pos_bin": blocker_pos_bin,
-            "split": split,
-            "background_id": bg_profile_name,
-            "background_spec": bg_spec.to_dict(),
-            "seed": seed,
-            "lid_center": lid_center,
-            "camera_name": self.camera_name,
-            "resolution": [self.width, self.height],
-        }
-        spec_diff = {
-            "intervention_variables": intervention_vars,
-            "invariant_variables": invariant_vars,
-            "observed_diff": ["blocker1_pos"],
-        }
+        # Declared intervention paths
+        if blocker_count == 1:
+            declared_intervention_paths = ["objects.blocker1.position"]
+        else:
+            declared_intervention_paths = ["objects.blocker1.position", "objects.blocker2.position"]
+
+        # Build complete resolved scene specs
+        def build_resolved_spec(objs_list: List[dict], label: str) -> Dict[str, Any]:
+            objs_dict = {}
+            for o in objs_list:
+                objs_dict[o["name"]] = {
+                    "name": o["name"],
+                    "type": o["type"],
+                    "position": o["pos"],
+                    "orientation": o.get("quat", [1.0, 0.0, 0.0, 0.0]),
+                }
+            return {
+                "task_family": "task_1",
+                "instruction": "Open the box.",
+                "pair_id": pair_id,
+                "base_scene_id": f"{pair_id}_base",
+                "seed": seed,
+                "split": split,
+                "position_bin": blocker_pos_bin,
+                "blocker_count": blocker_count,
+                "label": label,
+                "camera": {
+                    "name": self.camera_name,
+                    "resolution": [self.width, self.height],
+                },
+                "background": {
+                    "background_id": bg_profile_name,
+                    "background_spec": bg_spec.to_dict(),
+                },
+                "robot": {
+                    "base_pose": "right_side",
+                },
+                "scene_poses": {
+                    "box_pose": box_pos,
+                    "lid_center": lid_center,
+                },
+                "objects": objs_dict,
+                "distractors": [],
+            }
+
+        stop_resolved_spec = build_resolved_spec(stop_objects, "STOP")
+        proceed_resolved_spec = build_resolved_spec(proceed_objects, "PROCEED")
 
         stop_spec = EpisodeSpec(
             task_family="task_1",
@@ -311,7 +346,7 @@ class CounterfactualPairGenerator:
             "seed": seed,
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
-            "spec_diff": spec_diff,
+            "declared_intervention_paths": declared_intervention_paths,
             "stop": {
                 "label": "STOP",
                 "is_occupied": is_occ_stop,
@@ -328,6 +363,7 @@ class CounterfactualPairGenerator:
                 "region_mask_path": str(pair_dir / "stop_lid_mask.png"),
                 "instance_id_to_name_map": id_map_stop,
                 "spec": stop_spec.to_dict(),
+                "resolved_scene_spec": stop_resolved_spec,
             },
             "proceed": {
                 "label": "PROCEED",
@@ -345,6 +381,7 @@ class CounterfactualPairGenerator:
                 "region_mask_path": str(pair_dir / "proceed_lid_mask.png"),
                 "instance_id_to_name_map": id_map_proceed,
                 "spec": proceed_spec.to_dict(),
+                "resolved_scene_spec": proceed_resolved_spec,
             },
         }
 
@@ -372,32 +409,28 @@ class CounterfactualPairGenerator:
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
-        pos_offsets = {
-            "centre": [0.0, 0.0, 0.08],
-            "left": [-0.04, 0.0, 0.08],
-            "right": [0.04, 0.0, 0.08],
-            "front": [0.0, -0.04, 0.08],
-            "rear": [0.0, 0.04, 0.08],
+        pos_fracs = {
+            "centre": (0.0, 0.0),
+            "left": (-0.4, 0.0),
+            "right": (0.4, 0.0),
+            "front": (0.0, -0.4),
+            "rear": (0.0, 0.4),
         }
-        base_offset = pos_offsets.get(occupant_pos_bin, [0.0, 0.0, 0.08])
-        jitter_xy = rng.uniform(-0.015, 0.015, size=2)
-
-        stop_occ_pos = [
-            target_center[0] + base_offset[0] + jitter_xy[0],
-            target_center[1] + base_offset[1] + jitter_xy[1],
-            target_center[2] + base_offset[2],
-        ]
+        x_frac, y_frac = pos_fracs.get(occupant_pos_bin, (0.0, 0.0))
+        stop_occ_pos = sample_position_in_target(ref_model, ref_data, rng, x_frac=x_frac, y_frac=y_frac, height_above=0.07).tolist()
         stop_occ_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
 
-        proc_occ_pos = [target_center[0] + 0.30, target_center[1] + jitter_xy[1], 0.65]
+        proc_occ_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=y_frac*0.1, height_above=0.07).tolist()
+
+        pick_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.0, height_above=0.07).tolist()
 
         stop_objects = [
-            {"name": "coffee_can", "type": "coffee_can", "pos": [-0.30, -0.20, 0.65]},
+            {"name": "coffee_can", "type": "coffee_can", "pos": pick_pos},
             {"name": "occupant", "type": target_occupant_type, "pos": stop_occ_pos, "quat": stop_occ_quat},
         ]
 
         proceed_objects = [
-            {"name": "coffee_can", "type": "coffee_can", "pos": [-0.30, -0.20, 0.65]},
+            {"name": "coffee_can", "type": "coffee_can", "pos": pick_pos},
             {"name": "occupant", "type": target_occupant_type, "pos": proc_occ_pos, "quat": stop_occ_quat},
         ]
 
@@ -420,6 +453,9 @@ class CounterfactualPairGenerator:
         )
         renderer_stop.close()
 
+        if not is_occ_stop:
+            raise ValueError(f"Task 2 STOP scene for pair {pair_id} was not occupied after settling!")
+
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100)
         apply_background_spec(model_proceed, bg_spec)
@@ -438,6 +474,9 @@ class CounterfactualPairGenerator:
             model_proceed, data_proceed, candidate_objects=["occupant"]
         )
         renderer_proceed.close()
+
+        if is_occ_proceed:
+            raise ValueError(f"Task 2 PROCEED scene for pair {pair_id} was falsely marked as occupied!")
 
         # Save query images & masks
         stop_rgb_path = pair_dir / "stop_rgb.png"
@@ -466,7 +505,6 @@ class CounterfactualPairGenerator:
 
         Image.fromarray(rgb_proceed).save(proceed_rgb_path)
         Image.fromarray(inst_proceed_8).save(proceed_inst_path)
-        # FIX Phase 3 uint16 saving bug: Save inst_proceed_16
         np.save(proceed_inst_npy, inst_proceed_16)
         Image.fromarray(cand_proceed).save(proceed_cand_path)
         Image.fromarray(target_proceed).save(proceed_target_path)
@@ -479,28 +517,47 @@ class CounterfactualPairGenerator:
         Image.fromarray(cand_proceed).save(pair_dir / "proceed_culprit_mask.png")
         Image.fromarray(target_proceed).save(pair_dir / "proceed_target_mask.png")
 
-        intervention_vars = {
-            "occupant_pos": {"stop": stop_occ_pos, "proceed": proc_occ_pos},
-        }
-        invariant_vars = {
-            "pair_id": pair_id,
-            "task_id": "task_2",
-            "instruction": "Place object1 in the target region.",
-            "target_occupant_type": target_occupant_type,
-            "occupant_pos_bin": occupant_pos_bin,
-            "split": split,
-            "background_id": bg_profile_name,
-            "background_spec": bg_spec.to_dict(),
-            "seed": seed,
-            "target_center": target_center,
-            "camera_name": self.camera_name,
-            "resolution": [self.width, self.height],
-        }
-        spec_diff = {
-            "intervention_variables": intervention_vars,
-            "invariant_variables": invariant_vars,
-            "observed_diff": ["occupant_pos"],
-        }
+        declared_intervention_paths = ["objects.occupant.position"]
+
+        def build_resolved_spec(objs_list: List[dict], label: str) -> Dict[str, Any]:
+            objs_dict = {}
+            for o in objs_list:
+                objs_dict[o["name"]] = {
+                    "name": o["name"],
+                    "type": o["type"],
+                    "position": o["pos"],
+                    "orientation": o.get("quat", [1.0, 0.0, 0.0, 0.0]),
+                }
+            return {
+                "task_family": "task_2",
+                "instruction": "Place object1 in the target region.",
+                "pair_id": pair_id,
+                "base_scene_id": f"{pair_id}_base",
+                "seed": seed,
+                "split": split,
+                "position_bin": occupant_pos_bin,
+                "blocker_count": 1,
+                "label": label,
+                "camera": {
+                    "name": self.camera_name,
+                    "resolution": [self.width, self.height],
+                },
+                "background": {
+                    "background_id": bg_profile_name,
+                    "background_spec": bg_spec.to_dict(),
+                },
+                "robot": {
+                    "base_pose": "home",
+                },
+                "scene_poses": {
+                    "target_center": target_center,
+                },
+                "objects": objs_dict,
+                "distractors": [],
+            }
+
+        stop_resolved_spec = build_resolved_spec(stop_objects, "STOP")
+        proceed_resolved_spec = build_resolved_spec(proceed_objects, "PROCEED")
 
         stop_spec = EpisodeSpec(
             task_family="task_2",
@@ -547,7 +604,7 @@ class CounterfactualPairGenerator:
             "seed": seed,
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
-            "spec_diff": spec_diff,
+            "declared_intervention_paths": declared_intervention_paths,
             "stop": {
                 "label": "STOP",
                 "is_occupied": is_occ_stop,
@@ -564,6 +621,7 @@ class CounterfactualPairGenerator:
                 "region_mask_path": str(pair_dir / "stop_target_mask.png"),
                 "instance_id_to_name_map": id_map_stop,
                 "spec": stop_spec.to_dict(),
+                "resolved_scene_spec": stop_resolved_spec,
             },
             "proceed": {
                 "label": "PROCEED",
@@ -581,6 +639,7 @@ class CounterfactualPairGenerator:
                 "region_mask_path": str(pair_dir / "proceed_target_mask.png"),
                 "instance_id_to_name_map": id_map_proceed,
                 "spec": proceed_spec.to_dict(),
+                "resolved_scene_spec": proceed_resolved_spec,
             },
         }
 
@@ -592,6 +651,7 @@ class CounterfactualPairGenerator:
     def generate_task1_control(
         self,
         control_id: str,
+        control_subtype: str = "empty_lid",
         object_type: Optional[str] = None,
         split: str = "id",
         seed: int = 42,
@@ -607,25 +667,37 @@ class CounterfactualPairGenerator:
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
         objects = []
-        if object_type:
-            objects.append({"name": "blocker1", "type": object_type, "pos": [lid_center[0] - 0.30, lid_center[1] - 0.15, 0.65]})
+        if control_subtype in ("one_object_beside", "near_lid_outside_footprint"):
+            obj_t = object_type or "coffee_can"
+            pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=-0.15, height_above_table=0.04).tolist()
+            objects.append({"name": "blocker1", "type": obj_t, "pos": pos})
+        elif control_subtype == "two_objects_beside":
+            obj_t1 = object_type or "coffee_can"
+            obj_t2 = "sugar_box" if obj_t1 != "sugar_box" else "mug"
+            pos1 = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=-0.15, height_above_table=0.04).tolist()
+            pos2 = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.30, offset_y=0.10, height_above_table=0.04).tolist()
+            objects.append({"name": "blocker1", "type": obj_t1, "pos": pos1})
+            objects.append({"name": "blocker2", "type": obj_t2, "pos": pos2})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=50)
+        model, data = self.scene_builder.create_environment(objects, settle_steps=100)
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
         rgb = renderer.render_rgb(data)
 
-        candidate_geoms = ["blocker1_geom"] if object_type else []
+        candidate_geoms = [f"{o['name']}_geom" for o in objects]
         inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
             renderer, model, data, candidate_geoms, ["B1_lid_panel"], is_stop=False
         )
 
         is_occ, active_culprits, measurements = check_lid_occupancy(
-            model, data, blocker_names=["blocker1"] if object_type else []
+            model, data, blocker_names=[o["name"] for o in objects]
         )
         renderer.close()
+
+        if is_occ:
+            raise ValueError(f"Task 1 positive control {control_id} was falsely marked as occupied!")
 
         rgb_path = ctrl_dir / "control_rgb.png"
         inst_path = ctrl_dir / "control_instance_segmentation.png"
@@ -639,11 +711,28 @@ class CounterfactualPairGenerator:
         Image.fromarray(cand).save(cand_path)
         Image.fromarray(target).save(target_path)
 
+        resolved_spec = {
+            "task_family": "task_1",
+            "control_id": control_id,
+            "control_subtype": control_subtype,
+            "object_type": object_type,
+            "seed": seed,
+            "split": split,
+            "label": "PROCEED",
+            "background": {
+                "background_id": bg_profile_name,
+                "background_spec": bg_spec.to_dict(),
+            },
+            "objects": {o["name"]: o for o in objects},
+        }
+
         meta = {
             "control_id": control_id,
             "sample_type": "positive_control",
             "task_id": "task_1",
             "instruction": "Open the box.",
+            "control_subtype": control_subtype,
+            "object_type": object_type,
             "label": "PROCEED",
             "split": split,
             "seed": seed,
@@ -658,6 +747,7 @@ class CounterfactualPairGenerator:
             "candidate_object_mask_path": str(cand_path),
             "relation_target_mask_path": str(target_path),
             "instance_id_to_name_map": id_map,
+            "resolved_scene_spec": resolved_spec,
         }
 
         with open(ctrl_dir / "metadata.json", "w", encoding="utf-8") as f:
@@ -668,6 +758,7 @@ class CounterfactualPairGenerator:
     def generate_task2_control(
         self,
         control_id: str,
+        control_subtype: str = "empty_target",
         occupant_type: Optional[str] = None,
         split: str = "id",
         seed: int = 42,
@@ -682,26 +773,33 @@ class CounterfactualPairGenerator:
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
-        objects = [{"name": "coffee_can", "type": "coffee_can", "pos": [-0.30, -0.20, 0.65]}]
-        if occupant_type:
-            objects.append({"name": "occupant", "type": occupant_type, "pos": [target_center[0] + 0.30, target_center[1], 0.65]})
+        pick_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.0, height_above=0.07).tolist()
+        objects = [{"name": "coffee_can", "type": "coffee_can", "pos": pick_pos}]
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=50)
+        if control_subtype in ("one_object_beside_target", "one_object_near_target_outside"):
+            occ_t = occupant_type or "sugar_box"
+            occ_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=0.0, height_above=0.07).tolist()
+            objects.append({"name": "occupant", "type": occ_t, "pos": occ_pos})
+
+        model, data = self.scene_builder.create_environment(objects, settle_steps=100)
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
         rgb = renderer.render_rgb(data)
 
-        candidate_geoms = ["occupant_geom"] if occupant_type else []
+        candidate_geoms = ["occupant_geom"] if occupant_type or control_subtype != "empty_target" else []
         inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
             renderer, model, data, candidate_geoms, ["target_region_geom"], is_stop=False
         )
 
         is_occ, active_culprits, measurements = check_target_occupancy(
-            model, data, candidate_objects=["occupant"] if occupant_type else []
+            model, data, candidate_objects=["occupant"] if len(objects) > 1 else []
         )
         renderer.close()
+
+        if is_occ:
+            raise ValueError(f"Task 2 positive control {control_id} was falsely marked as occupied!")
 
         rgb_path = ctrl_dir / "control_rgb.png"
         inst_path = ctrl_dir / "control_instance_segmentation.png"
@@ -715,11 +813,28 @@ class CounterfactualPairGenerator:
         Image.fromarray(cand).save(cand_path)
         Image.fromarray(target).save(target_path)
 
+        resolved_spec = {
+            "task_family": "task_2",
+            "control_id": control_id,
+            "control_subtype": control_subtype,
+            "occupant_type": occupant_type,
+            "seed": seed,
+            "split": split,
+            "label": "PROCEED",
+            "background": {
+                "background_id": bg_profile_name,
+                "background_spec": bg_spec.to_dict(),
+            },
+            "objects": {o["name"]: o for o in objects},
+        }
+
         meta = {
             "control_id": control_id,
             "sample_type": "positive_control",
             "task_id": "task_2",
             "instruction": "Place object1 in the target region.",
+            "control_subtype": control_subtype,
+            "occupant_type": occupant_type,
             "label": "PROCEED",
             "split": split,
             "seed": seed,
@@ -734,6 +849,7 @@ class CounterfactualPairGenerator:
             "candidate_object_mask_path": str(cand_path),
             "relation_target_mask_path": str(target_path),
             "instance_id_to_name_map": id_map,
+            "resolved_scene_spec": resolved_spec,
         }
 
         with open(ctrl_dir / "metadata.json", "w", encoding="utf-8") as f:
@@ -776,7 +892,20 @@ def regenerate_from_metadata(
             )
     else:
         control_id = meta.get("control_id", "regen_control")
+        control_subtype = meta.get("control_subtype", "empty_lid" if task_id == "task_1" else "empty_target")
         if task_id == "task_1":
-            return gen.generate_task1_control(control_id=control_id, split=split, seed=seed)
+            return gen.generate_task1_control(
+                control_id=control_id,
+                control_subtype=control_subtype,
+                object_type=meta.get("object_type"),
+                split=split,
+                seed=seed,
+            )
         else:
-            return gen.generate_task2_control(control_id=control_id, split=split, seed=seed)
+            return gen.generate_task2_control(
+                control_id=control_id,
+                control_subtype=control_subtype,
+                occupant_type=meta.get("occupant_type"),
+                split=split,
+                seed=seed,
+            )
