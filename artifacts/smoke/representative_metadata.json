@@ -1,6 +1,6 @@
 {
-  "tested_code_commit": "0511b9c33bd2650495082406451f91ab253de59a",
-  "report_generation_commit": "0511b9c33bd2650495082406451f91ab253de59a",
+  "tested_code_commit": "1399f0b50a08c7903a9496213e401f16bc32d2d7",
+  "report_generation_commit": "1399f0b50a08c7903a9496213e401f16bc32d2d7",
   "total_records_generated": 16,
   "matched_pairs_count": 8,
   "positive_controls_count": 8,

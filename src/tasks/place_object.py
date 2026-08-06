@@ -270,6 +270,7 @@ class PlaceObjectExecutor:
                 mujoco.mj_step(self.model, self.data)
 
         # 3. Close Gripper & Activate Weld
+        self._activate_grasp_weld()
         self._close_gripper_fingers()
         for _ in range(10):
             self._set_arm_ctrl(pick_qpos)
@@ -278,8 +279,6 @@ class PlaceObjectExecutor:
             frames.append(renderer.render_rgb(self.data))
             self._log_state(frame_idx, "grasp")
             frame_idx += 1
-
-        self._activate_grasp_weld()
 
         # 4. Transport Phase (50 frames): Lift -> Move -> Place
         transport_steps = 50
