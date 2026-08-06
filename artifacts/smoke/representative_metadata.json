@@ -1,9 +1,9 @@
 {
-  "tested_code_commit": "4d11c118652fd8182429d277f56211285c07c700",
-  "report_generation_commit": "4d11c118652fd8182429d277f56211285c07c700",
-  "total_records_generated": 12,
+  "tested_code_commit": "11aa9c15a594760fc6cdff79249933882d7bdc6c",
+  "report_generation_commit": "11aa9c15a594760fc6cdff79249933882d7bdc6c",
+  "total_records_generated": 16,
   "matched_pairs_count": 8,
-  "positive_controls_count": 4,
+  "positive_controls_count": 8,
   "sample_matched_pair": {
     "pair_id": "pair_task_1_001",
     "sample_type": "matched_pair",

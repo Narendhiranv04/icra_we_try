@@ -107,11 +107,11 @@ class DemonstrationGenerator:
         t_center, t_rot, t_ext = get_target_frame(ref_model, ref_data)
 
         pick_offsets = {
-            "pick_left": np.array([-0.25, -0.10, 0.07]),
-            "pick_front": np.array([-0.25, -0.25, 0.07]),
-            "pick_rear": np.array([-0.25, 0.05, 0.07]),
+            "pick_left": np.array([0.0, -0.20, 0.07]),
+            "pick_front": np.array([0.10, 0.0, 0.07]),
+            "pick_rear": np.array([-0.10, 0.15, 0.07]),
         }
-        start_local = pick_offsets.get(start_bin, np.array([-0.25, -0.10, 0.07]))
+        start_local = pick_offsets.get(start_bin, np.array([0.0, -0.20, 0.07]))
         start_pos = (t_center + t_rot @ start_local).tolist()
 
         target_offsets = {
