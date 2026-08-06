@@ -1,4 +1,5 @@
 {
+  "commit_hash": "11227ddc337251e826d49b9373fc9340c53f351e",
   "total_records_generated": 12,
   "matched_pairs_count": 8,
   "positive_controls_count": 4,
@@ -9,38 +10,143 @@
     "instruction": "Open the box.",
     "blocker_type": "coffee_can",
     "blocker_count": 1,
+    "blocker_pos_bin": "centre",
     "split": "id",
     "seed": 42,
     "background_id": "bg_neutral_wood",
+    "background_spec": {
+      "profile_name": "bg_neutral_wood",
+      "counter_rgba": [
+        0.8,
+        0.7,
+        0.55,
+        1.0
+      ],
+      "wall_rgba": [
+        0.9,
+        0.9,
+        0.88,
+        1.0
+      ],
+      "floor_rgba": [
+        0.4,
+        0.35,
+        0.3,
+        1.0
+      ],
+      "light_spec": {
+        "light_pos_offsets": [
+          [
+            0.016437362913357803,
+            -0.00366729361487686,
+            0.021515875194682947
+          ],
+          [
+            0.015668382119421176,
+            0.01716385831661723,
+            -0.022313182039467246
+          ]
+        ],
+        "light_diffuse_mults": [
+          [
+            1.0078947211623746,
+            0.983767093915506,
+            1.0190248940654703
+          ],
+          [
+            0.9980154375158227,
+            0.9948319209693033,
+            1.017070599553944
+          ]
+        ]
+      }
+    },
     "spec_diff": {
-      "intervention": {
+      "intervention_variables": {
         "blocker1_pos": {
           "stop": [
-            0.5282186814566789,
-            0.17816635319256158,
+            0.52431595360242,
+            0.1896828483981249,
             0.82
           ],
           "proceed": [
             0.22000000000000003,
-            0.028166353192561597,
+            0.03968284839812493,
             0.65
           ]
         }
       },
-      "invariants": {
+      "invariant_variables": {
+        "pair_id": "pair_task_1_001",
         "task_id": "task_1",
         "instruction": "Open the box.",
         "blocker_type": "coffee_can",
         "blocker_count": 1,
+        "blocker_pos_bin": "centre",
         "split": "id",
         "background_id": "bg_neutral_wood",
+        "background_spec": {
+          "profile_name": "bg_neutral_wood",
+          "counter_rgba": [
+            0.8,
+            0.7,
+            0.55,
+            1.0
+          ],
+          "wall_rgba": [
+            0.9,
+            0.9,
+            0.88,
+            1.0
+          ],
+          "floor_rgba": [
+            0.4,
+            0.35,
+            0.3,
+            1.0
+          ],
+          "light_spec": {
+            "light_pos_offsets": [
+              [
+                0.016437362913357803,
+                -0.00366729361487686,
+                0.021515875194682947
+              ],
+              [
+                0.015668382119421176,
+                0.01716385831661723,
+                -0.022313182039467246
+              ]
+            ],
+            "light_diffuse_mults": [
+              [
+                1.0078947211623746,
+                0.983767093915506,
+                1.0190248940654703
+              ],
+              [
+                0.9980154375158227,
+                0.9948319209693033,
+                1.017070599553944
+              ]
+            ]
+          }
+        },
         "seed": 42,
         "lid_center": [
           0.52,
           0.18000000000000002,
           0.74
+        ],
+        "camera_name": "front_camera",
+        "resolution": [
+          640,
+          480
         ]
-      }
+      },
+      "observed_diff": [
+        "blocker1_pos"
+      ]
     },
     "stop": {
       "label": "STOP",
@@ -50,13 +156,15 @@
       ],
       "measurements": {
         "blocker1": {
+          "settling_steps": 50,
+          "consecutive_stable_steps": 20,
           "overlap_area": 0.010000000000000002,
           "overlap_ratio": 1.0,
-          "vertical_gap": 0.0019158971296736604,
-          "contact": false,
-          "linear_speed": 0.3924000000000002,
-          "angular_speed": 0.0,
-          "stable": false,
+          "vertical_gap": -3.672827884282359e-05,
+          "contact": true,
+          "linear_speed": 0.0012209943959814338,
+          "angular_speed": 0.009162356890959946,
+          "stable": true,
           "relation_true": true
         }
       },
@@ -167,15 +275,15 @@
             "name": "blocker1",
             "type": "coffee_can",
             "pos": [
-              0.5282186814566789,
-              0.17816635319256158,
+              0.52431595360242,
+              0.1896828483981249,
               0.82
             ],
             "quat": [
-              0.4297606982944199,
+              0.9842405639571534,
               0.0,
               0.0,
-              0.9029428233290814
+              -0.1768347032154732
             ]
           }
         ]
@@ -187,13 +295,15 @@
       "culprits": [],
       "measurements": {
         "blocker1": {
+          "settling_steps": 50,
+          "consecutive_stable_steps": 20,
           "overlap_area": 0.0,
           "overlap_ratio": 0.0,
-          "vertical_gap": -0.16808410287032627,
+          "vertical_gap": -0.1699400888155027,
           "contact": false,
-          "linear_speed": 0.3924000000000002,
-          "angular_speed": 1.0217375689930918e-30,
-          "stable": false,
+          "linear_speed": 0.0014524458164306212,
+          "angular_speed": 0.0008044324748105878,
+          "stable": true,
           "relation_true": false
         }
       },
@@ -307,14 +417,14 @@
             "type": "coffee_can",
             "pos": [
               0.22000000000000003,
-              0.028166353192561597,
+              0.03968284839812493,
               0.65
             ],
             "quat": [
-              0.4297606982944199,
+              0.9842405639571534,
               0.0,
               0.0,
-              0.9029428233290814
+              -0.1768347032154732
             ]
           }
         ]
@@ -330,6 +440,53 @@
     "split": "id",
     "seed": 1042,
     "background_id": "bg_neutral_wood",
+    "background_spec": {
+      "profile_name": "bg_neutral_wood",
+      "counter_rgba": [
+        0.8,
+        0.7,
+        0.55,
+        1.0
+      ],
+      "wall_rgba": [
+        0.9,
+        0.9,
+        0.88,
+        1.0
+      ],
+      "floor_rgba": [
+        0.4,
+        0.35,
+        0.3,
+        1.0
+      ],
+      "light_spec": {
+        "light_pos_offsets": [
+          [
+            -0.00855549109047143,
+            -0.00766748046958372,
+            0.0045602197405172
+          ],
+          [
+            0.002086340680707184,
+            0.0061495301139974645,
+            -0.014150180424428078
+          ]
+        ],
+        "light_diffuse_mults": [
+          [
+            1.0098836756913587,
+            0.9873842940526987,
+            1.0033842258476322
+          ],
+          [
+            0.9805865912109119,
+            0.9892663588315621,
+            1.0155749951538244
+          ]
+        ]
+      }
+    },
     "is_occupied": false,
     "culprits": [],
     "measurements": {},

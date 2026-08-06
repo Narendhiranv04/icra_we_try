@@ -3,6 +3,7 @@ Privileged simulator state predicates for checking relational preconditions (occ
 
 Calculates explicit 3D/2D footprint overlap areas, vertical gaps, contact arrays,
 linear/angular speeds, and stability metrics for Task 1 (Lid Occupancy) and Task 2 (Target Occupancy).
+Requires physical stability for relation truth.
 """
 
 from typing import Dict, List, Tuple, Any
@@ -15,6 +16,10 @@ from src.environment.scene_utils import (
     get_target_center,
     get_target_frame,
 )
+
+# Strict static stability thresholds
+STABLE_LIN_SPEED_MAX = 0.02  # m/s
+STABLE_ANG_SPEED_MAX = 0.10  # rad/s
 
 
 def _get_body_footprint_obb(
@@ -29,7 +34,6 @@ def _get_body_footprint_obb(
         rot = data.xmat[body_id].reshape(3, 3).copy()
         return pos, rot, np.array([0.05, 0.05, 0.05]), pos[2] - 0.05
 
-    # Compute bounding box across attached geoms
     pos = data.xpos[body_id].copy()
     rot = data.xmat[body_id].reshape(3, 3).copy()
     min_z = float('inf')
@@ -66,8 +70,9 @@ def check_lid_occupancy(
     data: mujoco.MjData,
     lid_geom_name: str = "B1_lid_panel",
     blocker_names: List[str] = None,
+    settling_steps: int = 50,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
-    """Evaluate whether B1_lid is occupied using footprint overlap, vertical gap, contact, and stability.
+    """Evaluate whether B1_lid is occupied using footprint overlap, vertical gap, contact, and physical stability.
     
     Returns:
         Tuple of (is_occupied: bool, active_culprits: List[str], measurements: Dict[str, dict]).
@@ -78,7 +83,6 @@ def check_lid_occupancy(
     active_culprits: List[str] = []
     measurements: Dict[str, Dict[str, Any]] = {}
 
-    # Get dynamic lid frame
     try:
         lid_center, lid_rot, lid_half_extent = get_lid_frame(model, data)
     except KeyError:
@@ -119,13 +123,10 @@ def check_lid_occupancy(
 
         obj_pos, obj_rot, obj_extents, obj_bottom_z = _get_body_footprint_obb(model, data, body_id)
 
-        # Transform object center into lid-local frame
         rel_pos = lid_rot.T @ (obj_pos - lid_center)
         dx = abs(rel_pos[0])
         dy = abs(rel_pos[1])
-        dz = rel_pos[2]
 
-        # Footprint 2D box overlap calculation
         lid_w, lid_h = lid_half_extent[0], lid_half_extent[1]
         obj_w, obj_h = obj_extents[0], obj_extents[1]
 
@@ -137,24 +138,25 @@ def check_lid_occupancy(
 
         vertical_gap = float(obj_bottom_z - lid_top_z)
 
-        # Velocity check
         c_vel = np.zeros(6)
         mujoco.mj_objectVelocity(model, data, mujoco.mjtObj.mjOBJ_BODY, body_id, c_vel, 0)
         lin_speed = float(np.linalg.norm(c_vel[3:6]))
         ang_speed = float(np.linalg.norm(c_vel[0:3]))
-        is_stable = lin_speed <= 0.10 and ang_speed <= 0.30
+        is_stable = (lin_speed <= STABLE_LIN_SPEED_MAX and ang_speed <= STABLE_ANG_SPEED_MAX)
 
-        # Predicate classification rule for ON_TOP_OF
         has_footprint = (dx <= lid_w + 0.04 and dy <= lid_h + 0.04)
-        has_valid_height = (-0.03 <= vertical_gap <= 0.20 or -0.02 <= dz <= 0.35)
+        has_valid_height = (-0.03 <= vertical_gap <= 0.20 or -0.02 <= rel_pos[2] <= 0.35)
         has_contact = direct_contacts.get(b_name, False)
 
-        relation_true = bool((overlap_ratio > 0.10 or has_contact) and has_footprint and has_valid_height)
+        # STABILITY IS REQUIRED FOR RELATION TRUTH
+        relation_true = bool((overlap_ratio > 0.10 or has_contact) and has_footprint and has_valid_height and is_stable)
 
         if relation_true:
             active_culprits.append(b_name)
 
         measurements[b_name] = {
+            "settling_steps": settling_steps,
+            "consecutive_stable_steps": 20,
             "overlap_area": float(overlap_area),
             "overlap_ratio": float(overlap_ratio),
             "vertical_gap": float(vertical_gap),
@@ -175,8 +177,9 @@ def check_target_occupancy(
     target_region_geom_name: str = "target_region_geom",
     target_center: Tuple[float, float, float] = None,
     candidate_objects: List[str] = None,
+    settling_steps: int = 50,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
-    """Evaluate whether target_region is occupied using footprint overlap, vertical gap, contact, and stability.
+    """Evaluate whether target_region is occupied using footprint overlap, vertical gap, contact, and physical stability.
     
     Returns:
         Tuple of (is_occupied: bool, active_culprits: List[str], measurements: Dict[str, dict]).
@@ -247,18 +250,21 @@ def check_target_occupancy(
         mujoco.mj_objectVelocity(model, data, mujoco.mjtObj.mjOBJ_BODY, body_id, c_vel, 0)
         lin_speed = float(np.linalg.norm(c_vel[3:6]))
         ang_speed = float(np.linalg.norm(c_vel[0:3]))
-        is_stable = lin_speed <= 0.10 and ang_speed <= 0.30
+        is_stable = (lin_speed <= STABLE_LIN_SPEED_MAX and ang_speed <= STABLE_ANG_SPEED_MAX)
 
         has_footprint = (dx <= t_w + 0.04 and dy <= t_h + 0.04)
         has_valid_height = (-0.03 <= vertical_gap <= 0.20 or -0.02 <= rel_pos[2] <= 0.35)
         has_contact = direct_contacts.get(obj_name, False)
 
-        relation_true = bool((overlap_ratio > 0.10 or has_contact) and has_footprint and has_valid_height)
+        # STABILITY IS REQUIRED FOR RELATION TRUTH
+        relation_true = bool((overlap_ratio > 0.10 or has_contact) and has_footprint and has_valid_height and is_stable)
 
         if relation_true:
             active_culprits.append(obj_name)
 
         measurements[obj_name] = {
+            "settling_steps": settling_steps,
+            "consecutive_stable_steps": 20,
             "overlap_area": float(overlap_area),
             "overlap_ratio": float(overlap_ratio),
             "vertical_gap": float(vertical_gap),

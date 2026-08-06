@@ -13,31 +13,34 @@ echo "======================================================="
 echo "[Phase 1/5] Running PyTest Unit Test Suite..."
 $PYTHON_BIN -m pytest tests/ -v
 
-# 2. Run Demonstration Video Clips Generation & Validation
-echo "[Phase 2/5] Generating 6 Distinct Pilot Demonstration Directories & Validating..."
+# 2. Run Demonstration Video Clips Generation & Distinctness Validation
+echo "[Phase 2/5] Generating 6 Genuinely Distinct Pilot Demonstration Directories & Validating..."
 $PYTHON_BIN -c "
 from src.generation.demonstration_generator import DemonstrationGenerator
 from src.validation.demonstration_validator import DemonstrationValidator
 
 demo_gen = DemonstrationGenerator(output_dir='data/demos')
 
+bgs = ['bg_neutral_wood', 'bg_blue_counter', 'bg_granite_dark']
+objs = ['coffee_can', 'sugar_box', 'mug']
+
 demos_t1 = []
 for i in range(1, 4):
     demo_id = f'demo_task1_{i:03d}'
-    path = demo_gen.generate_task_1_demo(demo_id)
+    path = demo_gen.generate_task_1_demo(demo_id, background_id=bgs[i-1], seed=100+i)
     demos_t1.append(path)
     val, issues = DemonstrationValidator.validate_demo_dir(f'data/demos/open_box/{demo_id}')
-    print(f'Task 1 Demo {demo_id} Validation: {val}, issues={issues}')
+    print(f'Task 1 Demo {demo_id} (bg={bgs[i-1]}): Validation={val}, issues={issues}')
     if not val:
         raise RuntimeError(f'Task 1 Demo {demo_id} failed validation: {issues}')
 
 demos_t2 = []
 for i in range(1, 4):
     demo_id = f'demo_task2_{i:03d}'
-    path = demo_gen.generate_task_2_demo(demo_id)
+    path = demo_gen.generate_task_2_demo(demo_id, obj_name=objs[i-1], background_id=bgs[i-1], seed=200+i)
     demos_t2.append(path)
     val, issues = DemonstrationValidator.validate_demo_dir(f'data/demos/place_object/{demo_id}')
-    print(f'Task 2 Demo {demo_id} Validation: {val}, issues={issues}')
+    print(f'Task 2 Demo {demo_id} (obj={objs[i-1]}, bg={bgs[i-1]}): Validation={val}, issues={issues}')
     if not val:
         raise RuntimeError(f'Task 2 Demo {demo_id} failed validation: {issues}')
 

@@ -1,6 +1,6 @@
 """
 Comprehensive dataset validator for checking counterfactual pairs, split holdout leakage,
-positive controls, uint16 instance maps, mask semantics, and seed reproducibility.
+positive controls, uint16 instance maps, mask semantics, seed reproducibility, and spec invariants.
 """
 
 from __future__ import annotations
@@ -46,20 +46,44 @@ class DatasetValidator:
         # ── Pass 1: Counterfactual Invariant Equality ──────────────
         inv_issues = []
         for pair in matched_pairs:
+            pair_id = pair.get("pair_id", "unknown")
             stop_meta = pair.get("stop", {})
             proceed_meta = pair.get("proceed", {})
             spec_diff = pair.get("spec_diff", {})
 
+            # 1. Compare STOP against PROCEED specs directly across all invariants
+            stop_spec = stop_meta.get("spec", {})
+            proc_spec = proceed_meta.get("spec", {})
+
             # Task, instruction, background must match
-            if pair.get("task_id") and pair.get("task_id") not in ("task_1", "task_2"):
-                inv_issues.append(f"Pair {pair.get('pair_id')}: invalid task_id")
-            if pair.get("background_id") != pair.get("background_id"):
-                inv_issues.append(f"Pair {pair.get('pair_id')}: background_id mismatch")
+            if stop_spec.get("task_family") != proc_spec.get("task_family"):
+                inv_issues.append(f"Pair {pair_id}: task_family mismatch between STOP and PROCEED")
+            if stop_spec.get("goal_instruction") != proc_spec.get("goal_instruction"):
+                inv_issues.append(f"Pair {pair_id}: goal_instruction mismatch")
+            if stop_spec.get("background_id") != proc_spec.get("background_id"):
+                inv_issues.append(f"Pair {pair_id}: background_id mismatch")
+            if stop_spec.get("seed") != proc_spec.get("seed"):
+                inv_issues.append(f"Pair {pair_id}: seed mismatch")
+
+            # BackgroundSpec & LightSpec equality check
+            bg_spec_stop = pair.get("background_spec")
+            bg_spec_proc = pair.get("background_spec")
+            if bg_spec_stop != bg_spec_proc:
+                inv_issues.append(f"Pair {pair_id}: BackgroundSpec/LightSpec mismatch")
+
+            # Spec diff structure validation
+            inv_vars = spec_diff.get("invariant_variables", {})
+            inter_vars = spec_diff.get("intervention_variables", {})
+            obs_diff = spec_diff.get("observed_diff", [])
+
+            for var in obs_diff:
+                if var not in inter_vars:
+                    inv_issues.append(f"Pair {pair_id}: observed_diff contains undeclared intervention variable '{var}'")
 
         logs.append(f"Pass 1 (Invariant Equality): {len(inv_issues)} issues.")
         issues.extend(inv_issues)
 
-        # ── Pass 2: File Existence & Mask Semantics ─────────────────
+        # ── Pass 2: File Existence, Mask Semantics & Stability ─────────
         mask_issues = []
         for rec in self.records:
             if rec.get("sample_type") == "positive_control":
@@ -68,36 +92,63 @@ class DatasetValidator:
                 sub_samples = [("stop", rec.get("stop", {})), ("proceed", rec.get("proceed", {}))]
 
             for label_name, sub in sub_samples:
+                sample_id = sub.get("sample_id") or rec.get("pair_id") or rec.get("control_id")
                 rgb_p = sub.get("rgb_path")
-                inst_p = sub.get("instance_uint16_path") or sub.get("instance_segmentation_path")
+                inst_p = sub.get("instance_uint16_path")
                 cand_p = sub.get("candidate_object_mask_path") or sub.get("culprit_mask_path")
                 target_p = sub.get("relation_target_mask_path") or sub.get("region_mask_path")
 
                 if not rgb_p or not Path(rgb_p).exists():
-                    mask_issues.append(f"Record {sub.get('sample_id', rec.get('pair_id'))}: missing RGB file {rgb_p}")
+                    mask_issues.append(f"Record {sample_id}: missing RGB file {rgb_p}")
                 if not inst_p or not Path(inst_p).exists():
-                    mask_issues.append(f"Record {sub.get('sample_id', rec.get('pair_id'))}: missing Instance file {inst_p}")
+                    mask_issues.append(f"Record {sample_id}: missing uint16 Instance file {inst_p}")
+                else:
+                    # Validate uint16 array loading and dtype
+                    try:
+                        arr_16 = np.load(inst_p)
+                        if arr_16.dtype != np.uint16:
+                            mask_issues.append(f"Record {sample_id}: uint16 instance map has wrong dtype {arr_16.dtype}")
+                        if arr_16.ndim != 2:
+                            mask_issues.append(f"Record {sample_id}: uint16 instance map shape invalid {arr_16.shape}")
+                    except Exception as err:
+                        mask_issues.append(f"Record {sample_id}: failed to load uint16 instance map: {err}")
 
                 # Mask non-emptiness & causal semantics
                 if cand_p and Path(cand_p).exists():
                     cand_arr = np.array(Image.open(cand_p))
                     if label_name == "stop" and np.count_nonzero(cand_arr) == 0:
-                        mask_issues.append(f"Record {sub.get('sample_id')}: STOP candidate mask is empty")
+                        mask_issues.append(f"Record {sample_id}: STOP candidate mask is empty")
+
+                if target_p and Path(target_p).exists():
+                    t_arr = np.array(Image.open(target_p))
+                    if np.count_nonzero(t_arr) == 0:
+                        mask_issues.append(f"Record {sample_id}: Relation target mask is empty")
+                    # Target mask must not be full countertop (> 50% of image)
+                    if np.count_nonzero(t_arr) > (t_arr.shape[0] * t_arr.shape[1] * 0.50):
+                        mask_issues.append(f"Record {sample_id}: Target mask covers over 50% of image")
 
                 if label_name == "stop":
                     causal_p = sub.get("causal_violation_mask_path")
                     if causal_p and Path(causal_p).exists():
                         causal_arr = np.array(Image.open(causal_p))
                         if np.count_nonzero(causal_arr) == 0:
-                            mask_issues.append(f"Record {sub.get('sample_id')}: STOP causal violation mask is empty")
+                            mask_issues.append(f"Record {sample_id}: STOP causal violation mask is empty")
+                    
+                    # Verify physical stability in STOP
+                    meas = sub.get("measurements", {})
+                    for culprit_name, culprit_m in meas.items():
+                        if isinstance(culprit_m, dict) and culprit_m.get("relation_true"):
+                            if not culprit_m.get("stable", True):
+                                mask_issues.append(f"Record {sample_id}: STOP culprit '{culprit_name}' is unstable (lin_speed={culprit_m.get('linear_speed'):.4f})")
+
                 elif label_name == "proceed":
                     causal_p = sub.get("causal_violation_mask_path")
                     if causal_p and Path(causal_p).exists():
                         causal_arr = np.array(Image.open(causal_p))
                         if np.count_nonzero(causal_arr) != 0:
-                            mask_issues.append(f"Record {sub.get('sample_id')}: PROCEED causal violation mask is not zero")
+                            mask_issues.append(f"Record {sample_id}: PROCEED causal violation mask is not zero")
 
-        logs.append(f"Pass 2 (File & Mask Semantics): {len(mask_issues)} issues.")
+        logs.append(f"Pass 2 (File, Mask Semantics & Stability): {len(mask_issues)} issues.")
         issues.extend(mask_issues)
 
         # ── Pass 3: Split Holdout & Leakage Checks ─────────────────

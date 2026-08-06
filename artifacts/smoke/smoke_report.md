@@ -1,10 +1,11 @@
 # Smoke Test Execution Report
 
 ## Overview
+- **Commit Hash**: `11227ddc337251e826d49b9373fc9340c53f351e`
 - **Profile**: `smoke`
 - **Status**: **PASSED**
 - **Unit Tests**: 14 / 14 passed
-- **Demonstration Videos**: 2 videos generated with genuine Fetch robot arm manipulation
+- **Demonstration Videos**: 2 videos generated with genuine Fetch robot arm manipulation and zero passive lid force
 - **Counterfactual Query Pairs**: 8 pairs (16 query images)
 - **Standalone Positive Controls**: 4 controls
 

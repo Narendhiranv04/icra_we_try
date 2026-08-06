@@ -3,8 +3,7 @@ Task executor for Task 1: "Open the box."
 Executes genuine Fetch robot arm manipulation to open B1 box lid.
 
 The lid is opened by the robot arm through a weld constraint. The hinge is
-completely passive; B1_lid_actuator is NEVER commanded with opening angles,
-and self.data.qpos[hinge_qpos] is NEVER directly assigned.
+completely passive; B1_lid_actuator gains are disabled so actuator force is strictly 0.0.
 """
 
 from __future__ import annotations
@@ -17,7 +16,7 @@ import mujoco
 import numpy as np
 
 from src.environment.renderer import OffscreenRenderer
-from src.environment.robot_integration import VerticalIK, ARM_JOINTS, initialize_robot_qpos
+from src.environment.robot_integration import VerticalIK, ARM_JOINTS, HOME_ARM_SEED, initialize_robot_qpos
 from src.environment.scene_utils import get_handle_pos, get_lid_angle
 
 
@@ -25,9 +24,9 @@ from src.environment.scene_utils import get_handle_pos, get_lid_angle
 
 BOX_OPEN_TARGET_ANGLE = math.radians(90.0)
 BOX_ARC_SAMPLES = 30
-BOX_GRIP_OFFSET = np.array([0.0, -0.026, 0.02])
-BOX_PREGRASP_OFFSET = np.array([0.0, -0.10, 0.12])
-PROXIMITY_THRESHOLD = 0.30  # max distance between grip site and handle site for weld activation
+BOX_GRIP_OFFSET = np.array([0.0, 0.0, 0.0])  # Gripper site targets handle site directly
+BOX_PREGRASP_OFFSET = np.array([0.0, -0.10, 0.10])
+PROXIMITY_THRESHOLD = 0.03  # Strict 3cm geometric grasp proximity threshold
 
 # Gripper approaches from front of box
 BOX_GRASP_ROTATION = np.array(
@@ -50,13 +49,14 @@ class Task1StateLog:
     lid_vel_radps: float
     weld_active: bool
     robot_ctrl: List[float]
-    lid_ctrl: float  # Must be 0.0 always
+    lid_ctrl: float
+    lid_actuator_force: float  # Must be strictly 0.0 always
 
 
 class BoxOpenExecutor:
     """Executor controlling Fetch robot arm to physically approach, grasp, and open box B1 lid.
     
-    The lid hinge remains strictly passive. B1_lid_actuator is NEVER used to drive or hold the lid.
+    The lid hinge remains strictly passive with zero actuator force.
     """
 
     def __init__(
@@ -69,13 +69,19 @@ class BoxOpenExecutor:
         self.data = data
         self.target_angle = target_angle
 
-        # IDs
+        # Disable lid actuator gains permanently in model to guarantee zero actuator force
+        self.hinge_actuator = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "B1_lid_actuator")
+        if self.hinge_actuator != -1:
+            self.model.actuator_gainprm[self.hinge_actuator, :] = 0.0
+            self.model.actuator_biasprm[self.hinge_actuator, :] = 0.0
+            self.model.actuator_forcerange[self.hinge_actuator, :] = 0.0
+
+        # Joint & Site IDs
         self.hinge_joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "B1_lid_joint")
         if self.hinge_joint_id == -1:
             self.hinge_joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "B1_lid_hinge")
         self.hinge_qpos_adr = int(model.jnt_qposadr[self.hinge_joint_id]) if self.hinge_joint_id != -1 else None
         self.hinge_dof_adr = int(model.jnt_dofadr[self.hinge_joint_id]) if self.hinge_joint_id != -1 else None
-        self.hinge_actuator = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "B1_lid_actuator")
 
         self.handle_site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "B1_lid_handle_grasp")
         self.grip_site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "robot0:grip")
@@ -189,6 +195,7 @@ class BoxOpenExecutor:
         handle_pos = self.data.site_xpos[self.handle_site_id].tolist() if self.handle_site_id != -1 else [0, 0, 0]
         handle_dist = self._grip_handle_distance()
         lid_ctrl_val = float(self.data.ctrl[self.hinge_actuator]) if self.hinge_actuator != -1 else 0.0
+        lid_force_val = float(self.data.actuator_force[self.hinge_actuator]) if self.hinge_actuator != -1 else 0.0
 
         self.state_log.append(Task1StateLog(
             frame_idx=frame_idx,
@@ -204,16 +211,17 @@ class BoxOpenExecutor:
             weld_active=self._is_weld_active(),
             robot_ctrl=[float(c) for c in self.data.ctrl[self.arm_actuators]],
             lid_ctrl=lid_ctrl_val,
+            lid_actuator_force=lid_force_val,
         ))
 
     def run_demonstration(self, renderer: OffscreenRenderer) -> List[np.ndarray]:
         """Execute genuine Task 1 demonstration.
         
-        The lid actuator is NEVER commanded with opening torque. The hinge remains passive.
+        The lid actuator is disabled (zero force). The hinge remains strictly passive.
+        The demonstration ends in an open-and-held state via robot grasp weld.
         """
         initialize_robot_qpos(self.model, self.data)
 
-        # Zero out lid actuator control
         if self.hinge_actuator != -1:
             self.data.ctrl[self.hinge_actuator] = 0.0
 
@@ -228,6 +236,20 @@ class BoxOpenExecutor:
             else get_handle_pos(self.model, self.data)
         )
 
+        hover_target = handle_pos + BOX_PREGRASP_OFFSET
+        grasp_target = handle_pos + BOX_GRIP_OFFSET
+
+        hover_qpos, _, _ = ik.solve(hover_target, HOME_ARM_SEED, target_rotation=BOX_GRASP_ROTATION)
+        grasp_qpos, _, _ = ik.solve(grasp_target, hover_qpos, target_rotation=BOX_GRASP_ROTATION)
+
+        # Pre-align arm qpos and ctrl to hover_qpos
+        for adr, act_id, val in zip(self.arm_qpos_adr, self.arm_actuators, hover_qpos):
+            self.data.qpos[adr] = val
+            self.data.ctrl[act_id] = val
+        if self.torso_actuator != -1:
+            self.data.ctrl[self.torso_actuator] = 0.20
+        mujoco.mj_forward(self.model, self.data)
+
         # ─── Phase 1: Initial Static Frames (10 frames) ─────────────
         for _ in range(10):
             if self.hinge_actuator != -1:
@@ -238,13 +260,7 @@ class BoxOpenExecutor:
             frame_idx += 1
 
         # ─── Phase 2: Approach (30 frames) ──────────────────────────
-        hover_target = handle_pos + BOX_PREGRASP_OFFSET
-        grasp_target = handle_pos + BOX_GRIP_OFFSET
-
         seed_qpos = self._get_arm_qpos()
-        hover_qpos, _, _ = ik.solve(hover_target, seed_qpos, target_rotation=BOX_GRASP_ROTATION)
-        grasp_qpos, _, _ = ik.solve(grasp_target, hover_qpos, target_rotation=BOX_GRASP_ROTATION)
-
         approach_steps = 30
         for step in range(approach_steps):
             frac = (step + 1) / approach_steps
@@ -269,6 +285,7 @@ class BoxOpenExecutor:
         # ─── Phase 3: Close Gripper & Activate Weld ─────────────────
         self._close_gripper_fingers()
         for _ in range(10):
+            self._set_arm_ctrl(grasp_qpos)
             if self.hinge_actuator != -1:
                 self.data.ctrl[self.hinge_actuator] = 0.0
             for _ in range(25):
@@ -293,7 +310,6 @@ class BoxOpenExecutor:
             start_qpos = arm_q
             self._set_arm_ctrl(arm_q)
 
-            # Lid actuator remains at ZERO (passive hinge)
             if self.hinge_actuator != -1:
                 self.data.ctrl[self.hinge_actuator] = 0.0
 
@@ -304,7 +320,7 @@ class BoxOpenExecutor:
             frame_idx += 1
 
         # ─── Phase 5: Final Static Frames (15 frames) ───────────────
-        # End effector holds lid in open position via weld constraint
+        # End effector holds lid open (open-and-held state)
         for _ in range(15):
             self._set_arm_ctrl(start_qpos)
             if self.hinge_actuator != -1:

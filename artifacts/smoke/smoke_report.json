@@ -1,6 +1,8 @@
 {
+  "commit_hash": "11227ddc337251e826d49b9373fc9340c53f351e",
   "profile": "smoke",
   "status": "PASSED",
+  "dataset_validation_status": "PASSED",
   "unit_tests_passed": 14,
   "unit_tests_total": 14,
   "demonstrations_generated": 2,

@@ -1,8 +1,8 @@
 """
 Matched counterfactual scene generator producing paired PROCEED / STOP query scenes and standalone positive controls.
 
-Uses dynamic scene_utils geometry, SplitPlanner, episode RNG seeding, spec diffs,
-detailed occupancy measurements, and lossless uint16 instance segmentation.
+Uses dynamic scene_utils geometry, SplitPlanner, episode RNG seeding, BackgroundSpec/LightSpec for 100% identical pair lighting,
+spec diffs, detailed occupancy measurements, and lossless uint16 instance segmentation.
 """
 
 from pathlib import Path
@@ -17,7 +17,12 @@ from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
 from src.validation.occupancy_checks import check_lid_occupancy, check_target_occupancy
 from src.generation.scene_config import EpisodeSpec
-from src.generation.background_randomization import apply_background_profile, randomize_lights, SPLIT_BACKGROUNDS
+from src.generation.background_randomization import (
+    sample_background_spec,
+    apply_background_spec,
+    SPLIT_BACKGROUNDS,
+    BackgroundSpec,
+)
 from src.generation.split_planner import SplitPlanner
 from src.environment.scene_utils import (
     get_lid_center,
@@ -38,7 +43,7 @@ def _yaw_quat(yaw: float) -> List[float]:
 
 
 class CounterfactualPairGenerator:
-    """Generator for producing matched PROCEED and STOP query image pairs with explicit masks."""
+    """Generator for producing matched STOP and PROCEED query image pairs with explicit masks."""
 
     def __init__(
         self,
@@ -111,14 +116,13 @@ class CounterfactualPairGenerator:
         pair_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        # Query dynamic lid center
         ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
         lid_center = get_lid_center(ref_model, ref_data).tolist()
 
-        # Randomize background and light jitter via rng seed
-        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        # Sample background and light spec ONCE per pair
+        bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
-        # Position offsets on lid
         pos_offsets = {
             "centre": [0.0, 0.0, 0.08],
             "front_left": [-0.05, -0.03, 0.08],
@@ -158,9 +162,8 @@ class CounterfactualPairGenerator:
             )
 
         # ── Render STOP scene ──────────────────────────────────────────
-        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=20)
-        apply_background_profile(model_stop, profile_name=bg_profile)
-        randomize_lights(model_stop, rng)
+        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=100)
+        apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -180,9 +183,8 @@ class CounterfactualPairGenerator:
         renderer_stop.close()
 
         # ── Render PROCEED scene ───────────────────────────────────────
-        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=20)
-        apply_background_profile(model_proceed, profile_name=bg_profile)
-        randomize_lights(model_proceed, rng)
+        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100)
+        apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -226,7 +228,8 @@ class CounterfactualPairGenerator:
 
         Image.fromarray(rgb_proceed).save(proceed_rgb_path)
         Image.fromarray(inst_proceed_8).save(proceed_inst_path)
-        np.save(proceed_inst_npy, proceed_inst_npy)
+        # FIX Phase 3 uint16 saving bug: Save inst_proceed_16
+        np.save(proceed_inst_npy, inst_proceed_16)
         Image.fromarray(cand_proceed).save(proceed_cand_path)
         Image.fromarray(target_proceed).save(proceed_target_path)
         Image.fromarray(causal_proceed).save(proceed_causal_path)
@@ -238,23 +241,28 @@ class CounterfactualPairGenerator:
         Image.fromarray(cand_proceed).save(pair_dir / "proceed_culprit_mask.png")
         Image.fromarray(target_proceed).save(pair_dir / "proceed_lid_mask.png")
 
-        # Record spec diff and intervention/invariant variables
         intervention_vars = {
             "blocker1_pos": {"stop": stop_b1_pos, "proceed": proc_b1_pos},
         }
         invariant_vars = {
+            "pair_id": pair_id,
             "task_id": "task_1",
             "instruction": "Open the box.",
             "blocker_type": blocker_type,
             "blocker_count": blocker_count,
+            "blocker_pos_bin": blocker_pos_bin,
             "split": split,
-            "background_id": bg_profile,
+            "background_id": bg_profile_name,
+            "background_spec": bg_spec.to_dict(),
             "seed": seed,
             "lid_center": lid_center,
+            "camera_name": self.camera_name,
+            "resolution": [self.width, self.height],
         }
         spec_diff = {
-            "intervention": intervention_vars,
-            "invariants": invariant_vars,
+            "intervention_variables": intervention_vars,
+            "invariant_variables": invariant_vars,
+            "observed_diff": ["blocker1_pos"],
         }
 
         stop_spec = EpisodeSpec(
@@ -264,7 +272,7 @@ class CounterfactualPairGenerator:
             seed=seed,
             label="STOP",
             goal_instruction="Open the box.",
-            background_id=bg_profile,
+            background_id=bg_profile_name,
             blocker_or_occupant_types=[blocker_type],
             blocker_count=blocker_count,
             blocker_position_bins=[blocker_pos_bin],
@@ -281,7 +289,7 @@ class CounterfactualPairGenerator:
             seed=seed,
             label="PROCEED",
             goal_instruction="Open the box.",
-            background_id=bg_profile,
+            background_id=bg_profile_name,
             blocker_or_occupant_types=[blocker_type],
             blocker_count=blocker_count,
             blocker_position_bins=[blocker_pos_bin],
@@ -298,9 +306,11 @@ class CounterfactualPairGenerator:
             "instruction": "Open the box.",
             "blocker_type": blocker_type,
             "blocker_count": blocker_count,
+            "blocker_pos_bin": blocker_pos_bin,
             "split": split,
             "seed": seed,
-            "background_id": bg_profile,
+            "background_id": bg_profile_name,
+            "background_spec": bg_spec.to_dict(),
             "spec_diff": spec_diff,
             "stop": {
                 "label": "STOP",
@@ -359,7 +369,8 @@ class CounterfactualPairGenerator:
         ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
         target_center = get_target_center(ref_model, ref_data).tolist()
 
-        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
         pos_offsets = {
             "centre": [0.0, 0.0, 0.08],
@@ -391,9 +402,8 @@ class CounterfactualPairGenerator:
         ]
 
         # ── Render STOP scene ──────────────────────────────────────────
-        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=20)
-        apply_background_profile(model_stop, profile_name=bg_profile)
-        randomize_lights(model_stop, rng)
+        model_stop, data_stop = self.scene_builder.create_environment(stop_objects, settle_steps=100)
+        apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -411,9 +421,8 @@ class CounterfactualPairGenerator:
         renderer_stop.close()
 
         # ── Render PROCEED scene ───────────────────────────────────────
-        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=20)
-        apply_background_profile(model_proceed, profile_name=bg_profile)
-        randomize_lights(model_proceed, rng)
+        model_proceed, data_proceed = self.scene_builder.create_environment(proceed_objects, settle_steps=100)
+        apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -457,6 +466,7 @@ class CounterfactualPairGenerator:
 
         Image.fromarray(rgb_proceed).save(proceed_rgb_path)
         Image.fromarray(inst_proceed_8).save(proceed_inst_path)
+        # FIX Phase 3 uint16 saving bug: Save inst_proceed_16
         np.save(proceed_inst_npy, inst_proceed_16)
         Image.fromarray(cand_proceed).save(proceed_cand_path)
         Image.fromarray(target_proceed).save(proceed_target_path)
@@ -473,17 +483,23 @@ class CounterfactualPairGenerator:
             "occupant_pos": {"stop": stop_occ_pos, "proceed": proc_occ_pos},
         }
         invariant_vars = {
+            "pair_id": pair_id,
             "task_id": "task_2",
             "instruction": "Place object1 in the target region.",
             "target_occupant_type": target_occupant_type,
+            "occupant_pos_bin": occupant_pos_bin,
             "split": split,
-            "background_id": bg_profile,
+            "background_id": bg_profile_name,
+            "background_spec": bg_spec.to_dict(),
             "seed": seed,
             "target_center": target_center,
+            "camera_name": self.camera_name,
+            "resolution": [self.width, self.height],
         }
         spec_diff = {
-            "intervention": intervention_vars,
-            "invariants": invariant_vars,
+            "intervention_variables": intervention_vars,
+            "invariant_variables": invariant_vars,
+            "observed_diff": ["occupant_pos"],
         }
 
         stop_spec = EpisodeSpec(
@@ -493,7 +509,7 @@ class CounterfactualPairGenerator:
             seed=seed,
             label="STOP",
             goal_instruction="Place object1 in the target region.",
-            background_id=bg_profile,
+            background_id=bg_profile_name,
             object1_type="coffee_can",
             blocker_or_occupant_types=[target_occupant_type],
             occupant_position_bin=occupant_pos_bin,
@@ -510,7 +526,7 @@ class CounterfactualPairGenerator:
             seed=seed,
             label="PROCEED",
             goal_instruction="Place object1 in the target region.",
-            background_id=bg_profile,
+            background_id=bg_profile_name,
             object1_type="coffee_can",
             blocker_or_occupant_types=[target_occupant_type],
             occupant_position_bin=occupant_pos_bin,
@@ -526,9 +542,11 @@ class CounterfactualPairGenerator:
             "task_id": "task_2",
             "instruction": "Place object1 in the target region.",
             "target_occupant_type": target_occupant_type,
+            "occupant_pos_bin": occupant_pos_bin,
             "split": split,
             "seed": seed,
-            "background_id": bg_profile,
+            "background_id": bg_profile_name,
+            "background_spec": bg_spec.to_dict(),
             "spec_diff": spec_diff,
             "stop": {
                 "label": "STOP",
@@ -581,17 +599,19 @@ class CounterfactualPairGenerator:
         """Generate standalone positive control for Task 1 (Open Box)."""
         ctrl_dir = self.output_dir / control_id
         ctrl_dir.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(seed)
 
         ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
         lid_center = get_lid_center(ref_model, ref_data).tolist()
-        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
         objects = []
         if object_type:
             objects.append({"name": "blocker1", "type": object_type, "pos": [lid_center[0] - 0.30, lid_center[1] - 0.15, 0.65]})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=20)
-        apply_background_profile(model, profile_name=bg_profile)
+        model, data = self.scene_builder.create_environment(objects, settle_steps=50)
+        apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -627,7 +647,8 @@ class CounterfactualPairGenerator:
             "label": "PROCEED",
             "split": split,
             "seed": seed,
-            "background_id": bg_profile,
+            "background_id": bg_profile_name,
+            "background_spec": bg_spec.to_dict(),
             "is_occupied": is_occ,
             "culprits": active_culprits,
             "measurements": measurements,
@@ -654,17 +675,19 @@ class CounterfactualPairGenerator:
         """Generate standalone positive control for Task 2 (Place Object)."""
         ctrl_dir = self.output_dir / control_id
         ctrl_dir.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(seed)
 
         ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
         target_center = get_target_center(ref_model, ref_data).tolist()
-        bg_profile = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
+        bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
         objects = [{"name": "coffee_can", "type": "coffee_can", "pos": [-0.30, -0.20, 0.65]}]
         if occupant_type:
             objects.append({"name": "occupant", "type": occupant_type, "pos": [target_center[0] + 0.30, target_center[1], 0.65]})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=20)
-        apply_background_profile(model, profile_name=bg_profile)
+        model, data = self.scene_builder.create_environment(objects, settle_steps=50)
+        apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
@@ -700,7 +723,8 @@ class CounterfactualPairGenerator:
             "label": "PROCEED",
             "split": split,
             "seed": seed,
-            "background_id": bg_profile,
+            "background_id": bg_profile_name,
+            "background_spec": bg_spec.to_dict(),
             "is_occupied": is_occ,
             "culprits": active_culprits,
             "measurements": measurements,
@@ -738,6 +762,7 @@ def regenerate_from_metadata(
                 pair_id=pair_id,
                 blocker_type=meta.get("blocker_type", "coffee_can"),
                 blocker_count=meta.get("blocker_count", 1),
+                blocker_pos_bin=meta.get("blocker_pos_bin", "centre"),
                 split=split,
                 seed=seed,
             )
@@ -745,6 +770,7 @@ def regenerate_from_metadata(
             return gen.generate_task2_pair(
                 pair_id=pair_id,
                 target_occupant_type=meta.get("target_occupant_type", "sugar_box"),
+                occupant_pos_bin=meta.get("occupant_pos_bin", "centre"),
                 split=split,
                 seed=seed,
             )

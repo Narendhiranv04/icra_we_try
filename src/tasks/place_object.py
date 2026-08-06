@@ -2,7 +2,7 @@
 Task executor for Task 2: "Place object1 in the target region."
 Executes genuine Fetch robot arm pick-and-place manipulation.
 
-The object is picked via weld constraint after finger closure and strict proximity checks,
+The object is picked via weld constraint after finger closure and strict 3cm surface-aware grasp proximity checks,
 and transported along a parabolic arc to the target region. No direct object qpos assignment is ever performed.
 """
 
@@ -20,7 +20,7 @@ from src.environment.robot_integration import VerticalIK, ARM_JOINTS, TOP_DOWN_R
 from src.environment.scene_utils import get_target_center, get_target_frame
 
 
-PROXIMITY_THRESHOLD = 0.30  # max distance for weld activation (robot grip site to object center)
+PROXIMITY_THRESHOLD = 0.03  # Strict 3cm geometric grasp proximity threshold
 
 
 @dataclass
@@ -100,6 +100,13 @@ class PlaceObjectExecutor:
         if self.l_finger_act != -1:
             self.data.ctrl[self.l_finger_act] = 0.0
 
+    def _open_gripper_fingers(self) -> None:
+        """Open gripper fingers to release the object."""
+        if self.r_finger_act != -1:
+            self.data.ctrl[self.r_finger_act] = 0.05
+        if self.l_finger_act != -1:
+            self.data.ctrl[self.l_finger_act] = 0.05
+
     def _set_arm_ctrl(self, target_joint_angles: np.ndarray) -> None:
         """Set arm joint target actuators cleanly while preserving torso height."""
         if self.torso_actuator != -1:
@@ -107,6 +114,25 @@ class PlaceObjectExecutor:
         for act_id, val in zip(self.arm_actuators, target_joint_angles):
             if act_id != -1:
                 self.data.ctrl[act_id] = val
+
+    def _get_object_half_height(self) -> float:
+        """Get object geom half height dynamically based on geom type."""
+        gid = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, f"{self.object_name}_geom")
+        if gid != -1:
+            gtype = self.model.geom_type[gid]
+            if gtype == mujoco.mjtGeom.mjGEOM_BOX:
+                return float(self.model.geom_size[gid, 2])
+            elif gtype in (mujoco.mjtGeom.mjGEOM_CYLINDER, mujoco.mjtGeom.mjGEOM_CAPSULE):
+                return float(self.model.geom_size[gid, 1])
+            else:
+                return float(self.model.geom_size[gid, 0])
+        return 0.06
+
+    def _get_object_grasp_target(self) -> np.ndarray:
+        """Surface-aware object top grasp target."""
+        obj_pos = self.data.xpos[self.obj_body_id].copy()
+        hz = self._get_object_half_height()
+        return obj_pos + np.array([0.0, 0.0, hz])
 
     def _activate_grasp_weld(self) -> None:
         dist = self._grip_object_distance()
@@ -136,15 +162,20 @@ class PlaceObjectExecutor:
     def _grip_object_distance(self) -> float:
         mujoco.mj_forward(self.model, self.data)
         grip = self.data.site_xpos[self.grip_site_id]
-        obj = self.data.xpos[self.obj_body_id]
-        return float(np.linalg.norm(grip - obj))
+        obj_grasp_target = self._get_object_grasp_target()
+        return float(np.linalg.norm(grip - obj_grasp_target))
 
     def _object_in_target(self) -> bool:
-        """Check if object center is within target region XY footprint."""
+        """Check if object center is within target region XY footprint using local frame."""
         obj_pos = self.data.xpos[self.obj_body_id]
-        dx = abs(obj_pos[0] - self.target_pos[0])
-        dy = abs(obj_pos[1] - self.target_pos[1])
-        return dx < 0.10 and dy < 0.10
+        try:
+            t_center, t_rot, t_extent = get_target_frame(self.model, self.data)
+            local_pos = t_rot.T @ (obj_pos - t_center)
+            return abs(local_pos[0]) < t_extent[0] + 0.02 and abs(local_pos[1]) < t_extent[1] + 0.02
+        except KeyError:
+            dx = abs(obj_pos[0] - self.target_pos[0])
+            dy = abs(obj_pos[1] - self.target_pos[1])
+            return dx < 0.10 and dy < 0.10
 
     def _log_state(self, frame_idx: int, phase: str) -> None:
         mujoco.mj_forward(self.model, self.data)
@@ -158,7 +189,6 @@ class PlaceObjectExecutor:
         grip_pos = self.data.site_xpos[self.grip_site_id].tolist() if self.grip_site_id != -1 else [0, 0, 0]
         grip_rot = self.data.site_xmat[self.grip_site_id].flatten().tolist() if self.grip_site_id != -1 else [0]*9
 
-        # Target local coordinates
         try:
             t_center, t_rot, _ = get_target_frame(self.model, self.data)
             rel_p = t_rot.T @ (np.array(obj_pos) - t_center)
@@ -196,10 +226,11 @@ class PlaceObjectExecutor:
         frame_idx = 0
         ik = VerticalIK(self.model, self.data)
 
+        hz = self._get_object_half_height()
         obj_start = self.data.xpos[self.obj_body_id].copy()
-        pick_pos = obj_start + np.array([0.0, 0.0, 0.07])
+        pick_pos = obj_start + np.array([0.0, 0.0, hz])
         hover_start = pick_pos + np.array([0.0, 0.0, 0.15])
-        target_place = self.target_pos + np.array([0.0, 0.0, 0.07])
+        target_place = self.target_pos + np.array([0.0, 0.0, hz])
 
         hover_qpos, _, _ = ik.solve(hover_start, HOME_ARM_SEED, target_rotation=TOP_DOWN_ROTATION)
         pick_qpos, _, _ = ik.solve(pick_pos, hover_qpos, target_rotation=TOP_DOWN_ROTATION)
@@ -268,6 +299,7 @@ class PlaceObjectExecutor:
 
         # 5. Release & Retreat Phase (15 frames)
         self._deactivate_grasp_weld()
+        self._open_gripper_fingers()
         retreat_pos = target_place + np.array([0.0, 0.0, 0.25])
         retreat_qpos, _, _ = ik.solve(retreat_pos, curr_q, target_rotation=TOP_DOWN_ROTATION)
 
@@ -275,6 +307,7 @@ class PlaceObjectExecutor:
             frac = (step + 1) / 15
             curr_qpos = (1 - frac) * curr_q + frac * retreat_qpos
             self._set_arm_ctrl(curr_qpos)
+            self._open_gripper_fingers()
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
@@ -284,6 +317,7 @@ class PlaceObjectExecutor:
         # 6. Final Static Frames (15 frames)
         for _ in range(15):
             self._set_arm_ctrl(retreat_qpos)
+            self._open_gripper_fingers()
             for _ in range(25):
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))

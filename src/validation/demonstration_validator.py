@@ -2,7 +2,7 @@
 Demonstration validator.
 
 Validates that generated demonstration directories, state logs, and video files
-satisfy all physical and state invariants without direct lid/object qpos writes.
+satisfy all physical and state invariants without direct lid/object qpos writes and zero actuator force.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ class DemonstrationValidator:
         *,
         min_final_angle_deg: float = 45.0,
         max_initial_angle_deg: float = 10.0,
-        proximity_threshold: float = 0.30,
+        proximity_threshold: float = 0.03,
     ) -> Tuple[bool, List[str]]:
         """Validate Task 1 (Open Box) demonstration state log."""
         issues: List[str] = []
@@ -32,7 +32,6 @@ class DemonstrationValidator:
         if not state_log:
             return False, ["No state log entries"]
 
-        # Helper getter for entry dict or object
         def get_val(entry, key, default=None):
             if isinstance(entry, dict):
                 return entry.get(key, default)
@@ -56,11 +55,15 @@ class DemonstrationValidator:
             if final_angle < min_final_angle_deg:
                 issues.append(f"Lid not sufficiently open at end: {final_angle:.1f}° < {min_final_angle_deg}°")
 
-        # 3. No lid actuator control check (ZERO control commanded)
+        # 3. Passive hinge zero force & zero control check
         for idx, entry in enumerate(state_log):
             lid_ctrl = get_val(entry, "lid_ctrl", 0.0)
+            lid_force = get_val(entry, "lid_actuator_force", 0.0)
             if abs(lid_ctrl) > 1e-4:
-                issues.append(f"Frame {idx}: B1_lid_actuator was commanded with non-zero control ({lid_ctrl})")
+                issues.append(f"Frame {idx}: B1_lid_actuator commanded with non-zero control ({lid_ctrl})")
+                break
+            if abs(lid_force) > 1e-5:
+                issues.append(f"Frame {idx}: B1_lid_actuator produced non-zero force ({lid_force})")
                 break
 
         # 4. Robot arm displacement check
@@ -72,12 +75,11 @@ class DemonstrationValidator:
             if disp < 0.01:
                 issues.append(f"Robot arm barely moved: displacement = {disp:.4f} rad")
 
-        # 5. Weld activation timing & proximity check
+        # 5. Weld activation timing & strict 3cm proximity check
         weld_entries = [e for e in state_log if get_val(e, "weld_active") is True]
         if not weld_entries:
             issues.append("Weld constraint was never activated")
         else:
-            # Check proximity at first activation frame
             first_weld = weld_entries[0]
             dist = get_val(first_weld, "handle_to_grip_dist", 0.0)
             if dist > proximity_threshold:
@@ -107,7 +109,7 @@ class DemonstrationValidator:
     def validate_place_object(
         state_log: List[Any],
         *,
-        proximity_threshold: float = 0.30,
+        proximity_threshold: float = 0.03,
     ) -> Tuple[bool, List[str]]:
         """Validate Task 2 (Place Object) demonstration state log."""
         issues: List[str] = []
@@ -137,7 +139,6 @@ class DemonstrationValidator:
             if not get_val(last_entry, "target_occupied", False):
                 issues.append("Object not in target region at end of demonstration")
 
-            # Check velocity stability
             linvel = get_val(last_entry, "object1_linvel", [0, 0, 0])
             angvel = get_val(last_entry, "object1_angvel", [0, 0, 0])
             lin_speed = float(np.linalg.norm(linvel))
@@ -156,7 +157,7 @@ class DemonstrationValidator:
             if disp < 0.01:
                 issues.append(f"Robot arm barely moved: displacement = {disp:.4f} rad")
 
-        # 4. Weld activation timing & proximity check
+        # 4. Weld activation timing & strict 3cm proximity check
         weld_entries = [e for e in state_log if get_val(e, "weld_active") is True]
         if not weld_entries:
             issues.append("Weld constraint was never activated")
@@ -194,7 +195,6 @@ class DemonstrationValidator:
         if not demo_dir.exists():
             return False, [f"Demonstration directory does not exist: {demo_dir}"]
 
-        # Check required files
         req_files = [
             "rgb.mp4",
             "state_log.jsonl",
@@ -212,7 +212,6 @@ class DemonstrationValidator:
         if issues:
             return False, issues
 
-        # Load metadata and state log
         try:
             with open(demo_dir / "metadata.json", "r", encoding="utf-8") as f:
                 meta = json.load(f)

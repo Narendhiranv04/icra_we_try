@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 import cv2
 import numpy as np
+import hashlib
 
 from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
@@ -13,6 +14,7 @@ from src.tasks.open_box import BoxOpenExecutor
 from src.tasks.place_object import PlaceObjectExecutor
 from src.validation.demonstration_validator import DemonstrationValidator
 from src.generation.demonstration_writer import DemonstrationWriter
+from src.generation.background_randomization import sample_background_spec, apply_background_spec
 
 
 class DemonstrationGenerator:
@@ -39,18 +41,22 @@ class DemonstrationGenerator:
         seed: int = 42,
     ) -> str:
         """Generate full structured demonstration for Task 1 (Open Box)."""
+        rng = np.random.default_rng(seed)
         model, data = self.scene_builder.create_environment(
             objects_to_spawn=None,
             include_robot=True,
             robot_base_pose=robot_base_pose,
         )
+
+        bg_spec = sample_background_spec(background_id, rng, n_lights=model.nlight)
+        apply_background_spec(model, bg_spec)
+
         renderer = OffscreenRenderer(model, width=self.width, height=self.height)
 
         executor = BoxOpenExecutor(model, data)
         frames = executor.run_demonstration(renderer)
         renderer.close()
 
-        # Validate demonstration state log
         is_valid, issues = DemonstrationValidator.validate_open_box(executor.state_log)
         val_result = {
             "is_valid": is_valid,
@@ -65,6 +71,7 @@ class DemonstrationGenerator:
             "seed": seed,
             "robot_base_pose": robot_base_pose,
             "background_id": background_id,
+            "background_spec": bg_spec.to_dict(),
             "instruction": "Open the box.",
         }
 
@@ -91,6 +98,7 @@ class DemonstrationGenerator:
         seed: int = 42,
     ) -> str:
         """Generate full structured demonstration for Task 2 (Place Object)."""
+        rng = np.random.default_rng(seed)
         objects = [{"name": obj_name, "type": obj_name, "pos": list(start_pos)}]
         model, data = self.scene_builder.create_environment(
             objects_to_spawn=objects,
@@ -98,6 +106,10 @@ class DemonstrationGenerator:
             robot_base_pose=robot_base_pose,
             weld_target_body=obj_name,
         )
+
+        bg_spec = sample_background_spec(background_id, rng, n_lights=model.nlight)
+        apply_background_spec(model, bg_spec)
+
         renderer = OffscreenRenderer(model, width=self.width, height=self.height)
 
         executor = PlaceObjectExecutor(model, data, object_name=obj_name, target_pos=target_pos)
@@ -121,6 +133,7 @@ class DemonstrationGenerator:
             "target_pos": list(target_pos),
             "robot_base_pose": robot_base_pose,
             "background_id": background_id,
+            "background_spec": bg_spec.to_dict(),
             "instruction": "Place object1 in the target region.",
         }
 
