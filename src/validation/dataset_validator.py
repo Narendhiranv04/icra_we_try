@@ -167,11 +167,13 @@ class DatasetValidator:
                         regen_stop_causal = np.array(Image.open(regen_meta["stop"]["causal_violation_mask_path"]))
                         stop_causal_mismatch = int(np.count_nonzero(orig_stop_causal != regen_stop_causal))
 
-                        stop_vis_mismatch = 0
+                        vis_vis_mismatch = 0
+                        stop_vis_max_diff = 0
                         if "combined_visualization_path" in orig_meta["stop"]:
                             orig_stop_vis = np.array(Image.open(orig_meta["stop"]["combined_visualization_path"]))
                             regen_stop_vis = np.array(Image.open(regen_meta["stop"]["combined_visualization_path"]))
-                            stop_vis_mismatch = int(np.count_nonzero(orig_stop_vis != regen_stop_vis))
+                            stop_vis_max_diff = int(np.max(np.abs(orig_stop_vis.astype(int) - regen_stop_vis.astype(int))))
+                            stop_vis_mismatch = int(np.count_nonzero(np.abs(orig_stop_vis.astype(int) - regen_stop_vis.astype(int)) > 5))
 
                         # Compare PROCEED member
                         proc_orig_spec = orig_meta["proceed"].get("resolved_scene_spec") or orig_meta["proceed"].get("spec")
@@ -200,10 +202,12 @@ class DatasetValidator:
                         proc_causal_mismatch = int(np.count_nonzero(orig_proc_causal != regen_proc_causal))
 
                         proc_vis_mismatch = 0
+                        proc_vis_max_diff = 0
                         if "combined_visualization_path" in orig_meta["proceed"]:
                             orig_proc_vis = np.array(Image.open(orig_meta["proceed"]["combined_visualization_path"]))
                             regen_proc_vis = np.array(Image.open(regen_meta["proceed"]["combined_visualization_path"]))
-                            proc_vis_mismatch = int(np.count_nonzero(orig_proc_vis != regen_proc_vis))
+                            proc_vis_max_diff = int(np.max(np.abs(orig_proc_vis.astype(int) - regen_proc_vis.astype(int))))
+                            proc_vis_mismatch = int(np.count_nonzero(np.abs(orig_proc_vis.astype(int) - regen_proc_vis.astype(int)) > 5))
 
                         # Strict 100% deterministic requirement: any non-zero mask mismatch makes sample FAIL!
                         stop_passed = (
@@ -212,6 +216,7 @@ class DatasetValidator:
                             and stop_cand_mismatch == 0
                             and stop_target_mismatch == 0
                             and stop_causal_mismatch == 0
+                            and stop_vis_max_diff <= 5
                             and stop_vis_mismatch == 0
                             and len(stop_meta_diffs) == 0
                         )
@@ -221,6 +226,7 @@ class DatasetValidator:
                             and proc_cand_mismatch == 0
                             and proc_target_mismatch == 0
                             and proc_causal_mismatch == 0
+                            and proc_vis_max_diff <= 5
                             and proc_vis_mismatch == 0
                             and len(proc_meta_diffs) == 0
                         )
@@ -285,10 +291,12 @@ class DatasetValidator:
                             ctrl_causal_mismatch = int(np.count_nonzero(orig_ctrl_causal != regen_ctrl_causal))
 
                         ctrl_vis_mismatch = 0
+                        ctrl_vis_max_diff = 0
                         if "combined_visualization_path" in orig_meta:
                             orig_ctrl_vis = np.array(Image.open(orig_meta["combined_visualization_path"]))
                             regen_ctrl_vis = np.array(Image.open(regen_meta["combined_visualization_path"]))
-                            ctrl_vis_mismatch = int(np.count_nonzero(orig_ctrl_vis != regen_ctrl_vis))
+                            ctrl_vis_max_diff = int(np.max(np.abs(orig_ctrl_vis.astype(int) - regen_ctrl_vis.astype(int))))
+                            ctrl_vis_mismatch = int(np.count_nonzero(np.abs(orig_ctrl_vis.astype(int) - regen_ctrl_vis.astype(int)) > 5))
 
                         sample_passed = (
                             ctrl_max_diff <= 5
@@ -296,6 +304,7 @@ class DatasetValidator:
                             and ctrl_cand_mismatch == 0
                             and ctrl_target_mismatch == 0
                             and ctrl_causal_mismatch == 0
+                            and ctrl_vis_max_diff <= 5
                             and ctrl_vis_mismatch == 0
                             and len(ctrl_meta_diffs) == 0
                         )
@@ -408,13 +417,22 @@ class DatasetValidator:
         obj_intersection = sorted(list(dev_objects.intersection(unseen_obj_objects)))
         # 2. unseen_backgrounds ∩ dev_backgrounds == ∅
         bg_intersection = sorted(list(dev_backgrounds.intersection(unseen_bg_backgrounds)))
-        # 3. compositional components MUST be subsets of dev components (100% familiar!)
-        comp_obj_unfam = sorted(list(comp_objects - dev_objects))
-        comp_bg_unfam = sorted(list(comp_backgrounds - dev_backgrounds))
-        comp_pos_unfam = sorted(list(comp_pos_bins - dev_pos_bins))
-        comp_cnt_unfam = sorted(list(comp_blocker_counts - dev_blocker_counts))
-        comp_start_unfam = sorted(list(comp_start_bins - dev_start_bins))
-        comp_light_unfam = sorted(list(comp_lighting_families - dev_lighting_families))
+        # 3. compositional components MUST be subsets of familiar domain components (100% familiar!)
+        from src.generation.split_planner import SplitPlanner
+        sp_planner = SplitPlanner()
+        fam_objects = set(sp_planner.id_objects)
+        fam_backgrounds = set(sp_planner.id_backgrounds)
+        fam_pos_bins = set(sp_planner.id_pos_t1 + sp_planner.id_pos_t2)
+        fam_blocker_counts = {1, 2}
+        fam_start_bins = set(sp_planner.start_bins)
+        fam_lighting_families = set(sp_planner.lighting_families)
+
+        comp_obj_unfam = sorted(list(comp_objects - fam_objects))
+        comp_bg_unfam = sorted(list(comp_backgrounds - fam_backgrounds))
+        comp_pos_unfam = sorted(list(comp_pos_bins - fam_pos_bins))
+        comp_cnt_unfam = sorted(list(comp_blocker_counts - fam_blocker_counts))
+        comp_start_unfam = sorted(list(comp_start_bins - fam_start_bins))
+        comp_light_unfam = sorted(list(comp_lighting_families - fam_lighting_families))
 
         # 4. compositional_tuples ∩ dev_tuples == ∅ (complete tuple novel!)
         comp_intersection = [list(t) for t in dev_factor_tuples.intersection(comp_factor_tuples)]

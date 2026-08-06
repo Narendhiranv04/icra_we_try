@@ -1,6 +1,6 @@
 {
-  "tested_code_commit": "36c4e7828a5309a9d1e4d030c24fc7f22b3365d9",
-  "report_generation_commit": "36c4e7828a5309a9d1e4d030c24fc7f22b3365d9",
+  "tested_code_commit": "cc9a3ae0cf19047a821233b292215a128c7521f9",
+  "report_generation_commit": "cc9a3ae0cf19047a821233b292215a128c7521f9",
   "profile": "smoke",
   "status": "PASSED",
   "test_summary": {
