@@ -1,8 +1,8 @@
 {
-  "tested_code_commit": "95b908a9dead61a5d3135aebb8aa706094d14bda",
-  "report_generation_commit": "95b908a9dead61a5d3135aebb8aa706094d14bda",
-  "total_records_generated": 16,
-  "matched_pairs_count": 8,
+  "tested_code_commit": "3b68e40d7102d7fdd94a739958e19cae3a279c60",
+  "report_generation_commit": "3b68e40d7102d7fdd94a739958e19cae3a279c60",
+  "total_records_generated": 32,
+  "matched_pairs_count": 24,
   "positive_controls_count": 8,
   "sample_matched_pair": {
     "pair_id": "pair_task_1_001",
@@ -65,6 +65,10 @@
     "declared_intervention_paths": [
       "objects.blocker1.position"
     ],
+    "scene_transforms": {
+      "box_pose": null,
+      "box_quat": null
+    },
     "stop": {
       "label": "STOP",
       "is_occupied": true,
@@ -613,12 +617,8 @@
     "is_occupied": false,
     "culprits": [],
     "measurements": {
-      "minimum_footprint_distance_to_lid": 999.0,
-      "footprint_overlap_ratio": 0.0,
-      "vertical_gap": 0.04,
-      "relation_true": false,
-      "beside_margin": 0.35,
-      "near_boundary_margin": 0.04
+      "_beside_margin": 0.35,
+      "_near_boundary_margin": 0.04
     },
     "rgb_path": "data/queries/control_task_1_001/control_rgb.png",
     "instance_segmentation_path": "data/queries/control_task_1_001/control_instance_segmentation.png",

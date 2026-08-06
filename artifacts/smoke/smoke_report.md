@@ -1,12 +1,12 @@
 # Smoke Test Execution Report
 
 ## Overview
-- **Tested Code Commit**: `95b908a9dead61a5d3135aebb8aa706094d14bda`
-- **Report Generation Commit**: `95b908a9dead61a5d3135aebb8aa706094d14bda`
+- **Tested Code Commit**: `3b68e40d7102d7fdd94a739958e19cae3a279c60`
+- **Report Generation Commit**: `3b68e40d7102d7fdd94a739958e19cae3a279c60`
 - **Profile**: `smoke`
 - **Overall Status**: **PASSED**
-- **Unit Tests**: 1 / 1 passed (PASSED)
-- **Counterfactual Query Pairs**: 8 pairs (16 query images)
+- **Unit Tests**: 19 / 19 passed (PASSED)
+- **Counterfactual Query Pairs**: 24 pairs (48 query images)
 - **Standalone Positive Controls**: 8 controls
 
 ## Required Reports Status

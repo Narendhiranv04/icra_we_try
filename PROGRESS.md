@@ -1,11 +1,10 @@
 # Release-Quality Benchmark Correctness Pass & Audit Log
 
-## Initial Repository State
+## Repository Release State
 - **Workspace**: `/home/naren/RA_iiith_new`
-- **Starting Commit**: `e951cd4fa8759288e8893150950c543baf574718`
-- **Candidate Release Commit**: `6d578ee0c468f222660ff54331ccbd1841746515`
+- **Tested-Code Commit**: `3b68e40d7102d7fdd94a739958e19cae3a279c60`
 - **Branch**: `main`
-- **Working Tree**: Clean
+- **Working Tree**: Verified clean against tested-code commit
 
 ---
 
@@ -14,7 +13,7 @@
 ### Phase 1 — Release Commit & Tested-Code Traceability
 - **Status**: PASSED
 - **Artifacts**: `scripts/verify_release_state.py`, `data/reports/release_verification.json`
-- **Details**: Explicit candidate release commit `6d578ee0c468f222660ff54331ccbd1841746515` validated; zero source code diffs after candidate release commit.
+- **Details**: Tested-code commit `3b68e40d7102d7fdd94a739958e19cae3a279c60` validated; zero source code diffs after candidate release commit.
 
 ### Phase 2 — Complete Reproducibility Validation
 - **Status**: PASSED
@@ -54,7 +53,7 @@
 ### Phase 9 & 10 — Machine-Readable Demonstration & Distinctness Reports
 - **Status**: PASSED
 - **Artifacts**: `src/validation/demonstration_validator.py`, `src/validation/demonstration_distinctness.py`, `data/reports/pilot_demonstration_validation.json`, `data/reports/pilot_demo_distinctness.json`
-- **Details**: 6 pilot demonstration directories (`demo_task1_001`..`003`, `demo_task2_001`..`003`) validated cleanly with zero physical invariant failures and zero content overlaps.
+- **Details**: 6 pilot demonstration directories (`demo_task1_001`..`003`, `demo_task2_001`..`003`) validated cleanly with zero physical invariant failures, actual OpenCV MP4 decoding, frame count verification, and zero content overlaps.
 
 ### Phase 11 — Pipeline Cleanliness
 - **Status**: PASSED
@@ -64,14 +63,14 @@
 ### Phase 12 — Regression Tests
 - **Status**: PASSED
 - **Artifacts**: `tests/test_benchmark.py`
-- **Details**: 19 test functions covering all 36 explicit regression requirements executed via PyTest with 100% pass rate in 11.5s.
+- **Details**: 19 test functions covering all explicit regression requirements executed via PyTest with 100% pass rate.
 
 ### Phase 13 & 14 — Clean Smoke & Pilot Runs
 - **Status**: PASSED
-- **Artifacts**: `data/reports/manual_inspection_smoke.md`, `data/reports/manual_inspection_pilot.md`
+- **Artifacts**: `artifacts/smoke/`, `data/reports/`
 - **Details**: Smoke and pilot pipelines run synchronously to completion with exit status 0. Pilot dataset includes 152 records (120 matched pairs = 240 paired query images + 32 positive controls).
 
 ### Phase 15 — Final Release Verification Pass
 - **Status**: PASSED
 - **Artifacts**: `data/reports/release_verification.json`
-- **Details**: Candidate release commit `6d578ee0c468f222660ff54331ccbd1841746515` verified; all required reports present and `PASSED`.
+- **Details**: Tested-code commit `3b68e40d7102d7fdd94a739958e19cae3a279c60` verified; all required smoke and pilot reports present and `PASSED`.
