@@ -21,10 +21,10 @@ import numpy as np
 class TrackedSmokeArtifactsGenerator:
     """Generator for producing committed smoke benchmark artifacts in artifacts/smoke/."""
 
-    def __init__(self, artifacts_dir: str = "artifacts/smoke"):
+    def __init__(self, artifacts_dir: str = "artifacts/smoke", reports_dir: str = "data/reports"):
         self.artifacts_dir = Path(artifacts_dir)
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
-        self.reports_dir = Path("data/reports")
+        self.reports_dir = Path(reports_dir)
 
     def _get_git_commit_hash(self) -> str:
         try:

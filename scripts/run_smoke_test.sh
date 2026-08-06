@@ -5,8 +5,8 @@ PYTHON_BIN="${PYTHON_BIN:-python}"
 export MUJOCO_GL=${MUJOCO_GL:-egl}
 export PYTHONPATH=.
 
-# Clean previous smoke data
-rm -rf data/reports data/queries data/demos data/manifests data/previews data/smoke
+# Clean previous smoke data selectively to avoid wiping pilot reports/data
+rm -rf data/demos data/queries data/manifests/smoke_* data/reports/pytest_results.xml data/reports/test_summary.json data/reports/dataset_validation.json data/reports/split_validation.json data/reports/reproducibility_report.json data/reports/demonstration_validation.json data/reports/demonstration_distinctness.json data/reports/control_distribution.json
 mkdir -p data/reports
 
 echo "======================================================="

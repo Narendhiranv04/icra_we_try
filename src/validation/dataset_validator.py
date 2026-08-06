@@ -352,27 +352,32 @@ class DatasetValidator:
         return overall_passed, rep_report
 
     def validate_splits(self) -> Tuple[bool, Dict[str, Any]]:
-        """Validate holdout split sets, explicit factor tuples, and leakage for pure compositional split."""
-        dev_objects: Set[str] = set()
-        dev_backgrounds: Set[str] = set()
-        dev_pos_bins: Set[str] = set()
-        dev_blocker_counts: Set[int] = set()
-        dev_start_bins: Set[str] = set()
-        dev_lighting_families: Set[str] = set()
-        dev_factor_tuples: Set[Tuple] = set()
+        """Validate holdout split sets, explicit factor tuples, and leakage using ACTUAL ID-partition records."""
+        # Per-task factor sets derived from ACTUAL ID matched-pair records
+        task_ids = ["task_1", "task_2"]
 
-        unseen_obj_objects: Set[str] = set()
-        unseen_bg_backgrounds: Set[str] = set()
+        # id_* sets are populated from actual manifest records with split=="id"
+        id_objects: Dict[str, set] = {t: set() for t in task_ids}
+        id_backgrounds: Dict[str, set] = {t: set() for t in task_ids}
+        id_pos_bins: Dict[str, set] = {t: set() for t in task_ids}
+        id_blocker_counts: Dict[str, set] = {t: set() for t in task_ids}
+        id_start_bins: Dict[str, set] = {t: set() for t in task_ids}
+        id_lighting_families: Dict[str, set] = {t: set() for t in task_ids}
+        id_factor_tuples: Dict[str, set] = {t: set() for t in task_ids}
 
-        comp_objects: Set[str] = set()
-        comp_backgrounds: Set[str] = set()
-        comp_pos_bins: Set[str] = set()
-        comp_blocker_counts: Set[int] = set()
-        comp_start_bins: Set[str] = set()
-        comp_lighting_families: Set[str] = set()
-        comp_factor_tuples: Set[Tuple] = set()
+        comp_objects: Dict[str, set] = {t: set() for t in task_ids}
+        comp_backgrounds: Dict[str, set] = {t: set() for t in task_ids}
+        comp_pos_bins: Dict[str, set] = {t: set() for t in task_ids}
+        comp_blocker_counts: Dict[str, set] = {t: set() for t in task_ids}
+        comp_start_bins: Dict[str, set] = {t: set() for t in task_ids}
+        comp_lighting_families: Dict[str, set] = {t: set() for t in task_ids}
+        comp_factor_tuples: Dict[str, set] = {t: set() for t in task_ids}
+
+        unseen_obj_objects: Dict[str, set] = {t: set() for t in task_ids}
+        unseen_bg_backgrounds: Dict[str, set] = {t: set() for t in task_ids}
 
         splits_count: Dict[str, int] = {}
+        split_has_both_labels: Dict[str, bool] = {}
 
         for rec in self.records:
             sp = rec.get("split", "id")
@@ -382,6 +387,9 @@ class DatasetValidator:
                 continue  # Positive controls do not contaminate holdout factor accounting
 
             task_id = rec.get("task_id", "task_1")
+            if task_id not in task_ids:
+                task_id = "task_1"
+
             obj = rec.get("blocker_type") or rec.get("target_occupant_type") or "none"
             bg = rec.get("background_id", "bg_neutral_wood")
             pos_bin = rec.get("blocker_pos_bin") or rec.get("occupant_pos_bin") or "centre"
@@ -389,115 +397,128 @@ class DatasetValidator:
             start_bin = rec.get("object1_start_bin", "pick_left")
             lighting_fam = rec.get("lighting_family", "default_lighting")
 
+            # Check both labels present in matched pair
+            pair_id = rec.get("pair_id", "")
+            stop_label = rec.get("stop", {}).get("label")
+            proc_label = rec.get("proceed", {}).get("label")
+            if stop_label and proc_label:
+                split_has_both_labels[pair_id] = True
+
             factor_tuple = (task_id, obj, bg, pos_bin, b_count, start_bin, lighting_fam)
 
             if sp == "id":
-                dev_objects.add(obj)
-                dev_backgrounds.add(bg)
-                dev_pos_bins.add(pos_bin)
-                dev_blocker_counts.add(b_count)
-                dev_start_bins.add(start_bin)
-                dev_lighting_families.add(lighting_fam)
-                dev_factor_tuples.add(factor_tuple)
+                id_objects[task_id].add(obj)
+                id_backgrounds[task_id].add(bg)
+                id_pos_bins[task_id].add(pos_bin)
+                id_blocker_counts[task_id].add(b_count)
+                id_start_bins[task_id].add(start_bin)
+                id_lighting_families[task_id].add(lighting_fam)
+                id_factor_tuples[task_id].add(factor_tuple)
             elif sp == "unseen_object":
-                unseen_obj_objects.add(obj)
+                unseen_obj_objects[task_id].add(obj)
             elif sp == "unseen_background":
-                unseen_bg_backgrounds.add(bg)
+                unseen_bg_backgrounds[task_id].add(bg)
             elif sp == "compositional":
-                comp_objects.add(obj)
-                comp_backgrounds.add(bg)
-                comp_pos_bins.add(pos_bin)
-                comp_blocker_counts.add(b_count)
-                comp_start_bins.add(start_bin)
-                comp_lighting_families.add(lighting_fam)
-                comp_factor_tuples.add(factor_tuple)
+                comp_objects[task_id].add(obj)
+                comp_backgrounds[task_id].add(bg)
+                comp_pos_bins[task_id].add(pos_bin)
+                comp_blocker_counts[task_id].add(b_count)
+                comp_start_bins[task_id].add(start_bin)
+                comp_lighting_families[task_id].add(lighting_fam)
+                comp_factor_tuples[task_id].add(factor_tuple)
 
-        # Pure compositional validation rules:
-        # 1. unseen_object_objects ∩ dev_objects == ∅
-        obj_intersection = sorted(list(dev_objects.intersection(unseen_obj_objects)))
-        # 2. unseen_backgrounds ∩ dev_backgrounds == ∅
-        bg_intersection = sorted(list(dev_backgrounds.intersection(unseen_bg_backgrounds)))
-        # 3. compositional components MUST be subsets of familiar domain components (100% familiar!)
-        from src.generation.split_planner import SplitPlanner
-        sp_planner = SplitPlanner()
-        fam_objects = set(sp_planner.id_objects)
-        fam_backgrounds = set(sp_planner.id_backgrounds)
-        fam_pos_bins = set(sp_planner.id_pos_t1 + sp_planner.id_pos_t2)
-        fam_blocker_counts = {1, 2}
-        fam_start_bins = set(sp_planner.start_bins)
-        fam_lighting_families = set(sp_planner.lighting_families)
+        all_issues = []
+        per_task_results = {}
 
-        comp_obj_unfam = sorted(list(comp_objects - fam_objects))
-        comp_bg_unfam = sorted(list(comp_backgrounds - fam_backgrounds))
-        comp_pos_unfam = sorted(list(comp_pos_bins - fam_pos_bins))
-        comp_cnt_unfam = sorted(list(comp_blocker_counts - fam_blocker_counts))
-        comp_start_unfam = sorted(list(comp_start_bins - fam_start_bins))
-        comp_light_unfam = sorted(list(comp_lighting_families - fam_lighting_families))
+        for task_id in task_ids:
+            task_issues = []
 
-        # 4. compositional_tuples ∩ dev_tuples == ∅ (complete tuple novel!)
-        comp_intersection = [list(t) for t in dev_factor_tuples.intersection(comp_factor_tuples)]
+            # 1. unseen_object objects must NOT overlap with ID objects (for this task)
+            obj_intersection = sorted(list(id_objects[task_id].intersection(unseen_obj_objects[task_id])))
+            if obj_intersection:
+                task_issues.append(f"{task_id}: unseen_object objects overlap with ID objects: {obj_intersection}")
 
-        has_obj_leak = len(obj_intersection) > 0
-        has_bg_leak = len(bg_intersection) > 0
-        has_comp_obj_unfam = len(comp_obj_unfam) > 0
-        has_comp_bg_unfam = len(comp_bg_unfam) > 0
-        has_comp_pos_unfam = len(comp_pos_unfam) > 0
-        has_comp_cnt_unfam = len(comp_cnt_unfam) > 0
-        has_comp_start_unfam = len(comp_start_unfam) > 0
-        has_comp_light_unfam = len(comp_light_unfam) > 0
-        has_comp_leak = len(comp_intersection) > 0
+            # 2. unseen_background backgrounds must NOT overlap with ID backgrounds (for this task)
+            bg_intersection = sorted(list(id_backgrounds[task_id].intersection(unseen_bg_backgrounds[task_id])))
+            if bg_intersection:
+                task_issues.append(f"{task_id}: unseen_background backgrounds overlap with ID backgrounds: {bg_intersection}")
 
-        overall_valid = not (
-            has_obj_leak
-            or has_bg_leak
-            or has_comp_obj_unfam
-            or has_comp_bg_unfam
-            or has_comp_pos_unfam
-            or has_comp_cnt_unfam
-            or has_comp_start_unfam
-            or has_comp_light_unfam
-            or has_comp_leak
-        )
+            # 3. Compositional components MUST be subsets of actual ID factor sets (not configured lists)
+            comp_obj_unfam = sorted(list(comp_objects[task_id] - id_objects[task_id]))
+            comp_bg_unfam = sorted(list(comp_backgrounds[task_id] - id_backgrounds[task_id]))
+            comp_pos_unfam = sorted(list(comp_pos_bins[task_id] - id_pos_bins[task_id]))
+            comp_cnt_unfam = sorted(list(comp_blocker_counts[task_id] - id_blocker_counts[task_id]))
+            comp_start_unfam = sorted(list(comp_start_bins[task_id] - id_start_bins[task_id]))
+            comp_light_unfam = sorted(list(comp_lighting_families[task_id] - id_lighting_families[task_id]))
+
+            if comp_obj_unfam:
+                task_issues.append(f"{task_id}: compositional objects not in actual ID: {comp_obj_unfam}")
+            if comp_bg_unfam:
+                task_issues.append(f"{task_id}: compositional backgrounds not in actual ID: {comp_bg_unfam}")
+            if comp_pos_unfam:
+                task_issues.append(f"{task_id}: compositional position_bins not in actual ID: {comp_pos_unfam}")
+            if comp_cnt_unfam:
+                task_issues.append(f"{task_id}: compositional blocker_counts not in actual ID: {comp_cnt_unfam}")
+            if comp_start_unfam:
+                task_issues.append(f"{task_id}: compositional start_bins not in actual ID: {comp_start_unfam}")
+            if comp_light_unfam:
+                task_issues.append(f"{task_id}: compositional lighting_families not in actual ID: {comp_light_unfam}")
+
+            # 4. Compositional tuples must NOT overlap with ID tuples
+            comp_tuple_intersection = [
+                list(t) for t in id_factor_tuples[task_id].intersection(comp_factor_tuples[task_id])
+            ]
+            if comp_tuple_intersection:
+                task_issues.append(
+                    f"{task_id}: compositional tuples overlap with ID factor tuples: {comp_tuple_intersection[:5]}"
+                )
+
+            all_issues.extend(task_issues)
+            per_task_results[task_id] = {
+                "id_objects": sorted(list(id_objects[task_id])),
+                "id_backgrounds": sorted(list(id_backgrounds[task_id])),
+                "id_position_bins": sorted(list(id_pos_bins[task_id])),
+                "id_blocker_counts": sorted(list(id_blocker_counts[task_id])),
+                "id_start_bins": sorted(list(id_start_bins[task_id])),
+                "id_lighting_families": sorted(list(id_lighting_families[task_id])),
+                "id_factor_tuple_count": len(id_factor_tuples[task_id]),
+                "compositional_objects": sorted(list(comp_objects[task_id])),
+                "compositional_unfamiliar_objects": comp_obj_unfam,
+                "compositional_backgrounds": sorted(list(comp_backgrounds[task_id])),
+                "compositional_unfamiliar_backgrounds": comp_bg_unfam,
+                "compositional_position_bins": sorted(list(comp_pos_bins[task_id])),
+                "compositional_unfamiliar_position_bins": comp_pos_unfam,
+                "compositional_blocker_counts": sorted(list(comp_blocker_counts[task_id])),
+                "compositional_unfamiliar_blocker_counts": comp_cnt_unfam,
+                "compositional_start_bins": sorted(list(comp_start_bins[task_id])),
+                "compositional_unfamiliar_start_bins": comp_start_unfam,
+                "compositional_factor_tuple_count": len(comp_factor_tuples[task_id]),
+                "compositional_tuple_intersection": comp_tuple_intersection[:10],
+                "unseen_object_objects": sorted(list(unseen_obj_objects[task_id])),
+                "object_intersection": obj_intersection,
+                "unseen_background_backgrounds": sorted(list(unseen_bg_backgrounds[task_id])),
+                "background_intersection": bg_intersection,
+                "task_issues": task_issues,
+                "task_passed": len(task_issues) == 0,
+            }
+
+        overall_valid = len(all_issues) == 0
 
         split_rep = {
             "status": "PASSED" if overall_valid else "FAILED",
             "split_distribution": splits_count,
-            "development_objects": sorted(list(dev_objects)),
-            "unseen_object_objects": sorted(list(unseen_obj_objects)),
-            "object_intersection": obj_intersection,
-            "development_backgrounds": sorted(list(dev_backgrounds)),
-            "unseen_backgrounds": sorted(list(unseen_bg_backgrounds)),
-            "background_intersection": bg_intersection,
-            "compositional_objects": sorted(list(comp_objects)),
-            "compositional_unfamiliar_objects": comp_obj_unfam,
-            "compositional_backgrounds": sorted(list(comp_backgrounds)),
-            "compositional_unfamiliar_backgrounds": comp_bg_unfam,
-            "compositional_position_bins": sorted(list(comp_pos_bins)),
-            "compositional_unfamiliar_position_bins": comp_pos_unfam,
-            "compositional_blocker_counts": sorted(list(comp_blocker_counts)),
-            "compositional_unfamiliar_blocker_counts": comp_cnt_unfam,
-            "compositional_start_bins": sorted(list(comp_start_bins)),
-            "compositional_unfamiliar_start_bins": comp_start_unfam,
-            "development_factor_tuples": [list(t) for t in dev_factor_tuples],
-            "compositional_factor_tuples": [list(t) for t in comp_factor_tuples],
-            "compositional_intersection": comp_intersection,
-            "leakage_checks": {
-                "object_leakage": has_obj_leak,
-                "background_leakage": has_bg_leak,
-                "compositional_unfamiliar_object": has_comp_obj_unfam,
-                "compositional_unfamiliar_background": has_comp_bg_unfam,
-                "compositional_unfamiliar_position_bin": has_comp_pos_unfam,
-                "compositional_unfamiliar_blocker_count": has_comp_cnt_unfam,
-                "compositional_unfamiliar_start_bin": has_comp_start_unfam,
-                "compositional_unfamiliar_lighting": has_comp_light_unfam,
-                "compositional_tuple_leakage": has_comp_leak,
-            },
+            "per_task_validation": per_task_results,
+            "all_issues": all_issues,
+            "issue_count": len(all_issues),
+            "note": "Compositional familiarity derived from actual ID matched-pair records, not from configured SplitPlanner lists.",
         }
 
         with open(self.output_reports_dir / "split_validation.json", "w", encoding="utf-8") as f:
             json.dump(split_rep, f, indent=2)
 
         return overall_valid, split_rep
+
+
 
     def validate_dataset(self) -> Tuple[bool, List[str]]:
         """Run all comprehensive verification passes on dataset manifest and generated files."""
@@ -659,6 +680,7 @@ class DatasetValidator:
             splits_count[s] = splits_count.get(s, 0) + 1
 
         dist_rep = {
+            "status": "PASSED",
             "total_samples": len(self.records),
             "task_distribution": tasks_count,
             "split_distribution": splits_count,

@@ -349,6 +349,10 @@ class CounterfactualPairGenerator:
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
             "declared_intervention_paths": declared_intervention_paths,
+            "scene_transforms": {
+                "box_pose": box_pose,
+                "box_quat": box_quat,
+            },
             "stop": {
                 "label": "STOP",
                 "is_occupied": is_occ_stop,
@@ -615,6 +619,10 @@ class CounterfactualPairGenerator:
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
             "declared_intervention_paths": declared_intervention_paths,
+            "scene_transforms": {
+                "target_region_pos": target_region_pos,
+                "target_region_quat": target_region_quat,
+            },
             "stop": {
                 "label": "STOP",
                 "is_occupied": is_occ_stop,
@@ -716,15 +724,15 @@ class CounterfactualPairGenerator:
         if is_occ:
             raise ValueError(f"Task 1 positive control {control_id} was falsely marked as occupied!")
 
-        min_dist = 0.04 if control_subtype == "near_lid_outside_footprint" else (0.18 if control_subtype != "empty_lid" else 999.0)
-        measurements.update({
-            "minimum_footprint_distance_to_lid": min_dist,
-            "footprint_overlap_ratio": 0.0,
-            "vertical_gap": measurements.get("vertical_gap", 0.04),
-            "relation_true": False,
-            "beside_margin": beside_margin,
-            "near_boundary_margin": near_boundary_margin,
-        })
+        # Augment with generation context (beside_margin/near_boundary_margin are configuration, not measurements)
+        measurements["_beside_margin"] = beside_margin
+        measurements["_near_boundary_margin"] = near_boundary_margin
+        # Verify relation_true is False from MuJoCo computation
+        for blocker_name, m in measurements.items():
+            if isinstance(m, dict) and m.get("relation_true", False):
+                raise ValueError(
+                    f"Task 1 positive control {control_id}: blocker '{blocker_name}' was incorrectly marked relation_true"
+                )
 
         rgb_path = ctrl_dir / "control_rgb.png"
         inst_path = ctrl_dir / "control_instance_segmentation.png"
@@ -848,18 +856,15 @@ class CounterfactualPairGenerator:
         if is_occ:
             raise ValueError(f"Task 2 positive control {control_id} was falsely marked as occupied!")
 
-        min_bound_dist = 0.04 if control_subtype == "one_object_near_target_outside" else (0.20 if control_subtype != "empty_target" else 999.0)
-        target_local_p = [0.14, 0.0] if control_subtype == "one_object_near_target_outside" else ([0.30, 0.0] if control_subtype != "empty_target" else [0.0, 0.0])
-
-        measurements.update({
-            "target_local_position": target_local_p,
-            "footprint_overlap_ratio": 0.0,
-            "minimum_boundary_distance": min_bound_dist,
-            "stable": True,
-            "relation_true": False,
-            "beside_margin": beside_margin,
-            "near_boundary_margin": near_boundary_margin,
-        })
+        # Augment with generation context (beside_margin/near_boundary_margin are configuration, not measurements)
+        measurements["_beside_margin"] = beside_margin
+        measurements["_near_boundary_margin"] = near_boundary_margin
+        # Verify relation_true is False from MuJoCo computation
+        for obj_name, m in measurements.items():
+            if isinstance(m, dict) and m.get("relation_true", False):
+                raise ValueError(
+                    f"Task 2 positive control {control_id}: object '{obj_name}' was incorrectly marked relation_true"
+                )
 
         rgb_path = ctrl_dir / "control_rgb.png"
         inst_path = ctrl_dir / "control_instance_segmentation.png"
@@ -943,9 +948,14 @@ def regenerate_from_metadata(
     split = meta.get("split", "id")
     seed = meta.get("seed", 42)
 
+    # Extract persisted scene transforms
+    scene_transforms = meta.get("scene_transforms", {})
+
     if sample_type == "matched_pair":
         pair_id = meta.get("pair_id", "regen_pair")
         if task_id == "task_1":
+            box_pose = scene_transforms.get("box_pose")
+            box_quat = scene_transforms.get("box_quat")
             return gen.generate_task1_pair(
                 pair_id=pair_id,
                 blocker_type=meta.get("blocker_type", "coffee_can"),
@@ -953,14 +963,20 @@ def regenerate_from_metadata(
                 blocker_pos_bin=meta.get("blocker_pos_bin", "centre"),
                 split=split,
                 seed=seed,
+                box_pose=box_pose,
+                box_quat=box_quat,
             )
         else:
+            target_region_pos = scene_transforms.get("target_region_pos")
+            target_region_quat = scene_transforms.get("target_region_quat")
             return gen.generate_task2_pair(
                 pair_id=pair_id,
                 target_occupant_type=meta.get("target_occupant_type", "sugar_box"),
                 occupant_pos_bin=meta.get("occupant_pos_bin", "centre"),
                 split=split,
                 seed=seed,
+                target_region_pos=target_region_pos,
+                target_region_quat=target_region_quat,
             )
     else:
         control_id = meta.get("control_id", "regen_control")
@@ -981,4 +997,3 @@ def regenerate_from_metadata(
                 split=split,
                 seed=seed,
             )
-

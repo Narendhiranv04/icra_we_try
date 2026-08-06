@@ -90,6 +90,42 @@ shutil.copy('data/reports/dataset_validation.json', 'data/reports/pilot_validati
 shutil.copy('data/reports/split_validation.json', 'data/reports/pilot_split_validation.json')
 shutil.copy('data/reports/reproducibility_report.json', 'data/reports/pilot_reproducibility.json')
 shutil.copy('data/reports/distribution_report.json', 'data/reports/pilot_distribution.json')
+
+# Build pilot_control_distribution.json with control subtype breakdown
+records = []
+with open('data/manifests/pilot_manifest.jsonl', 'r') as f:
+    for line in f:
+        if line.strip():
+            records.append(json.loads(line))
+
+controls = [r for r in records if r.get('sample_type') == 'positive_control']
+subtype_dist = {'task_1': {}, 'task_2': {}}
+for ctrl in controls:
+    task_id = ctrl.get('task_id', 'task_1')
+    subtype = ctrl.get('control_subtype', 'unknown')
+    if task_id not in subtype_dist:
+        subtype_dist[task_id] = {}
+    subtype_dist[task_id][subtype] = subtype_dist[task_id].get(subtype, 0) + 1
+
+required_t1 = {'empty_lid', 'one_object_beside', 'two_objects_beside', 'near_lid_outside_footprint'}
+required_t2 = {'empty_target', 'one_object_beside_target', 'one_object_near_target_outside', 'multiple_distractors_outside'}
+missing_t1 = required_t1 - set(subtype_dist.get('task_1', {}).keys())
+missing_t2 = required_t2 - set(subtype_dist.get('task_2', {}).keys())
+ctrl_dist_status = 'PASSED' if (not missing_t1 and not missing_t2) else 'FAILED'
+
+ctrl_dist = {
+    'status': ctrl_dist_status,
+    'total_controls': len(controls),
+    'subtype_distribution': subtype_dist,
+    'missing_task1_subtypes': list(missing_t1),
+    'missing_task2_subtypes': list(missing_t2),
+}
+with open('data/reports/pilot_control_distribution.json', 'w') as f:
+    json.dump(ctrl_dist, f, indent=2)
+
+print(f'Pilot control distribution status: {ctrl_dist_status}')
+if ctrl_dist_status != 'PASSED':
+    raise RuntimeError('Missing required pilot control subtypes!')
 "
 
 # 5. Render HTML & Contact Sheet Previews

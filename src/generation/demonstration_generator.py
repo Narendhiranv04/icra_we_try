@@ -99,12 +99,23 @@ class DemonstrationGenerator:
         robot_base_pose: str = "home",
         background_id: str = "bg_neutral_wood",
         seed: int = 42,
+        target_region_pos: list = None,
+        target_region_quat: list = None,
     ) -> str:
-        """Generate full structured demonstration for Task 2 (Place Object) using scene-local frame geometry."""
+        """Generate full structured demonstration for Task 2 (Place Object) using scene-local frame geometry.
+
+        Args:
+            target_region_pos: Optional override for target region world position [x, y, z].
+            target_region_quat: Optional override for target region quaternion [w, x, y, z].
+        """
         rng = np.random.default_rng(seed)
 
         # 1. Resolve start_pos and target_pos from scene geometry local frame
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        ref_model, ref_data = self.scene_builder.create_environment(
+            settle_steps=0,
+            target_region_pos=target_region_pos,
+            target_region_quat=target_region_quat,
+        )
         t_center, t_rot, t_ext = get_target_frame(ref_model, ref_data)
 
         pick_offsets = {
@@ -131,6 +142,8 @@ class DemonstrationGenerator:
             include_robot=True,
             robot_base_pose=robot_base_pose,
             weld_target_body=obj_name,
+            target_region_pos=target_region_pos,
+            target_region_quat=target_region_quat,
         )
 
         bg_spec = sample_background_spec(background_id, rng, n_lights=model.nlight)
@@ -164,6 +177,10 @@ class DemonstrationGenerator:
             "background_id": background_id,
             "background_spec": bg_spec.to_dict(),
             "instruction": "Place object1 in the target region.",
+            "scene_transforms": {
+                "target_region_pos": target_region_pos,
+                "target_region_quat": target_region_quat,
+            },
         }
 
         demo_dir = self.writer.save_demonstration(

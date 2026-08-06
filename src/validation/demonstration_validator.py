@@ -14,6 +14,8 @@ from typing import Any, Dict, List, Tuple, Union
 import json
 
 import numpy as np
+import cv2
+
 
 
 class DemonstrationValidator:
@@ -272,6 +274,124 @@ class DemonstrationValidator:
         return is_valid, metrics, issues
 
     @classmethod
+    def _validate_mp4(
+        cls,
+        mp4_path: Path,
+        expected_frame_count: int,
+        expected_fps: float,
+        expected_width: int,
+        expected_height: int,
+    ) -> Tuple[bool, Dict[str, Any], List[str]]:
+        """Open and validate an MP4 file using OpenCV. Returns (passed, metrics, issues)."""
+        issues: List[str] = []
+        metrics: Dict[str, Any] = {}
+
+        if not mp4_path.exists():
+            return False, {"video_readable": False}, [f"MP4 file does not exist: {mp4_path}"]
+
+        cap = cv2.VideoCapture(str(mp4_path))
+        if not cap.isOpened():
+            cap.release()
+            return False, {"video_readable": False}, [f"Failed to open MP4: {mp4_path}"]
+
+        actual_frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        actual_fps = float(cap.get(cv2.CAP_PROP_FPS))
+        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # Validate frame count
+        frame_count_matches = (actual_frame_count == expected_frame_count)
+        if not frame_count_matches:
+            issues.append(
+                f"MP4 frame count mismatch: actual={actual_frame_count}, expected={expected_frame_count}"
+            )
+
+        # Validate FPS within tolerance
+        fps_matches = (abs(actual_fps - expected_fps) <= max(0.5, expected_fps * 0.05))
+        if not fps_matches:
+            issues.append(f"MP4 FPS mismatch: actual={actual_fps:.2f}, expected={expected_fps:.2f}")
+
+        # Validate resolution
+        resolution_matches = (actual_width == expected_width and actual_height == expected_height)
+        if not resolution_matches:
+            issues.append(
+                f"MP4 resolution mismatch: actual={actual_width}x{actual_height}, expected={expected_width}x{expected_height}"
+            )
+
+        # Decode first and last frames
+        first_frame_readable = False
+        final_frame_readable = False
+        decoded_frame_count = 0
+        first_frame_arr = None
+        last_frame_arr = None
+
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        ret, frame = cap.read()
+        if ret:
+            first_frame_readable = True
+            first_frame_arr = frame
+            decoded_frame_count += 1
+
+        if actual_frame_count > 1:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, max(0, actual_frame_count - 1))
+            ret, frame = cap.read()
+            if ret:
+                final_frame_readable = True
+                last_frame_arr = frame
+                decoded_frame_count += 1
+
+        # Scan all frames (verify readability)
+        if actual_frame_count > 0:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            scan_count = 0
+            for _ in range(actual_frame_count):
+                ret, _ = cap.read()
+                if ret:
+                    scan_count += 1
+                else:
+                    break
+            decoded_frame_count = scan_count
+            if scan_count < actual_frame_count:
+                issues.append(
+                    f"MP4 decode incomplete: decoded {scan_count}/{actual_frame_count} frames"
+                )
+
+        # Check non-static: compare first and last frames
+        video_non_static = False
+        if first_frame_arr is not None and last_frame_arr is not None:
+            diff = np.abs(first_frame_arr.astype(np.int32) - last_frame_arr.astype(np.int32))
+            mean_diff = float(np.mean(diff))
+            video_non_static = mean_diff > 0.1  # threshold for non-trivial change
+            if not video_non_static:
+                issues.append(
+                    f"MP4 appears static: mean pixel diff between first and last frame = {mean_diff:.3f}"
+                )
+
+        cap.release()
+
+        metrics = {
+            "video_readable": True,
+            "video_actual_frame_count": actual_frame_count,
+            "metadata_frame_count": expected_frame_count,
+            "state_log_frame_count": expected_frame_count,
+            "frame_count_matches": frame_count_matches,
+            "video_actual_fps": round(actual_fps, 3),
+            "metadata_fps": expected_fps,
+            "fps_matches": fps_matches,
+            "video_width": actual_width,
+            "video_height": actual_height,
+            "metadata_width": expected_width,
+            "metadata_height": expected_height,
+            "resolution_matches": resolution_matches,
+            "decoded_frame_count": decoded_frame_count,
+            "first_frame_readable": first_frame_readable,
+            "final_frame_readable": final_frame_readable,
+            "video_non_static": video_non_static,
+        }
+
+        return len(issues) == 0, metrics, issues
+
+    @classmethod
     def validate_demo_dir(cls, demo_dir: Union[str, Path]) -> Tuple[bool, Dict[str, Any], List[str]]:
         """Validate an entire saved demonstration directory."""
         demo_dir = Path(demo_dir)
@@ -304,6 +424,10 @@ class DemonstrationValidator:
                 meta = json.load(f)
 
             task_family = meta.get("task_family", "")
+            expected_frame_count = meta.get("frame_count", 0)
+            expected_fps = float(meta.get("fps", 15))
+            expected_width = int(meta.get("width", 640))
+            expected_height = int(meta.get("height", 480))
 
             state_log = []
             with open(demo_dir / "state_log.jsonl", "r", encoding="utf-8") as f:
@@ -311,20 +435,40 @@ class DemonstrationValidator:
                     if line.strip():
                         state_log.append(json.loads(line))
 
-            if meta.get("frame_count") != len(state_log):
+            state_log_frame_count = len(state_log)
+
+            if expected_frame_count != state_log_frame_count:
                 issues.append(
-                    f"Frame count mismatch: metadata={meta.get('frame_count')} state_log={len(state_log)}"
+                    f"Frame count mismatch: metadata={expected_frame_count} state_log={state_log_frame_count}"
                 )
 
+            # Validate actual MP4 file
+            mp4_issues: List[str] = []
+            mp4_path = demo_dir / "rgb.mp4"
+            mp4_valid, mp4_metrics, mp4_issues = cls._validate_mp4(
+                mp4_path,
+                expected_frame_count=state_log_frame_count,
+                expected_fps=expected_fps,
+                expected_width=expected_width,
+                expected_height=expected_height,
+            )
+            # Update state_log_frame_count in mp4_metrics
+            mp4_metrics["state_log_frame_count"] = state_log_frame_count
+            issues.extend(mp4_issues)
+
             if task_family == "open_box":
-                valid, metrics, log_issues = cls.validate_open_box(state_log)
+                valid, task_metrics, log_issues = cls.validate_open_box(state_log)
                 issues.extend(log_issues)
             elif task_family == "place_object":
-                valid, metrics, log_issues = cls.validate_place_object(state_log)
+                valid, task_metrics, log_issues = cls.validate_place_object(state_log)
                 issues.extend(log_issues)
             else:
                 valid = False
+                task_metrics = {}
                 issues.append(f"Unknown task_family: {task_family}")
+
+            # Merge mp4_metrics (overrides video_readable, frame_count_matches from task_metrics)
+            metrics = {**task_metrics, **mp4_metrics}
 
         except Exception as err:
             issues.append(f"Error parsing demonstration directory: {err}")
@@ -332,6 +476,7 @@ class DemonstrationValidator:
 
         is_valid = len(issues) == 0
         return is_valid, metrics, issues
+
 
     @classmethod
     def generate_demonstration_validation_report(
