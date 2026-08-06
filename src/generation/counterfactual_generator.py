@@ -780,6 +780,13 @@ class CounterfactualPairGenerator:
             occ_t = occupant_type or "sugar_box"
             occ_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=0.0, height_above=0.07).tolist()
             objects.append({"name": "occupant", "type": occ_t, "pos": occ_pos})
+        elif control_subtype == "multiple_distractors_outside":
+            occ1_t = occupant_type or "sugar_box"
+            occ2_t = "mug" if occ1_t != "mug" else "cup"
+            pos1 = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=-0.10, height_above=0.07).tolist()
+            pos2 = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=0.10, height_above=0.07).tolist()
+            objects.append({"name": "occupant1", "type": occ1_t, "pos": pos1})
+            objects.append({"name": "occupant2", "type": occ2_t, "pos": pos2})
 
         model, data = self.scene_builder.create_environment(objects, settle_steps=100)
         apply_background_spec(model, bg_spec)
@@ -788,13 +795,13 @@ class CounterfactualPairGenerator:
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
         rgb = renderer.render_rgb(data)
 
-        candidate_geoms = ["occupant_geom"] if occupant_type or control_subtype != "empty_target" else []
+        candidate_geoms = [f"{o['name']}_geom" for o in objects if o["name"] != "coffee_can"] if control_subtype != "empty_target" else []
         inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
             renderer, model, data, candidate_geoms, ["target_region_geom"], is_stop=False
         )
 
         is_occ, active_culprits, measurements = check_target_occupancy(
-            model, data, candidate_objects=["occupant"] if len(objects) > 1 else []
+            model, data, candidate_objects=[o["name"] for o in objects if o["name"] != "coffee_can"]
         )
         renderer.close()
 
