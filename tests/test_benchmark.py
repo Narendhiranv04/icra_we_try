@@ -251,6 +251,9 @@ def test_34_positive_control_occupancy_must_be_false():
 # ── 35-36. Tested Code Commit & Release Verification ──────────────────
 def test_35_36_release_verification_state():
     with tempfile.TemporaryDirectory() as tmp_dir:
+        import subprocess
+        curr_head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+
         # Save valid dummy reports
         rep_dir = Path("data/reports")
         rep_dir.mkdir(parents=True, exist_ok=True)
@@ -272,7 +275,7 @@ def test_35_36_release_verification_state():
         smoke_dir = Path("artifacts/smoke")
         smoke_dir.mkdir(parents=True, exist_ok=True)
         with open(smoke_dir / "smoke_report.json", "w", encoding="utf-8") as f:
-            json.dump({"tested_code_commit": "e951cd4fa8759288e8893150950c543baf574718"}, f)
+            json.dump({"tested_code_commit": curr_head}, f)
 
-        res = verify_release_state("e951cd4fa8759288e8893150950c543baf574718")
+        res = verify_release_state(curr_head)
         assert res is True
