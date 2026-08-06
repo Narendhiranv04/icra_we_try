@@ -1,5 +1,6 @@
 """
 Scene builder for constructing dynamic MuJoCo environments for benchmark tasks.
+Supports full scene transform overrides for box and target region geometry.
 """
 
 from pathlib import Path
@@ -30,6 +31,10 @@ class SceneBuilder:
         include_robot: bool = False,
         robot_base_pose: str = "home",
         weld_target_body: Optional[str] = None,
+        box_pose: Optional[List[float]] = None,
+        box_quat: Optional[List[float]] = None,
+        target_region_pos: Optional[List[float]] = None,
+        target_region_quat: Optional[List[float]] = None,
     ) -> str:
         """Construct scene XML string by reading base XML and injecting object bodies and robot.
         
@@ -38,6 +43,10 @@ class SceneBuilder:
             include_robot: Whether to inject Fetch manipulator.
             robot_base_pose: Base placement pose ("home" or "right_side").
             weld_target_body: Optional object body name to attach grasp weld equality constraint.
+            box_pose: Optional position override for box_B1.
+            box_quat: Optional quaternion override for box_B1.
+            target_region_pos: Optional position override for target_region_geom.
+            target_region_quat: Optional quaternion override for target_region_geom.
             
         Returns:
             Complete MJCF XML string.
@@ -50,6 +59,24 @@ class SceneBuilder:
         worldbody = root.find("worldbody")
         if worldbody is None:
             raise ValueError("Invalid MJCF XML: <worldbody> tag missing.")
+
+        # Apply box_B1 overrides if provided
+        if box_pose or box_quat:
+            box_elem = worldbody.find(".//*[@name='box_B1']")
+            if box_elem is not None:
+                if box_pose:
+                    box_elem.set("pos", f"{box_pose[0]} {box_pose[1]} {box_pose[2]}")
+                if box_quat:
+                    box_elem.set("quat", f"{box_quat[0]} {box_quat[1]} {box_quat[2]} {box_quat[3]}")
+
+        # Apply target_region_geom overrides if provided
+        if target_region_pos or target_region_quat:
+            t_elem = worldbody.find(".//*[@name='target_region_geom']")
+            if t_elem is not None:
+                if target_region_pos:
+                    t_elem.set("pos", f"{target_region_pos[0]} {target_region_pos[1]} {target_region_pos[2]}")
+                if target_region_quat:
+                    t_elem.set("quat", f"{target_region_quat[0]} {target_region_quat[1]} {target_region_quat[2]} {target_region_quat[3]}")
 
         if objects_to_spawn:
             for obj in objects_to_spawn:
@@ -124,25 +151,21 @@ class SceneBuilder:
         include_robot: bool = False,
         robot_base_pose: str = "home",
         weld_target_body: Optional[str] = None,
+        box_pose: Optional[List[float]] = None,
+        box_quat: Optional[List[float]] = None,
+        target_region_pos: Optional[List[float]] = None,
+        target_region_quat: Optional[List[float]] = None,
     ) -> Tuple[mujoco.MjModel, mujoco.MjData]:
-
-        """Create and initialize MuJoCo MjModel and MjData with settling physics.
-        
-        Args:
-            objects_to_spawn: List of object dictionaries to inject into scene.
-            settle_steps: Number of simulation steps to settle objects.
-            include_robot: Whether to inject Fetch robot.
-            robot_base_pose: Base placement pose ("home" or "right_side").
-            weld_target_body: Object body to attach grasp weld.
-            
-        Returns:
-            Tuple of (MjModel, MjData).
-        """
+        """Create and initialize MuJoCo MjModel and MjData with settling physics."""
         xml_string = self.build_scene_xml(
             objects_to_spawn=objects_to_spawn,
             include_robot=include_robot,
             robot_base_pose=robot_base_pose,
             weld_target_body=weld_target_body,
+            box_pose=box_pose,
+            box_quat=box_quat,
+            target_region_pos=target_region_pos,
+            target_region_quat=target_region_quat,
         )
         assets = load_assets_from_dir(self.assets_dir)
         model, data = load_model_from_string(xml_string, assets=assets)
@@ -157,4 +180,3 @@ class SceneBuilder:
                 mujoco.mj_step(model, data)
                 
         return model, data
-

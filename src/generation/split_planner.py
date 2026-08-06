@@ -1,8 +1,8 @@
 """
 Split planner for allocating factor combinations to benchmark splits.
 
-Ensures holds out objects and background configurations are correctly assigned
-to 'id', 'unseen_object', 'unseen_background', and 'compositional' splits.
+Ensures strict partitioning across 'id', 'unseen_object', 'unseen_background', and 'compositional' splits.
+Compositional split uses exclusively familiar factor components whose full factor tuple is absent from ID.
 """
 
 from __future__ import annotations
@@ -18,6 +18,11 @@ class SplitAssignment:
     split: str
     object_type: str
     background_id: str
+    position_bin: str
+    blocker_count: int
+    object1_start_bin: str
+    lighting_family: str
+    factor_tuple: Tuple[str, str, str, str, int]
 
 
 class SplitPlanner:
@@ -29,36 +34,69 @@ class SplitPlanner:
             with open(self.config_path, "r", encoding="utf-8") as f:
                 self.config = yaml.safe_load(f)
         else:
-            self.config = {
-                "holdout_distractors": {
-                    "train": ["coffee_can", "sugar_box", "mug"],
-                    "val": ["cup"],
-                    "test": ["bowl"],
-                }
-            }
+            self.config = {}
 
-        self.train_objects = self.config.get("holdout_distractors", {}).get("train", ["coffee_can", "sugar_box", "mug"])
-        self.val_objects = self.config.get("holdout_distractors", {}).get("val", ["cup"])
-        self.test_objects = self.config.get("holdout_distractors", {}).get("test", ["bowl"])
+        id_factors = self.config.get("id_factors", {})
+        self.id_objects: List[str] = id_factors.get("objects", ["coffee_can", "sugar_box", "mug"])
+        self.id_backgrounds: List[str] = id_factors.get("backgrounds", ["bg_neutral_wood"])
+        self.id_pos_t1: List[str] = id_factors.get("position_bins_task1", ["centre", "front_left", "front_right"])
+        self.id_pos_t2: List[str] = id_factors.get("position_bins_task2", ["centre", "left", "right"])
 
-    def get_assignment_for_split(self, split: str, idx: int = 0) -> SplitAssignment:
-        """Return object type and background profile for a given split and index."""
+        holdout_d = self.config.get("holdout_distractors", {})
+        self.unseen_objects: List[str] = (holdout_d.get("val", ["cup"]) + holdout_d.get("test", ["bowl"]))
+        self.unseen_backgrounds: List[str] = self.config.get("holdout_backgrounds", {}).get("unseen", ["bg_blue_counter", "bg_granite_dark"])
+
+        self.comp_pos_t1: List[str] = ["rear_left", "rear_right", "opening_edge", "hinge_side"]
+        self.comp_pos_t2: List[str] = ["front", "rear"]
+
+        self.start_bins: List[str] = ["pick_left", "pick_front", "pick_rear"]
+
+    def get_assignment_for_split(
+        self,
+        split: str,
+        idx: int = 0,
+        task_id: str = "task_1",
+    ) -> SplitAssignment:
+        """Return a complete SplitAssignment containing factor choices and factor tuple."""
+        start_bin = self.start_bins[idx % len(self.start_bins)]
+        lighting_fam = "default_lighting"
+
         if split == "id":
-            obj = self.train_objects[idx % len(self.train_objects)]
-            bg = "bg_neutral_wood"
+            obj = self.id_objects[idx % len(self.id_objects)]
+            bg = self.id_backgrounds[idx % len(self.id_backgrounds)]
+            pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)] if task_id == "task_1" else self.id_pos_t2[idx % len(self.id_pos_t2)]
+            b_count = 1 if (idx % 2 == 0) else 2
         elif split == "unseen_object":
-            unseen = self.val_objects + self.test_objects
-            obj = unseen[idx % len(unseen)]
-            bg = "bg_neutral_wood"
+            obj = self.unseen_objects[idx % len(self.unseen_objects)]
+            bg = self.id_backgrounds[idx % len(self.id_backgrounds)]
+            pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)] if task_id == "task_1" else self.id_pos_t2[idx % len(self.id_pos_t2)]
+            b_count = 1
         elif split == "unseen_background":
-            obj = self.train_objects[idx % len(self.train_objects)]
-            bg = "bg_blue_counter"
+            obj = self.id_objects[idx % len(self.id_objects)]
+            bg = self.unseen_backgrounds[idx % len(self.unseen_backgrounds)]
+            pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)] if task_id == "task_1" else self.id_pos_t2[idx % len(self.id_pos_t2)]
+            b_count = 1
         elif split == "compositional":
-            unseen = self.val_objects + self.test_objects
-            obj = unseen[idx % len(unseen)]
-            bg = "bg_granite_dark"
+            # Pure compositional split: familiar object, familiar background, novel position bin / count combination!
+            obj = self.id_objects[idx % len(self.id_objects)]
+            bg = self.id_backgrounds[0]  # Familiar background
+            pos_bin = self.comp_pos_t1[idx % len(self.comp_pos_t1)] if task_id == "task_1" else self.comp_pos_t2[idx % len(self.comp_pos_t2)]
+            b_count = 2 if (idx % 2 == 0) else 1
         else:
-            obj = self.train_objects[idx % len(self.train_objects)]
-            bg = "bg_neutral_wood"
+            obj = self.id_objects[idx % len(self.id_objects)]
+            bg = self.id_backgrounds[idx % len(self.id_backgrounds)]
+            pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)] if task_id == "task_1" else self.id_pos_t2[idx % len(self.id_pos_t2)]
+            b_count = 1
 
-        return SplitAssignment(split=split, object_type=obj, background_id=bg)
+        factor_tuple = (task_id, obj, bg, pos_bin, b_count)
+
+        return SplitAssignment(
+            split=split,
+            object_type=obj,
+            background_id=bg,
+            position_bin=pos_bin,
+            blocker_count=b_count,
+            object1_start_bin=start_bin,
+            lighting_family=lighting_fam,
+            factor_tuple=factor_tuple,
+        )

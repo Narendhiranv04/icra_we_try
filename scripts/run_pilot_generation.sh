@@ -5,8 +5,9 @@ PYTHON_BIN="${PYTHON_BIN:-python}"
 export MUJOCO_GL=${MUJOCO_GL:-egl}
 export PYTHONPATH=.
 
+# Clean previous pilot data
+rm -rf data/demos/open_box/demo_task1* data/demos/place_object/demo_task2* data/queries/pair_* data/queries/control_* data/manifests/pilot_* data/reports/pilot_*
 mkdir -p data/reports
-rm -rf data/demos/open_box/data_task1* data/demos/place_object/data_task2* data/demos/open_box/demo_task1* data/demos/place_object/demo_task2*
 
 echo "======================================================="
 echo " Starting MuJoCo Relational Precondition Pilot Generation "
@@ -29,32 +30,31 @@ demo_gen = DemonstrationGenerator(output_dir='data/demos')
 
 bgs = ['bg_neutral_wood', 'bg_blue_counter', 'bg_granite_dark']
 objs = ['coffee_can', 'sugar_box', 'mug']
+start_bins = ['pick_left', 'pick_front', 'pick_rear']
+target_bins = ['centre', 'left', 'right']
 
 demos_t1 = []
 for i in range(1, 4):
     demo_id = f'demo_task1_{i:03d}'
     path = demo_gen.generate_task_1_demo(demo_id, background_id=bgs[i-1], seed=100+i)
     demos_t1.append(path)
-    val, issues = DemonstrationValidator.validate_demo_dir(f'data/demos/open_box/{demo_id}')
-    print(f'Task 1 Demo {demo_id} (bg={bgs[i-1]}): Validation={val}, issues={issues}')
-    if not val:
-        raise RuntimeError(f'Task 1 Demo {demo_id} failed validation: {issues}')
 
 demos_t2 = []
 for i in range(1, 4):
     demo_id = f'demo_task2_{i:03d}'
-    path = demo_gen.generate_task_2_demo(demo_id, obj_name=objs[i-1], background_id=bgs[i-1], seed=200+i)
+    path = demo_gen.generate_task_2_demo(demo_id, obj_name=objs[i-1], start_bin=start_bins[i-1], target_bin=target_bins[i-1], background_id=bgs[i-1], seed=200+i)
     demos_t2.append(path)
-    val, issues = DemonstrationValidator.validate_demo_dir(f'data/demos/place_object/{demo_id}')
-    print(f'Task 2 Demo {demo_id} (obj={objs[i-1]}, bg={bgs[i-1]}): Validation={val}, issues={issues}')
-    if not val:
-        raise RuntimeError(f'Task 2 Demo {demo_id} failed validation: {issues}')
+
+val, rep = DemonstrationValidator.generate_demonstration_validation_report('data/demos', 'data/reports/pilot_demonstration_validation.json')
+print(f'Pilot Demonstration Validation: {val}')
+if not val:
+    raise RuntimeError('Pilot demonstration validation failed!')
 
 dist_val = DemonstrationDistinctnessValidator('data/demos')
 dist_valid, dist_rep = dist_val.validate_all_demos()
 print(f'Pilot Demonstration Distinctness Validation: {dist_valid}')
 if not dist_valid:
-    raise RuntimeError(f'Pilot demonstration distinctness validation failed!')
+    raise RuntimeError('Pilot demonstration distinctness validation failed!')
 
 with open('data/reports/pilot_demo_distinctness.json', 'w', encoding='utf-8') as f:
     json.dump(dist_rep, f, indent=2)
@@ -65,10 +65,12 @@ print('All 6 pilot demonstration directories generated and validated cleanly!')
 # 3. Run Query & Counterfactual Pair Generation
 echo "[Phase 3/5] Generating Full Pilot Matched Pairs & Standalone Controls..."
 $PYTHON_BIN -c "
+import shutil
 from src.generation.query_generator import QueryGenerator
 gen = QueryGenerator(config_path='configs/pilot.yaml')
 records = gen.run_generation()
 print(f'Generated {len(records)} total pilot query records.')
+shutil.copy('data/reports/pilot_control_distribution.json', 'data/reports/pilot_control_distribution.json')
 "
 
 # 4. Run Dataset Validator (including Deep Diff, Split Holdouts, Actual Reproducibility)

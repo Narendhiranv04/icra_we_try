@@ -11,7 +11,7 @@ demo_generation:
 
 query_generation:
   num_pairs_per_task: 60 # 60 matched PROCEED/STOP pairs per task family (120 pairs = 240 query images)
-  num_controls_per_task: 15 # 15 standalone positive controls per task family (30 total controls)
+  num_controls_per_task: 16 # 16 standalone positive controls per task family (4 per subtype, 32 total controls)
   resolution: [640, 480]
   camera_name: "front_camera"
   save_instance_masks: true

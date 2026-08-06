@@ -3,12 +3,77 @@ Master query generator driving counterfactual pair creation, positive controls, 
 """
 
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 import json
 import yaml
 
 from src.generation.counterfactual_generator import CounterfactualPairGenerator
 from src.generation.split_planner import SplitPlanner
+
+
+def generate_control_distribution_report(
+    records: List[Dict[str, Any]],
+    output_report_path: Union[str, Path] = "data/reports/control_distribution.json",
+) -> Dict[str, Any]:
+    """Generate control distribution summary report and verify non-zero samples for all configured subtypes."""
+    output_report_path = Path(output_report_path)
+    output_report_path.parent.mkdir(parents=True, exist_ok=True)
+
+    controls = [r for r in records if r.get("sample_type") == "positive_control"]
+
+    counts_by_task: Dict[str, int] = {}
+    counts_by_subtype: Dict[str, int] = {}
+    counts_by_object: Dict[str, int] = {}
+    counts_by_bg: Dict[str, int] = {}
+    cand_mask_empty_count = 0
+    verified_occupancy_count = 0
+
+    req_t1_subtypes = ["empty_lid", "one_object_beside", "two_objects_beside", "near_lid_outside_footprint"]
+    req_t2_subtypes = ["empty_target", "one_object_beside_target", "one_object_near_target_outside", "multiple_distractors_outside"]
+
+    for c in controls:
+        t_id = c.get("task_id", "unknown")
+        sub = c.get("control_subtype", "unknown")
+        obj = c.get("object_type") or c.get("occupant_type") or "none"
+        bg = c.get("background_id", "unknown")
+
+        counts_by_task[t_id] = counts_by_task.get(t_id, 0) + 1
+        counts_by_subtype[sub] = counts_by_subtype.get(sub, 0) + 1
+        counts_by_object[obj] = counts_by_object.get(obj, 0) + 1
+        counts_by_bg[bg] = counts_by_bg.get(bg, 0) + 1
+
+        cand_p = c.get("candidate_object_mask_path")
+        if not cand_p or not Path(cand_p).exists() or sub in ("empty_lid", "empty_target"):
+            cand_mask_empty_count += 1
+
+        if c.get("is_occupied", False):
+            verified_occupancy_count += 1
+
+    # Verify every subtype has at least 1 sample if controls generated
+    missing_subtypes = []
+    if len(controls) > 0:
+        for sub in req_t1_subtypes + req_t2_subtypes:
+            if counts_by_subtype.get(sub, 0) == 0:
+                missing_subtypes.append(sub)
+
+    overall_status = "PASSED" if (len(missing_subtypes) == 0 and verified_occupancy_count == 0) else "FAILED"
+
+    report = {
+        "status": overall_status,
+        "total_controls": len(controls),
+        "counts_by_task": counts_by_task,
+        "counts_by_subtype": counts_by_subtype,
+        "counts_by_object": counts_by_object,
+        "counts_by_background": counts_by_bg,
+        "candidate_mask_empty_count": cand_mask_empty_count,
+        "verified_occupancy_count": verified_occupancy_count,
+        "missing_subtypes": missing_subtypes,
+    }
+
+    with open(output_report_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+
+    return report
 
 
 class QueryGenerator:
@@ -35,19 +100,15 @@ class QueryGenerator:
         self.split_planner = SplitPlanner()
 
     def run_generation(self) -> List[Dict[str, dict]]:
-        """Run query pair and positive control generation for all configured tasks.
-        
-        Returns:
-            List of generated metadata dictionary records.
-        """
+        """Run query pair and positive control generation for all configured tasks."""
         all_records = []
         num_pairs = self.config["query_generation"].get("num_pairs_per_task", 4)
-        num_controls = self.config["query_generation"].get("num_controls_per_task", 2)
+        num_controls = self.config["query_generation"].get("num_controls_per_task", 4)
         seed_base = self.config.get("seed", 42)
 
-        task1_pos_bins = ["centre", "front_left", "front_right", "rear_left", "rear_right", "opening_edge", "hinge_side"]
-        task2_pos_bins = ["centre", "left", "right", "front", "rear"]
         splits = ["id", "unseen_object", "unseen_background", "compositional"]
+        t1_control_subtypes = ["empty_lid", "one_object_beside", "two_objects_beside", "near_lid_outside_footprint"]
+        t2_control_subtypes = ["empty_target", "one_object_beside_target", "one_object_near_target_outside", "multiple_distractors_outside"]
 
         for task_cfg in self.config.get("tasks", []):
             task_id = task_cfg["id"]
@@ -58,26 +119,22 @@ class QueryGenerator:
                 split = splits[idx % len(splits)]
                 ep_seed = seed_base + idx * 17
 
-                assignment = self.split_planner.get_assignment_for_split(split, idx)
-                blocker_obj = assignment.object_type
+                assignment = self.split_planner.get_assignment_for_split(split, idx, task_id=task_id)
 
                 if task_id == "task_1":
-                    b_count = 2 if (idx % 3 == 2) else 1
-                    pos_bin = task1_pos_bins[idx % len(task1_pos_bins)]
                     record = self.counterfactual_gen.generate_task1_pair(
                         pair_id=pair_id,
-                        blocker_type=blocker_obj,
-                        blocker_count=b_count,
-                        blocker_pos_bin=pos_bin,
+                        blocker_type=assignment.object_type,
+                        blocker_count=assignment.blocker_count,
+                        blocker_pos_bin=assignment.position_bin,
                         split=split,
                         seed=ep_seed,
                     )
                 else:
-                    pos_bin = task2_pos_bins[idx % len(task2_pos_bins)]
                     record = self.counterfactual_gen.generate_task2_pair(
                         pair_id=pair_id,
-                        target_occupant_type=blocker_obj,
-                        occupant_pos_bin=pos_bin,
+                        target_occupant_type=assignment.object_type,
+                        occupant_pos_bin=assignment.position_bin,
                         split=split,
                         seed=ep_seed,
                     )
@@ -89,20 +146,23 @@ class QueryGenerator:
                 split = splits[c_idx % len(splits)]
                 ctrl_seed = seed_base + 1000 + c_idx * 13
 
-                assignment = self.split_planner.get_assignment_for_split(split, c_idx)
-                obj_type = assignment.object_type if (c_idx % 2 == 1) else None
+                assignment = self.split_planner.get_assignment_for_split(split, c_idx, task_id=task_id)
 
                 if task_id == "task_1":
+                    sub = t1_control_subtypes[c_idx % len(t1_control_subtypes)]
                     ctrl_record = self.counterfactual_gen.generate_task1_control(
                         control_id=control_id,
-                        object_type=obj_type,
+                        control_subtype=sub,
+                        object_type=assignment.object_type if sub != "empty_lid" else None,
                         split=split,
                         seed=ctrl_seed,
                     )
                 else:
+                    sub = t2_control_subtypes[c_idx % len(t2_control_subtypes)]
                     ctrl_record = self.counterfactual_gen.generate_task2_control(
                         control_id=control_id,
-                        occupant_type=obj_type,
+                        control_subtype=sub,
+                        occupant_type=assignment.object_type if sub != "empty_target" else None,
                         split=split,
                         seed=ctrl_seed,
                     )
@@ -113,5 +173,9 @@ class QueryGenerator:
         with open(manifest_path, "w", encoding="utf-8") as f:
             for record in all_records:
                 f.write(json.dumps(record) + "\n")
+
+        # Generate control distribution report
+        report_name = f"{self.config['profile_name']}_control_distribution.json" if self.config['profile_name'] != "smoke" else "control_distribution.json"
+        generate_control_distribution_report(all_records, output_report_path=f"data/reports/{report_name}")
 
         return all_records

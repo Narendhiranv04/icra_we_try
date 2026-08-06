@@ -9,7 +9,18 @@ split_rules:
   balanced_labels: true # 50% PROCEED / 50% STOP
   pair_integrity: true  # Counterfactual pair (PROCEED and STOP) MUST be in the same split
 
+id_factors:
+  objects: ["coffee_can", "sugar_box", "mug"]
+  backgrounds: ["bg_neutral_wood"]
+  position_bins_task1: ["centre", "front_left", "front_right"]
+  position_bins_task2: ["centre", "left", "right"]
+  blocker_counts: [1, 2]
+  lighting_families: ["default_lighting"]
+
 holdout_distractors:
   train: ["coffee_can", "sugar_box", "mug"]
   val: ["cup"]
   test: ["bowl"]
+
+holdout_backgrounds:
+  unseen: ["bg_blue_counter", "bg_granite_dark"]

@@ -864,7 +864,13 @@ def regenerate_from_metadata(
     resolution: Tuple[int, int] = (640, 480),
 ) -> Dict[str, Any]:
     """Reconstruct exact scene RGB, masks, and privileged labels deterministically from saved metadata."""
-    gen = CounterfactualPairGenerator(output_dir=output_dir, resolution=resolution)
+    res_list = (
+        meta.get("stop", {}).get("resolved_scene_spec", {}).get("camera", {}).get("resolution")
+        or meta.get("resolved_scene_spec", {}).get("camera", {}).get("resolution")
+        or [resolution[0], resolution[1]]
+    )
+    gen_res = (int(res_list[0]), int(res_list[1]))
+    gen = CounterfactualPairGenerator(output_dir=output_dir, resolution=gen_res)
 
     task_id = meta.get("task_id")
     sample_type = meta.get("sample_type", "matched_pair")
@@ -909,3 +915,4 @@ def regenerate_from_metadata(
                 split=split,
                 seed=seed,
             )
+

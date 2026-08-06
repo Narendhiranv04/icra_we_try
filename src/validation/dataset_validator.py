@@ -51,7 +51,7 @@ def deep_diff(d1: Any, d2: Any, path: str = "") -> List[str]:
 
 
 class DatasetValidator:
-    """Validator performing 26 rigorous dataset verification passes and exporting machine-readable reports."""
+    """Validator performing comprehensive dataset verification passes and exporting machine-readable reports."""
 
     def __init__(self, manifest_path: str):
         self.manifest_path = Path(manifest_path)
@@ -115,15 +115,17 @@ class DatasetValidator:
 
         return len(issues) == 0, issues
 
-    def run_reproducibility_validation(self, sample_count: int = 5) -> Tuple[bool, Dict[str, Any]]:
-        """Perform actual reconstruction validation on a subset of manifest records."""
+    def run_reproducibility_validation(self, sample_count: int = None) -> Tuple[bool, Dict[str, Any]]:
+        """Perform actual reconstruction validation comparing STOP and PROCEED for all selected records."""
         if not self.records:
             return False, {"status": "FAILED", "reason": "No records in manifest"}
 
-        rng = np.random.default_rng(2026)
-        num_samples = min(sample_count, len(self.records))
-        indices = rng.choice(len(self.records), size=num_samples, replace=False)
-        selected_records = [self.records[i] for i in indices]
+        if sample_count is None or sample_count >= len(self.records):
+            selected_records = self.records
+        else:
+            rng = np.random.default_rng(2026)
+            indices = rng.choice(len(self.records), size=sample_count, replace=False)
+            selected_records = [self.records[i] for i in indices]
 
         sample_results = []
         overall_passed = True
@@ -138,50 +140,132 @@ class DatasetValidator:
                 try:
                     regen_meta = regenerate_from_metadata(orig_meta, output_dir=tmp_path / f"regen_{idx}")
 
-                    # Check metadata matching
-                    meta_diffs = deep_diff(
-                        orig_meta.get("resolved_scene_spec", orig_meta.get("background_id")),
-                        regen_meta.get("resolved_scene_spec", regen_meta.get("background_id")),
-                    )
-
-                    # Compare STOP/control RGB and uint16 instance maps
                     if sample_type == "matched_pair":
-                        orig_rgb_p = orig_meta["stop"]["rgb_path"]
-                        regen_rgb_p = regen_meta["stop"]["rgb_path"]
-                        orig_inst_p = orig_meta["stop"]["instance_uint16_path"]
-                        regen_inst_p = regen_meta["stop"]["instance_uint16_path"]
+                        # Compare STOP member
+                        stop_orig_spec = orig_meta["stop"].get("resolved_scene_spec") or orig_meta["stop"].get("spec")
+                        stop_regen_spec = regen_meta["stop"].get("resolved_scene_spec") or regen_meta["stop"].get("spec")
+                        stop_meta_diffs = deep_diff(stop_orig_spec, stop_regen_spec)
+
+                        orig_stop_rgb = np.array(Image.open(orig_meta["stop"]["rgb_path"]))
+                        regen_stop_rgb = np.array(Image.open(regen_meta["stop"]["rgb_path"]))
+                        stop_max_diff = int(np.max(np.abs(orig_stop_rgb.astype(int) - regen_stop_rgb.astype(int))))
+                        stop_mean_diff = float(np.mean(np.abs(orig_stop_rgb.astype(float) - regen_stop_rgb.astype(float))))
+
+                        orig_stop_inst = np.load(orig_meta["stop"]["instance_uint16_path"])
+                        regen_stop_inst = np.load(regen_meta["stop"]["instance_uint16_path"])
+                        stop_inst_mismatch = int(np.count_nonzero(orig_stop_inst != regen_stop_inst))
+
+                        orig_stop_cand = np.array(Image.open(orig_meta["stop"]["candidate_object_mask_path"]))
+                        regen_stop_cand = np.array(Image.open(regen_meta["stop"]["candidate_object_mask_path"]))
+                        stop_cand_mismatch = int(np.count_nonzero(orig_stop_cand != regen_stop_cand))
+
+                        orig_stop_target = np.array(Image.open(orig_meta["stop"]["relation_target_mask_path"]))
+                        regen_stop_target = np.array(Image.open(regen_meta["stop"]["relation_target_mask_path"]))
+                        stop_target_mismatch = int(np.count_nonzero(orig_stop_target != regen_stop_target))
+
+                        orig_stop_causal = np.array(Image.open(orig_meta["stop"]["causal_violation_mask_path"]))
+                        regen_stop_causal = np.array(Image.open(regen_meta["stop"]["causal_violation_mask_path"]))
+                        stop_causal_mismatch = int(np.count_nonzero(orig_stop_causal != regen_stop_causal))
+
+                        # Compare PROCEED member
+                        proc_orig_spec = orig_meta["proceed"].get("resolved_scene_spec") or orig_meta["proceed"].get("spec")
+                        proc_regen_spec = regen_meta["proceed"].get("resolved_scene_spec") or regen_meta["proceed"].get("spec")
+                        proc_meta_diffs = deep_diff(proc_orig_spec, proc_regen_spec)
+
+                        orig_proc_rgb = np.array(Image.open(orig_meta["proceed"]["rgb_path"]))
+                        regen_proc_rgb = np.array(Image.open(regen_meta["proceed"]["rgb_path"]))
+                        proc_max_diff = int(np.max(np.abs(orig_proc_rgb.astype(int) - regen_proc_rgb.astype(int))))
+                        proc_mean_diff = float(np.mean(np.abs(orig_proc_rgb.astype(float) - regen_proc_rgb.astype(float))))
+
+                        orig_proc_inst = np.load(orig_meta["proceed"]["instance_uint16_path"])
+                        regen_proc_inst = np.load(regen_meta["proceed"]["instance_uint16_path"])
+                        proc_inst_mismatch = int(np.count_nonzero(orig_proc_inst != regen_proc_inst))
+
+                        orig_proc_cand = np.array(Image.open(orig_meta["proceed"]["candidate_object_mask_path"]))
+                        regen_proc_cand = np.array(Image.open(regen_meta["proceed"]["candidate_object_mask_path"]))
+                        proc_cand_mismatch = int(np.count_nonzero(orig_proc_cand != regen_proc_cand))
+
+                        orig_proc_target = np.array(Image.open(orig_meta["proceed"]["relation_target_mask_path"]))
+                        regen_proc_target = np.array(Image.open(regen_meta["proceed"]["relation_target_mask_path"]))
+                        proc_target_mismatch = int(np.count_nonzero(orig_proc_target != regen_proc_target))
+
+                        orig_proc_causal = np.array(Image.open(orig_meta["proceed"]["causal_violation_mask_path"]))
+                        regen_proc_causal = np.array(Image.open(regen_meta["proceed"]["causal_violation_mask_path"]))
+                        proc_causal_mismatch = int(np.count_nonzero(orig_proc_causal != regen_proc_causal))
+
+                        stop_passed = (stop_max_diff <= 5 and stop_inst_mismatch == 0 and len(stop_meta_diffs) == 0)
+                        proc_passed = (proc_max_diff <= 5 and proc_inst_mismatch == 0 and len(proc_meta_diffs) == 0)
+                        sample_passed = stop_passed and proc_passed
+                        if not sample_passed:
+                            overall_passed = False
+
+                        sample_results.append({
+                            "sample_id": sample_id,
+                            "sample_type": sample_type,
+                            "task_id": task_id,
+                            "status": "PASSED" if sample_passed else "FAILED",
+                            "stop": {
+                                "metadata_differences": stop_meta_diffs,
+                                "rgb_max_difference": stop_max_diff,
+                                "rgb_mean_difference": stop_mean_diff,
+                                "instance_mismatch_count": stop_inst_mismatch,
+                                "candidate_mask_mismatch_count": stop_cand_mismatch,
+                                "target_mask_mismatch_count": stop_target_mismatch,
+                                "causal_mask_mismatch_count": stop_causal_mismatch,
+                            },
+                            "proceed": {
+                                "metadata_differences": proc_meta_diffs,
+                                "rgb_max_difference": proc_max_diff,
+                                "rgb_mean_difference": proc_mean_diff,
+                                "instance_mismatch_count": proc_inst_mismatch,
+                                "candidate_mask_mismatch_count": proc_cand_mismatch,
+                                "target_mask_mismatch_count": proc_target_mismatch,
+                                "causal_mask_mismatch_count": proc_causal_mismatch,
+                            },
+                        })
+
                     else:
-                        orig_rgb_p = orig_meta["rgb_path"]
-                        regen_rgb_p = regen_meta["rgb_path"]
-                        orig_inst_p = orig_meta["instance_uint16_path"]
-                        regen_inst_p = regen_meta["instance_uint16_path"]
+                        # Compare Positive Control
+                        ctrl_orig_spec = orig_meta.get("resolved_scene_spec") or orig_meta.get("background_id")
+                        ctrl_regen_spec = regen_meta.get("resolved_scene_spec") or regen_meta.get("background_id")
+                        ctrl_meta_diffs = deep_diff(ctrl_orig_spec, ctrl_regen_spec)
 
-                    orig_rgb = np.array(Image.open(orig_rgb_p))
-                    regen_rgb = np.array(Image.open(regen_rgb_p))
+                        orig_ctrl_rgb = np.array(Image.open(orig_meta["rgb_path"]))
+                        regen_ctrl_rgb = np.array(Image.open(regen_meta["rgb_path"]))
+                        ctrl_max_diff = int(np.max(np.abs(orig_ctrl_rgb.astype(int) - regen_ctrl_rgb.astype(int))))
+                        ctrl_mean_diff = float(np.mean(np.abs(orig_ctrl_rgb.astype(float) - regen_ctrl_rgb.astype(float))))
 
-                    max_diff = int(np.max(np.abs(orig_rgb.astype(int) - regen_rgb.astype(int))))
-                    mean_diff = float(np.mean(np.abs(orig_rgb.astype(float) - regen_rgb.astype(float))))
-                    mismatched_px = int(np.count_nonzero(orig_rgb != regen_rgb))
+                        orig_ctrl_inst = np.load(orig_meta["instance_uint16_path"])
+                        regen_ctrl_inst = np.load(regen_meta["instance_uint16_path"])
+                        ctrl_inst_mismatch = int(np.count_nonzero(orig_ctrl_inst != regen_ctrl_inst))
 
-                    orig_inst = np.load(orig_inst_p)
-                    regen_inst = np.load(regen_inst_p)
-                    inst_mismatch_count = int(np.count_nonzero(orig_inst != regen_inst))
+                        orig_ctrl_cand = np.array(Image.open(orig_meta["candidate_object_mask_path"]))
+                        regen_ctrl_cand = np.array(Image.open(regen_meta["candidate_object_mask_path"]))
+                        ctrl_cand_mismatch = int(np.count_nonzero(orig_ctrl_cand != regen_ctrl_cand))
 
-                    sample_passed = (max_diff <= 5 and inst_mismatch_count == 0 and len(meta_diffs) == 0)
-                    if not sample_passed:
-                        overall_passed = False
+                        orig_ctrl_target = np.array(Image.open(orig_meta["relation_target_mask_path"]))
+                        regen_ctrl_target = np.array(Image.open(regen_meta["relation_target_mask_path"]))
+                        ctrl_target_mismatch = int(np.count_nonzero(orig_ctrl_target != regen_ctrl_target))
 
-                    sample_results.append({
-                        "sample_id": sample_id,
-                        "sample_type": sample_type,
-                        "task_id": task_id,
-                        "status": "PASSED" if sample_passed else "FAILED",
-                        "rgb_max_difference": max_diff,
-                        "rgb_mean_difference": mean_diff,
-                        "rgb_mismatched_pixels": mismatched_px,
-                        "instance_mismatch_count": inst_mismatch_count,
-                        "metadata_differences": meta_diffs,
-                    })
+                        sample_passed = (ctrl_max_diff <= 5 and ctrl_inst_mismatch == 0 and len(ctrl_meta_diffs) == 0)
+                        if not sample_passed:
+                            overall_passed = False
+
+                        sample_results.append({
+                            "sample_id": sample_id,
+                            "sample_type": sample_type,
+                            "task_id": task_id,
+                            "control_subtype": orig_meta.get("control_subtype"),
+                            "status": "PASSED" if sample_passed else "FAILED",
+                            "control": {
+                                "metadata_differences": ctrl_meta_diffs,
+                                "rgb_max_difference": ctrl_max_diff,
+                                "rgb_mean_difference": ctrl_mean_diff,
+                                "instance_mismatch_count": ctrl_inst_mismatch,
+                                "candidate_mask_mismatch_count": ctrl_cand_mismatch,
+                                "target_mask_mismatch_count": ctrl_target_mismatch,
+                            },
+                        })
 
                 except Exception as err:
                     overall_passed = False
@@ -206,13 +290,19 @@ class DatasetValidator:
         return overall_passed, rep_report
 
     def validate_splits(self) -> Tuple[bool, Dict[str, Any]]:
-        """Validate holdout split sets, factor tuples, and leakage."""
+        """Validate holdout split sets, factor tuples, and leakage for pure compositional split."""
         dev_objects: Set[str] = set()
         dev_backgrounds: Set[str] = set()
+        dev_pos_bins: Set[str] = set()
+        dev_blocker_counts: Set[int] = set()
         dev_factor_tuples: Set[Tuple] = set()
 
         unseen_obj_objects: Set[str] = set()
         unseen_bg_backgrounds: Set[str] = set()
+        comp_objects: Set[str] = set()
+        comp_backgrounds: Set[str] = set()
+        comp_pos_bins: Set[str] = set()
+        comp_blocker_counts: Set[int] = set()
         comp_factor_tuples: Set[Tuple] = set()
 
         splits_count: Dict[str, int] = {}
@@ -235,23 +325,39 @@ class DatasetValidator:
             if sp == "id":
                 dev_objects.add(obj)
                 dev_backgrounds.add(bg)
+                dev_pos_bins.add(pos_bin)
+                dev_blocker_counts.add(b_count)
                 dev_factor_tuples.add(factor_tuple)
             elif sp == "unseen_object":
                 unseen_obj_objects.add(obj)
             elif sp == "unseen_background":
                 unseen_bg_backgrounds.add(bg)
             elif sp == "compositional":
+                comp_objects.add(obj)
+                comp_backgrounds.add(bg)
+                comp_pos_bins.add(pos_bin)
+                comp_blocker_counts.add(b_count)
                 comp_factor_tuples.add(factor_tuple)
 
+        # Pure compositional validation rules:
+        # 1. unseen_object_objects ∩ dev_objects == ∅
         obj_intersection = sorted(list(dev_objects.intersection(unseen_obj_objects)))
+        # 2. unseen_backgrounds ∩ dev_backgrounds == ∅
         bg_intersection = sorted(list(dev_backgrounds.intersection(unseen_bg_backgrounds)))
+        # 3. compositional_objects ⊆ dev_objects
+        comp_obj_non_fam = sorted(list(comp_objects - dev_objects))
+        # 4. compositional_backgrounds ⊆ dev_backgrounds
+        comp_bg_non_fam = sorted(list(comp_backgrounds - dev_backgrounds))
+        # 5. compositional_tuples ∩ dev_tuples == ∅
         comp_intersection = [list(t) for t in dev_factor_tuples.intersection(comp_factor_tuples)]
 
         has_obj_leak = len(obj_intersection) > 0
         has_bg_leak = len(bg_intersection) > 0
+        has_comp_obj_unfam = len(comp_obj_non_fam) > 0
+        has_comp_bg_unfam = len(comp_bg_non_fam) > 0
         has_comp_leak = len(comp_intersection) > 0
 
-        overall_valid = not (has_obj_leak or has_bg_leak or has_comp_leak)
+        overall_valid = not (has_obj_leak or has_bg_leak or has_comp_obj_unfam or has_comp_bg_unfam or has_comp_leak)
 
         split_rep = {
             "status": "PASSED" if overall_valid else "FAILED",
@@ -262,13 +368,19 @@ class DatasetValidator:
             "development_backgrounds": sorted(list(dev_backgrounds)),
             "unseen_backgrounds": sorted(list(unseen_bg_backgrounds)),
             "background_intersection": bg_intersection,
+            "compositional_objects": sorted(list(comp_objects)),
+            "compositional_unfamiliar_objects": comp_obj_non_fam,
+            "compositional_backgrounds": sorted(list(comp_backgrounds)),
+            "compositional_unfamiliar_backgrounds": comp_bg_non_fam,
             "development_factor_tuples": [list(t) for t in dev_factor_tuples],
             "compositional_factor_tuples": [list(t) for t in comp_factor_tuples],
             "compositional_intersection": comp_intersection,
             "leakage_checks": {
                 "object_leakage": has_obj_leak,
                 "background_leakage": has_bg_leak,
-                "compositional_leakage": has_comp_leak,
+                "compositional_unfamiliar_object": has_comp_obj_unfam,
+                "compositional_unfamiliar_background": has_comp_bg_unfam,
+                "compositional_tuple_leakage": has_comp_leak,
             },
         }
 
@@ -278,7 +390,7 @@ class DatasetValidator:
         return overall_valid, split_rep
 
     def validate_dataset(self) -> Tuple[bool, List[str]]:
-        """Run all 26 verification passes on dataset manifest and generated files."""
+        """Run all comprehensive verification passes on dataset manifest and generated files."""
         logs: List[str] = []
         issues: List[str] = []
 
@@ -286,6 +398,17 @@ class DatasetValidator:
             return False, ["Manifest is empty or missing"]
 
         logs.append(f"Loaded {len(self.records)} records from {self.manifest_path.name}.")
+
+        # Pass 0: Uniqueness Verification (Pair IDs, Control IDs, Sample IDs)
+        seen_ids: Set[str] = set()
+        for rec in self.records:
+            s_id = rec.get("pair_id") or rec.get("control_id")
+            if not s_id:
+                issues.append("Record missing pair_id / control_id")
+            elif s_id in seen_ids:
+                issues.append(f"Duplicate sample ID detected in manifest: '{s_id}'")
+            else:
+                seen_ids.add(s_id)
 
         matched_pairs = [r for r in self.records if r.get("sample_type") == "matched_pair" or "pair_id" in r]
         positive_controls = [r for r in self.records if r.get("sample_type") == "positive_control"]
@@ -304,10 +427,8 @@ class DatasetValidator:
         # Pass 3: File Existence, Mask Semantics & Stability
         mask_issues = []
         for rec in self.records:
-            if rec.get("sample_type") == "positive_control":
-                sub_samples = [("control", rec)]
-            else:
-                sub_samples = [("stop", rec.get("stop", {})), ("proceed", rec.get("proceed", {}))]
+            is_control = (rec.get("sample_type") == "positive_control")
+            sub_samples = [("control", rec)] if is_control else [("stop", rec.get("stop", {})), ("proceed", rec.get("proceed", {}))]
 
             for label_name, sub in sub_samples:
                 sample_id = sub.get("sample_id") or rec.get("pair_id") or rec.get("control_id")
@@ -317,9 +438,9 @@ class DatasetValidator:
                 target_p = sub.get("relation_target_mask_path") or sub.get("region_mask_path")
 
                 if not rgb_p or not Path(rgb_p).exists():
-                    mask_issues.append(f"Record {sample_id}: missing RGB file {rgb_p}")
+                    mask_issues.append(f"Record {sample_id}: missing RGB file '{rgb_p}'")
                 if not inst_p or not Path(inst_p).exists():
-                    mask_issues.append(f"Record {sample_id}: missing uint16 Instance file {inst_p}")
+                    mask_issues.append(f"Record {sample_id}: missing uint16 Instance file '{inst_p}'")
                 else:
                     try:
                         arr_16 = np.load(inst_p)
@@ -330,21 +451,30 @@ class DatasetValidator:
                     except Exception as err:
                         mask_issues.append(f"Record {sample_id}: failed to load uint16 instance map: {err}")
 
-                if cand_p and Path(cand_p).exists():
+                if not cand_p or not Path(cand_p).exists():
+                    if not (is_control and rec.get("control_subtype") in ("empty_lid", "empty_target")):
+                        mask_issues.append(f"Record {sample_id}: missing candidate object mask path '{cand_p}'")
+                else:
                     cand_arr = np.array(Image.open(cand_p))
-                    if label_name == "stop" and np.count_nonzero(cand_arr) == 0:
-                        mask_issues.append(f"Record {sample_id}: STOP candidate mask is empty")
+                    if label_name in ("stop", "proceed") and np.count_nonzero(cand_arr) == 0:
+                        mask_issues.append(f"Record {sample_id}: matched candidate mask is empty")
+                    elif is_control and rec.get("control_subtype") not in ("empty_lid", "empty_target") and np.count_nonzero(cand_arr) == 0:
+                        mask_issues.append(f"Record {sample_id}: non-empty control candidate mask is zero")
 
-                if target_p and Path(target_p).exists():
+                if not target_p or not Path(target_p).exists():
+                    mask_issues.append(f"Record {sample_id}: missing relation target mask path '{target_p}'")
+                else:
                     t_arr = np.array(Image.open(target_p))
                     if np.count_nonzero(t_arr) == 0:
-                        mask_issues.append(f"Record {sample_id}: Relation target mask is empty")
+                        mask_issues.append(f"Record {sample_id}: relation target mask is empty")
                     if np.count_nonzero(t_arr) > (t_arr.shape[0] * t_arr.shape[1] * 0.50):
-                        mask_issues.append(f"Record {sample_id}: Target mask covers over 50% of image")
+                        mask_issues.append(f"Record {sample_id}: target mask covers over 50% of image area")
 
                 if label_name == "stop":
                     causal_p = sub.get("causal_violation_mask_path")
-                    if causal_p and Path(causal_p).exists():
+                    if not causal_p or not Path(causal_p).exists():
+                        mask_issues.append(f"Record {sample_id}: missing STOP causal violation mask path '{causal_p}'")
+                    else:
                         causal_arr = np.array(Image.open(causal_p))
                         if np.count_nonzero(causal_arr) == 0:
                             mask_issues.append(f"Record {sample_id}: STOP causal violation mask is empty")
@@ -359,10 +489,16 @@ class DatasetValidator:
 
                 elif label_name == "proceed":
                     causal_p = sub.get("causal_violation_mask_path")
-                    if causal_p and Path(causal_p).exists():
+                    if not causal_p or not Path(causal_p).exists():
+                        mask_issues.append(f"Record {sample_id}: missing PROCEED causal violation mask path '{causal_p}'")
+                    else:
                         causal_arr = np.array(Image.open(causal_p))
                         if np.count_nonzero(causal_arr) != 0:
                             mask_issues.append(f"Record {sample_id}: PROCEED causal violation mask is not zero")
+
+                elif is_control:
+                    if sub.get("is_occupied", False):
+                        mask_issues.append(f"Positive control record {sample_id} was falsely marked as occupied")
 
         logs.append(f"Pass 3 (File, Mask Semantics & Stability): {len(mask_issues)} issues.")
         issues.extend(mask_issues)
@@ -374,7 +510,7 @@ class DatasetValidator:
         logs.append(f"Pass 4 (Split Holdout & Leakage): {'PASSED' if splits_valid else 'FAILED'}.")
 
         # Pass 5: Actual Reproducibility Regeneration
-        rep_valid, rep_rep = self.run_reproducibility_validation(sample_count=min(5, len(self.records)))
+        rep_valid, rep_rep = self.run_reproducibility_validation()
         if not rep_valid:
             issues.append("Reproducibility validation failed during sample reconstruction!")
         logs.append(f"Pass 5 (Actual Reproducibility Regeneration): {'PASSED' if rep_valid else 'FAILED'}.")
@@ -416,7 +552,7 @@ class DatasetValidator:
         else:
             logs.append(f"FAILED: {len(issues)} total dataset issues detected.")
 
-        return is_valid, logs
+        return is_valid, logs + issues
 
 
 if __name__ == "__main__":

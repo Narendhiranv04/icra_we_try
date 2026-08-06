@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Union
 import cv2
 import numpy as np
 import hashlib
+import mujoco
 
 from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
@@ -15,6 +16,7 @@ from src.tasks.place_object import PlaceObjectExecutor
 from src.validation.demonstration_validator import DemonstrationValidator
 from src.generation.demonstration_writer import DemonstrationWriter
 from src.generation.background_randomization import sample_background_spec, apply_background_spec
+from src.environment.scene_utils import get_target_frame
 
 
 class DemonstrationGenerator:
@@ -91,15 +93,36 @@ class DemonstrationGenerator:
         self,
         demo_id: str = "demo_task2_001",
         obj_name: str = "coffee_can",
-        start_pos: tuple[float, float, float] = (-0.30, -0.20, 0.65),
-        target_pos: tuple[float, float, float] = (-0.10, -0.20, 0.65),
+        start_bin: str = "pick_left",
+        target_bin: str = "centre",
         robot_base_pose: str = "home",
         background_id: str = "bg_neutral_wood",
         seed: int = 42,
     ) -> str:
-        """Generate full structured demonstration for Task 2 (Place Object)."""
+        """Generate full structured demonstration for Task 2 (Place Object) using scene-local frame geometry."""
         rng = np.random.default_rng(seed)
-        objects = [{"name": obj_name, "type": obj_name, "pos": list(start_pos)}]
+
+        # 1. Resolve start_pos and target_pos from scene geometry local frame
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0)
+        t_center, t_rot, t_ext = get_target_frame(ref_model, ref_data)
+
+        pick_offsets = {
+            "pick_left": np.array([-0.25, -0.10, 0.07]),
+            "pick_front": np.array([-0.25, -0.25, 0.07]),
+            "pick_rear": np.array([-0.25, 0.05, 0.07]),
+        }
+        start_local = pick_offsets.get(start_bin, np.array([-0.25, -0.10, 0.07]))
+        start_pos = (t_center + t_rot @ start_local).tolist()
+
+        target_offsets = {
+            "centre": np.array([0.0, 0.0, 0.07]),
+            "left": np.array([-0.03, 0.0, 0.07]),
+            "right": np.array([0.03, 0.0, 0.07]),
+        }
+        target_local = target_offsets.get(target_bin, np.array([0.0, 0.0, 0.07]))
+        target_pos = (t_center + t_rot @ target_local).tolist()
+
+        objects = [{"name": obj_name, "type": obj_name, "pos": start_pos}]
         model, data = self.scene_builder.create_environment(
             objects_to_spawn=objects,
             include_robot=True,
@@ -112,8 +135,8 @@ class DemonstrationGenerator:
 
         renderer = OffscreenRenderer(model, width=self.width, height=self.height)
 
-        executor = PlaceObjectExecutor(model, data, object_name=obj_name, target_pos=target_pos)
-        frames = executor.run_demonstration(renderer, start_pos=start_pos)
+        executor = PlaceObjectExecutor(model, data, object_name=obj_name, target_pos=tuple(target_pos))
+        frames = executor.run_demonstration(renderer, start_pos=tuple(start_pos))
         renderer.close()
 
         is_valid, issues = DemonstrationValidator.validate_place_object(executor.state_log)
@@ -129,8 +152,10 @@ class DemonstrationGenerator:
             "task_family": "place_object",
             "seed": seed,
             "object_name": obj_name,
-            "start_pos": list(start_pos),
-            "target_pos": list(target_pos),
+            "start_bin": start_bin,
+            "target_bin": target_bin,
+            "start_pos": start_pos,
+            "target_pos": target_pos,
             "robot_base_pose": robot_base_pose,
             "background_id": background_id,
             "background_spec": bg_spec.to_dict(),

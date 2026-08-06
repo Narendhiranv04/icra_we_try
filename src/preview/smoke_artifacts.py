@@ -3,7 +3,7 @@ Helper to copy and compile tracked smoke benchmark artifacts into artifacts/smok
 
 All report values (status, unit_tests_passed, demonstration_status, pair_counts, commit_hash)
 derive dynamically from actual execution results and reports loaded from data/reports/.
-No hard-coded success claims or manually passed status arguments.
+No hard-coded success claims or fallback defaults for missing reports.
 """
 
 from pathlib import Path
@@ -11,6 +11,7 @@ from typing import List, Dict, Union, Optional, Any
 import json
 import xml.etree.ElementTree as ET
 import shutil
+import os
 import subprocess
 import cv2
 import PIL.Image as Image
@@ -35,17 +36,11 @@ class TrackedSmokeArtifactsGenerator:
     def _parse_pytest_xml(self) -> Dict[str, Any]:
         xml_p = self.reports_dir / "pytest_results.xml"
         if not xml_p.exists():
-            # Fallback to json if xml not present
-            json_p = self.reports_dir / "test_summary.json"
-            if json_p.exists():
-                with open(json_p, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            return {"status": "FAILED", "total": 0, "passed": 0, "failed": 0, "errors": 0}
+            return {"status": "FAILED", "total": 0, "passed": 0, "failed": 1, "errors": 0, "error": "Missing pytest_results.xml"}
 
         try:
             tree = ET.parse(xml_p)
             root = tree.getroot()
-            # Handle testsuite or testsuites element
             if root.tag == "testsuites":
                 suite = root.find("testsuite")
                 if suite is None:
@@ -116,9 +111,12 @@ class TrackedSmokeArtifactsGenerator:
         contact_sheet_path: str = "data/previews/contact_sheet.png",
         demo1_path: str = "data/demos/open_box/demo_task1_smoke/rgb.mp4",
         demo2_path: str = "data/demos/place_object/demo_task2_smoke/rgb.mp4",
+        tested_code_commit: Optional[str] = None,
     ) -> str:
         """Compile all smoke preview artifacts into artifacts/smoke/ reading machine-readable reports dynamically."""
-        commit_hash = self._get_git_commit_hash()
+        report_gen_commit = self._get_git_commit_hash()
+        if not tested_code_commit:
+            tested_code_commit = os.environ.get("TESTED_CODE_COMMIT", report_gen_commit)
 
         # 1. Contact sheet
         if Path(contact_sheet_path).exists():
@@ -150,7 +148,8 @@ class TrackedSmokeArtifactsGenerator:
         positive_controls = [r for r in records if r.get("sample_type") == "positive_control"]
 
         rep_meta = {
-            "commit_hash": commit_hash,
+            "tested_code_commit": tested_code_commit,
+            "report_generation_commit": report_gen_commit,
             "total_records_generated": len(records),
             "matched_pairs_count": len(matched_pairs),
             "positive_controls_count": len(positive_controls),
@@ -160,44 +159,51 @@ class TrackedSmokeArtifactsGenerator:
         with open(self.artifacts_dir / "representative_metadata.json", "w", encoding="utf-8") as f:
             json.dump(rep_meta, f, indent=2)
 
-        # 4. Load all machine-readable reports from data/reports/
+        # 4. Mandatory Report Verification (All required smoke reports MUST exist and be PASSED)
         test_res = self._parse_pytest_xml()
 
-        def load_rep_status(rep_name: str) -> str:
+        required_reports = [
+            "dataset_validation.json",
+            "split_validation.json",
+            "reproducibility_report.json",
+            "demonstration_validation.json",
+            "demonstration_distinctness.json",
+            "control_distribution.json",
+        ]
+
+        report_statuses: Dict[str, str] = {}
+        missing_or_failed = []
+
+        if test_res.get("status") != "PASSED":
+            missing_or_failed.append(f"pytest_results.xml ({test_res.get('status')})")
+
+        for rep_name in required_reports:
             p = self.reports_dir / rep_name
-            if p.exists():
+            if not p.exists():
+                report_statuses[rep_name] = "MISSING"
+                missing_or_failed.append(f"{rep_name} (MISSING)")
+            else:
                 try:
                     with open(p, "r", encoding="utf-8") as f:
-                        return json.load(f).get("status", "FAILED")
+                        st = json.load(f).get("status", "FAILED")
+                        report_statuses[rep_name] = st
+                        if st != "PASSED":
+                            missing_or_failed.append(f"{rep_name} ({st})")
                 except Exception:
-                    return "FAILED"
-            return "PASSED"  # Optional report if not created
+                    report_statuses[rep_name] = "CORRUPT"
+                    missing_or_failed.append(f"{rep_name} (CORRUPT)")
 
-        dataset_status = load_rep_status("dataset_validation.json")
-        split_status = load_rep_status("split_validation.json")
-        reproducibility_status = load_rep_status("reproducibility_report.json")
-        distinctness_status = load_rep_status("demonstration_distinctness.json")
-
-        all_passed = (
-            test_res.get("status") == "PASSED"
-            and dataset_status == "PASSED"
-            and split_status == "PASSED"
-            and reproducibility_status == "PASSED"
-            and distinctness_status == "PASSED"
-            and len(records) > 0
-        )
-        overall_status = "PASSED" if all_passed else "FAILED"
+        overall_status = "PASSED" if (len(missing_or_failed) == 0 and len(records) > 0) else "FAILED"
 
         # 5. Smoke report JSON
         smoke_report_json = {
-            "commit_hash": commit_hash,
+            "tested_code_commit": tested_code_commit,
+            "report_generation_commit": report_gen_commit,
             "profile": "smoke",
             "status": overall_status,
             "test_summary": test_res,
-            "dataset_validation_status": dataset_status,
-            "split_validation_status": split_status,
-            "reproducibility_status": reproducibility_status,
-            "distinctness_status": distinctness_status,
+            "required_report_statuses": report_statuses,
+            "missing_or_failed_reports": missing_or_failed,
             "unit_tests_passed": test_res.get("passed", 0),
             "unit_tests_total": test_res.get("total", 0),
             "counterfactual_pairs_generated": len(matched_pairs),
@@ -219,25 +225,20 @@ class TrackedSmokeArtifactsGenerator:
         smoke_report_md = f"""# Smoke Test Execution Report
 
 ## Overview
-- **Commit Hash**: `{commit_hash}`
+- **Tested Code Commit**: `{tested_code_commit}`
+- **Report Generation Commit**: `{report_gen_commit}`
 - **Profile**: `smoke`
 - **Overall Status**: **{overall_status}**
 - **Unit Tests**: {test_res.get('passed', 0)} / {test_res.get('total', 0)} passed ({test_res.get('status')})
-- **Dataset Validation**: {dataset_status}
-- **Split Validation**: {split_status}
-- **Reproducibility Regeneration**: {reproducibility_status}
-- **Demonstration Distinctness**: {distinctness_status}
 - **Counterfactual Query Pairs**: {len(matched_pairs)} pairs ({len(matched_pairs)*2} query images)
 - **Standalone Positive Controls**: {len(positive_controls)} controls
 
-## Task Summary
-1. **Task 1: "Open the box."**
-   - Matched counterfactual pairs across splits (`id`, `unseen_object`, `unseen_background`, `compositional`)
-   - Robot demonstration video (`open_box/demo_task1_smoke/rgb.mp4`)
-2. **Task 2: "Place object1 in the target region."**
-   - Matched counterfactual pairs across splits (`id`, `unseen_object`, `unseen_background`, `compositional`)
-   - Robot demonstration video (`place_object/demo_task2_smoke/rgb.mp4`)
+## Required Reports Status
+"""
+        for r_name, r_st in report_statuses.items():
+            smoke_report_md += f"- `{r_name}`: **{r_st}**\n"
 
+        smoke_report_md += f"""
 ## Verified Artifacts
 - `contact_sheet.png`: Grid layout of RGB queries, overlays, and causal violation masks
 - `demonstration_montage.png`: Representative frame montage of robot task executions
@@ -250,7 +251,7 @@ class TrackedSmokeArtifactsGenerator:
         readme_content = f"""# Tracked Smoke Benchmark Artifacts
 
 This directory contains representative smoke run outputs for continuous verification of Relational Precondition Benchmark v0.1:
-- `commit_hash`: `{commit_hash}`
+- `tested_code_commit`: `{tested_code_commit}`
 - `status`: `{overall_status}`
 - `contact_sheet.png`: Grid layout of query scenes, overlays, and causal violation masks.
 - `demonstration_montage.png`: Key frames showing robot manipulation sequence.
