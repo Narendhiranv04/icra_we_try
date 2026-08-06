@@ -87,7 +87,7 @@ SPLIT_BACKGROUNDS: Dict[str, str] = {
     "id": "bg_neutral_wood",
     "unseen_object": "bg_neutral_wood",
     "unseen_background": "bg_blue_counter",
-    "compositional": "bg_granite_dark",
+    "compositional": "bg_neutral_wood",
 }
 
 
