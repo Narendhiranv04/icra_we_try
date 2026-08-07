@@ -1,0 +1,172 @@
+{
+  "Wrong Instruction": {
+    "accuracy": {
+      "mean": 0.9833333333333332,
+      "std": 0.03333333333333335
+    },
+    "f1": {
+      "mean": 0.9818181818181818,
+      "std": 0.036363636363636376
+    },
+    "pla": {
+      "mean": 0.6666666666666667,
+      "std": 0.408248290463863
+    },
+    "flip_rate": {
+      "mean": 0.016666666666666666,
+      "std": 0.03333333333333333
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.903125,
+      "std": 0.040203786536895963
+    },
+    "mean_compatibility": {
+      "mean": 0.021159677952528,
+      "std": 0.07232291203387313
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.03618246279656887,
+      "std": 0.004227342316413546
+    }
+  },
+  "Held-out Paraphrase": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.6333333333333333,
+      "std": 0.45215533220835125
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.96328125,
+      "std": 0.0629564024222877
+    },
+    "mean_compatibility": {
+      "mean": 0.007890872657299042,
+      "std": 0.062310629276848356
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.025538883917033673,
+      "std": 0.013207605863849645
+    }
+  },
+  "Zero Text": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.6,
+      "std": 0.48989794855663565
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": Infinity,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.92763671875,
+      "std": 0.05373969400651684
+    },
+    "mean_compatibility": {
+      "mean": 0.013236342370510102,
+      "std": 0.0626101344087452
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.027874958142638205,
+      "std": 0.009979694064899612
+    }
+  },
+  "Wrong Demo": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.6666666666666667,
+      "std": 0.408248290463863
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.96650390625,
+      "std": 0.06309878569823509
+    },
+    "mean_compatibility": {
+      "mean": 0.005705694854259491,
+      "std": 0.060633394029754775
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.0341224143281579,
+      "std": 0.01820933098658694
+    }
+  },
+  "Zero Demo": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.6666666666666667,
+      "std": 0.408248290463863
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.96650390625,
+      "std": 0.06309878569823509
+    },
+    "mean_compatibility": {
+      "mean": 0.00570569634437561,
+      "std": 0.06063339064562993
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.024130602180957795,
+      "std": 0.017375744232604632
+    }
+  }
+}

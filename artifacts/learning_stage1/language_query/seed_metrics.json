@@ -1,0 +1,427 @@
+[
+  {
+    "seed": 11,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 0.16666666666666666,
+        "total_pairs": 6,
+        "loss": 0.0006909561197971925
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 0.4666666666666667,
+        "total_pairs": 30,
+        "loss": 0.009022341662785038
+      },
+      "unseen_background": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 0.26666666666666666,
+        "total_pairs": 30,
+        "loss": 0.013925688806921244
+      },
+      "compositional": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 0.3,
+        "total_pairs": 30,
+        "loss": 0.0022427308904298116
+      }
+    }
+  },
+  {
+    "seed": 23,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "loss": 0.0006215813118615188
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.01513029370107688
+      },
+      "unseen_background": {
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9666666666666667,
+        "precision": 0.9666666666666667,
+        "recall": 0.9666666666666667,
+        "confusion_matrix": [
+          [
+            29,
+            1
+          ],
+          [
+            1,
+            29
+          ]
+        ],
+        "pla": 0.9333333333333333,
+        "total_pairs": 30,
+        "loss": 0.060291190398857
+      },
+      "compositional": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.001587211896548979
+      }
+    }
+  },
+  {
+    "seed": 42,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "loss": 0.0021546436473727226
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.011959073672187515
+      },
+      "unseen_background": {
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            2,
+            28
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.06574731788714416
+      },
+      "compositional": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.0015064917752170004
+      }
+    }
+  },
+  {
+    "seed": 67,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "loss": 0.0005497764504980296
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.009129230573307723
+      },
+      "unseen_background": {
+        "accuracy": 0.9833333333333333,
+        "balanced_accuracy": 0.9833333333333334,
+        "f1": 0.9830508474576272,
+        "precision": 1.0,
+        "recall": 0.9666666666666667,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            1,
+            29
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.02952595140232006
+      },
+      "compositional": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "loss": 0.002406201003395836
+      }
+    }
+  },
+  {
+    "seed": 101,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 0.16666666666666666,
+        "total_pairs": 6,
+        "loss": 0.09450971335172653
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 0.4666666666666667,
+        "total_pairs": 30,
+        "loss": 0.18489215523004532
+      },
+      "unseen_background": {
+        "accuracy": 0.9333333333333333,
+        "balanced_accuracy": 0.9333333333333333,
+        "f1": 0.9310344827586207,
+        "precision": 0.9642857142857143,
+        "recall": 0.9,
+        "confusion_matrix": [
+          [
+            29,
+            1
+          ],
+          [
+            3,
+            27
+          ]
+        ],
+        "pla": 0.4,
+        "total_pairs": 30,
+        "loss": 0.2513891374692321
+      },
+      "compositional": {
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            2,
+            28
+          ]
+        ],
+        "pla": 0.4666666666666667,
+        "total_pairs": 30,
+        "loss": 0.14400694286450744
+      }
+    }
+  }
+]

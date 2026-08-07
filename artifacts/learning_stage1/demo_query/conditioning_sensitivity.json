@@ -1,0 +1,172 @@
+{
+  "Wrong Instruction": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.7333333333333334,
+      "std": 0.37416573867739417
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.95908203125,
+      "std": 0.07553911360564255
+    },
+    "mean_compatibility": {
+      "mean": 0.03420098274946213,
+      "std": 0.03705342708582522
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.01002084743231535,
+      "std": 0.0039739499851091376
+    }
+  },
+  "Held-out Paraphrase": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.7333333333333334,
+      "std": 0.37416573867739417
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.95908203125,
+      "std": 0.07553911360564255
+    },
+    "mean_compatibility": {
+      "mean": 0.03420110736042261,
+      "std": 0.03705367350727641
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.008775501931086182,
+      "std": 0.00467809982219199
+    }
+  },
+  "Zero Text": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.7333333333333334,
+      "std": 0.37416573867739417
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.95908203125,
+      "std": 0.07553911360564255
+    },
+    "mean_compatibility": {
+      "mean": 0.03420368656516075,
+      "std": 0.037055444865514015
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.010855602845549584,
+      "std": 0.0034431315726034684
+    }
+  },
+  "Wrong Demo": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.7333333333333334,
+      "std": 0.37416573867739417
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.9552734375,
+      "std": 0.07808690477452429
+    },
+    "mean_compatibility": {
+      "mean": 0.03489981675520539,
+      "std": 0.03663966421025069
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.010699816979467869,
+      "std": 0.0027622678581037375
+    }
+  },
+  "Zero Demo": {
+    "accuracy": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "f1": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "pla": {
+      "mean": 0.7333333333333334,
+      "std": 0.37416573867739417
+    },
+    "flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "mean_delta_logit": {
+      "mean": NaN,
+      "std": NaN
+    },
+    "mean_confidence": {
+      "mean": 0.95908203125,
+      "std": 0.07553911360564255
+    },
+    "mean_compatibility": {
+      "mean": 0.034202026948332784,
+      "std": 0.0370541621002758
+    },
+    "mean_delta_compatibility": {
+      "mean": 0.011707650311291218,
+      "std": 0.006319607590828036
+    }
+  }
+}

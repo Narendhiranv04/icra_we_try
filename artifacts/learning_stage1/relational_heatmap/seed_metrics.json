@@ -1,0 +1,507 @@
+[
+  {
+    "seed": 11,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "stop_iou": 0.704056854532061,
+        "stop_dice": 0.825738262630071,
+        "proceed_fp_frac": 0.0,
+        "proceed_mean_act": 0.3632449209690094,
+        "loss": 0.6913187901178995
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.7153367497188686,
+        "stop_dice": 0.8330087303163697,
+        "proceed_fp_frac": 0.003966039540816327,
+        "proceed_mean_act": 0.36262789368629456,
+        "loss": 0.6936599731445312
+      },
+      "unseen_background": {
+        "accuracy": 0.95,
+        "balanced_accuracy": 0.95,
+        "f1": 0.9473684210526315,
+        "precision": 1.0,
+        "recall": 0.9,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            3,
+            27
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.6215783543064701,
+        "stop_dice": 0.7645848651583361,
+        "proceed_fp_frac": 0.003807929421768708,
+        "proceed_mean_act": 0.3641766309738159,
+        "loss": 0.8133628964424133
+      },
+      "compositional": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.7266538419218792,
+        "stop_dice": 0.8406403508124728,
+        "proceed_fp_frac": 2.9230442176870748e-05,
+        "proceed_mean_act": 0.3644406199455261,
+        "loss": 0.6915737589200338
+      }
+    }
+  },
+  {
+    "seed": 23,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "stop_iou": 0.7939758370324196,
+        "stop_dice": 0.8847128492220174,
+        "proceed_fp_frac": 0.0,
+        "proceed_mean_act": 0.31637588143348694,
+        "loss": 0.6387271682421366
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.7720391215005723,
+        "stop_dice": 0.8701774301115245,
+        "proceed_fp_frac": 0.00018933354591836734,
+        "proceed_mean_act": 0.31435248255729675,
+        "loss": 0.6386498133341472
+      },
+      "unseen_background": {
+        "accuracy": 0.9333333333333333,
+        "balanced_accuracy": 0.9333333333333333,
+        "f1": 0.9310344827586207,
+        "precision": 0.9642857142857143,
+        "recall": 0.9,
+        "confusion_matrix": [
+          [
+            29,
+            1
+          ],
+          [
+            3,
+            27
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.710041998918838,
+        "stop_dice": 0.827779541419078,
+        "proceed_fp_frac": 0.0015306122448979593,
+        "proceed_mean_act": 0.3118502199649811,
+        "loss": 0.8527996897697449
+      },
+      "compositional": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.7852045812700734,
+        "stop_dice": 0.8788011556046933,
+        "proceed_fp_frac": 0.0,
+        "proceed_mean_act": 0.31602466106414795,
+        "loss": 0.6364868481953939
+      }
+    }
+  },
+  {
+    "seed": 42,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "stop_iou": 0.41172116177558404,
+        "stop_dice": 0.58279154025227,
+        "proceed_fp_frac": 0.002521125637755102,
+        "proceed_mean_act": 0.3793560564517975,
+        "loss": 0.7389738361040751
+      },
+      "unseen_object": {
+        "accuracy": 0.9833333333333333,
+        "balanced_accuracy": 0.9833333333333334,
+        "f1": 0.9830508474576272,
+        "precision": 1.0,
+        "recall": 0.9666666666666667,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            1,
+            29
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.54452678336798,
+        "stop_dice": 0.6966356467158497,
+        "proceed_fp_frac": 0.0069927189625850344,
+        "proceed_mean_act": 0.38291892409324646,
+        "loss": 0.7783219218254089
+      },
+      "unseen_background": {
+        "accuracy": 0.8166666666666667,
+        "balanced_accuracy": 0.8166666666666667,
+        "f1": 0.7755102040816326,
+        "precision": 1.0,
+        "recall": 0.6333333333333333,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            11,
+            19
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.17113018898765864,
+        "stop_dice": 0.2909604888906674,
+        "proceed_fp_frac": 0.048024952168367344,
+        "proceed_mean_act": 0.3995545506477356,
+        "loss": 1.2353956659634908
+      },
+      "compositional": {
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            2,
+            28
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.5042871885468064,
+        "stop_dice": 0.6665027165493381,
+        "proceed_fp_frac": 0.00037933142006802724,
+        "proceed_mean_act": 0.3839138150215149,
+        "loss": 0.7926695227622986
+      }
+    }
+  },
+  {
+    "seed": 67,
+    "metrics": {
+      "id_val": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "stop_iou": 0.7606750033413535,
+        "stop_dice": 0.8626724155994957,
+        "proceed_fp_frac": 0.0,
+        "proceed_mean_act": 0.28390371799468994,
+        "loss": 0.6075084010759989
+      },
+      "unseen_object": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.7946688914952437,
+        "stop_dice": 0.884872289113919,
+        "proceed_fp_frac": 1.8601190476190474e-05,
+        "proceed_mean_act": 0.281307578086853,
+        "loss": 0.6089892029762268
+      },
+      "unseen_background": {
+        "accuracy": 0.9333333333333333,
+        "balanced_accuracy": 0.9333333333333333,
+        "f1": 0.9310344827586207,
+        "precision": 0.9642857142857143,
+        "recall": 0.9,
+        "confusion_matrix": [
+          [
+            29,
+            1
+          ],
+          [
+            3,
+            27
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.7581224708075103,
+        "stop_dice": 0.860904444604839,
+        "proceed_fp_frac": 0.0,
+        "proceed_mean_act": 0.28330859541893005,
+        "loss": 0.7983561317125957
+      },
+      "compositional": {
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.780684809050154,
+        "stop_dice": 0.8755613072499993,
+        "proceed_fp_frac": 0.0,
+        "proceed_mean_act": 0.28401607275009155,
+        "loss": 0.6088036060333252
+      }
+    }
+  },
+  {
+    "seed": 101,
+    "metrics": {
+      "id_val": {
+        "accuracy": 0.9166666666666666,
+        "balanced_accuracy": 0.9166666666666667,
+        "f1": 0.9230769230769231,
+        "precision": 0.8571428571428571,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            5,
+            1
+          ],
+          [
+            0,
+            6
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 6,
+        "stop_iou": 0.4797717187281047,
+        "stop_dice": 0.6467814295168833,
+        "proceed_fp_frac": 0.007251142644557823,
+        "proceed_mean_act": 0.41101810336112976,
+        "loss": 0.9441534280776978
+      },
+      "unseen_object": {
+        "accuracy": 0.95,
+        "balanced_accuracy": 0.95,
+        "f1": 0.9523809523809523,
+        "precision": 0.9090909090909091,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            27,
+            3
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.5314716964360335,
+        "stop_dice": 0.6912981345115903,
+        "proceed_fp_frac": 0.014429209183673469,
+        "proceed_mean_act": 0.4116535484790802,
+        "loss": 0.8565909584363302
+      },
+      "unseen_background": {
+        "accuracy": 0.85,
+        "balanced_accuracy": 0.8500000000000001,
+        "f1": 0.8615384615384616,
+        "precision": 0.8,
+        "recall": 0.9333333333333333,
+        "confusion_matrix": [
+          [
+            23,
+            7
+          ],
+          [
+            2,
+            28
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.4019764762258361,
+        "stop_dice": 0.5704504931053093,
+        "proceed_fp_frac": 0.03604312818877552,
+        "proceed_mean_act": 0.42433393001556396,
+        "loss": 1.088491721947988
+      },
+      "compositional": {
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.967741935483871,
+        "precision": 0.9375,
+        "recall": 1.0,
+        "confusion_matrix": [
+          [
+            28,
+            2
+          ],
+          [
+            0,
+            30
+          ]
+        ],
+        "pla": 1.0,
+        "total_pairs": 30,
+        "stop_iou": 0.5087951549408108,
+        "stop_dice": 0.6720568824404352,
+        "proceed_fp_frac": 0.011138791454081634,
+        "proceed_mean_act": 0.41240718960762024,
+        "loss": 0.835688050587972
+      }
+    }
+  }
+]

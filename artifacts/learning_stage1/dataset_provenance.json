@@ -1,0 +1,20 @@
+{
+  "tested_benchmark_commit": "7eb0ec18c69969dd2c205ac9169366abea42628a",
+  "pilot_config": "configs/pilot.yaml",
+  "pilot_manifest_path": "data/manifests/pilot_manifest.jsonl",
+  "pilot_manifest_sha256": "33bac08757004f5a1b509e0783e828c9191a14342b0484d94558df932b7061b9",
+  "matched_pair_count": 120,
+  "query_count": 240,
+  "control_count": 32,
+  "split_counts": {
+    "id": 30,
+    "unseen_object": 30,
+    "unseen_background": 30,
+    "compositional": 30
+  },
+  "task_counts": {
+    "task_1": 60,
+    "task_2": 60
+  },
+  "query_root_directory": "data/pilot_queries"
+}
