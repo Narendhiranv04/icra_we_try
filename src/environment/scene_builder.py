@@ -193,20 +193,6 @@ class SceneBuilder:
                         col_attribs.update({"type": "cylinder", "size": f"{r} {h}"})
 
                     ET.SubElement(body, "geom", col_attribs)
-
-                    # Also add a legacy alias geom name if code expects {obj_name}_geom
-                    ET.SubElement(
-                        body,
-                        "geom",
-                        name=f"{obj_name}_geom",
-                        type="mesh",
-                        mesh=mesh_name,
-                        material=mat_name,
-                        group="1",
-                        mass="0.001",
-                        contype="0",
-                        conaffinity="0",
-                    )
                 else:
                     # Fail clearly if registered asset is expected but missing
                     raise ValueError(f"Requested asset '{asset_key}' not found in AssetRegistry!")
@@ -270,27 +256,29 @@ def get_instance_visual_geom_names(model: mujoco.MjModel, instance_name: str) ->
     names = []
     body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, instance_name)
     if body_id == -1:
-        return [f"{instance_name}_geom"]
+        return [f"{instance_name}_visual", f"{instance_name}_geom"]
 
     for i in range(model.ngeom):
         if model.geom_bodyid[i] == body_id:
             gname = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, i) or ""
-            # Only include visual geoms (group 1 or non-collision)
-            if model.geom_group[i] == 1 and gname:
+            # Only include visual geoms (group != 3)
+            if model.geom_group[i] != 3 and gname:
                 names.append(gname)
-    return names if names else [f"{instance_name}_geom"]
+    return names if names else [f"{instance_name}_visual"]
 
 
 def get_instance_visual_geom_ids(model: mujoco.MjModel, instance_name: str) -> List[int]:
     """Retrieve all visible geom IDs associated with an object instance."""
     body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, instance_name)
     if body_id == -1:
-        gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, f"{instance_name}_geom")
+        gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, f"{instance_name}_visual")
+        if gid == -1:
+            gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, f"{instance_name}_geom")
         return [gid] if gid != -1 else []
 
     ids = []
     for i in range(model.ngeom):
-        if model.geom_bodyid[i] == body_id and model.geom_group[i] == 1:
+        if model.geom_bodyid[i] == body_id and model.geom_group[i] != 3:
             ids.append(i)
     return ids
 

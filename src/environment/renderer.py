@@ -86,6 +86,110 @@ class OffscreenRenderer:
             "resolution": [int(self.width), int(self.height)],
         }
 
+    def validate_instance_visibility(
+        self,
+        data: mujoco.MjData,
+        target_geom_names: list[str],
+        required_instances: Dict[str, list[str]],
+        minimum_pixels: int = 50,
+        min_target_pixels: int = 50,
+        max_torso_fraction: float = 0.25,
+    ) -> Dict[str, Union[bool, int, float, dict]]:
+        """Validate visibility of target region and each required object instance individually.
+        
+        Args:
+            data: MjData instance.
+            target_geom_names: Geoms representing target surface or lid.
+            required_instances: Mapping of instance label (e.g. 'object1', 'occupant', 'blocker1')
+                                to list of visual geom names for that instance.
+            minimum_pixels: Minimum visible pixels required per required instance.
+            min_target_pixels: Minimum visible pixels required for target region.
+            max_torso_fraction: Maximum acceptable torso area fraction.
+            
+        Returns:
+            Dictionary with per-instance visibility metrics and overall validation status.
+        """
+        seg_mask = self.render_segmentation(data)
+        geom_ids_in_view = seg_mask[:, :, 0]
+
+        # Target / region pixels (only visual geoms, group != 3)
+        target_ids = [
+            mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, name)
+            for name in target_geom_names
+        ]
+        target_ids = [g for g in target_ids if g != -1 and self.model.geom_group[g] != 3]
+        target_px = int(np.isin(geom_ids_in_view, target_ids).sum()) if target_ids else 0
+        target_visible = bool(target_px >= min_target_pixels)
+
+        instance_results = {}
+        all_instances_visible = True
+        total_candidate_pixels = 0
+
+        for inst_name, geom_names in required_instances.items():
+            g_ids = [
+                mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, name)
+                for name in geom_names
+            ]
+            g_ids = [g for g in g_ids if g != -1 and self.model.geom_group[g] != 3]
+            px = int(np.isin(geom_ids_in_view, g_ids).sum()) if g_ids else 0
+            vis = bool(px >= minimum_pixels)
+            instance_results[inst_name] = {
+                "pixels": px,
+                "visible": vis,
+            }
+            total_candidate_pixels += px
+            if not vis:
+                all_instances_visible = False
+
+        # Torso body pixels (visual group != 3)
+        torso_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "robot0:torso_lift_link")
+        torso_geom_ids = []
+        if torso_body_id != -1:
+            torso_geom_ids = [
+                g for g in range(self.model.ngeom)
+                if self.model.geom_bodyid[g] == torso_body_id and self.model.geom_group[g] != 3
+            ]
+        torso_px = int(np.isin(geom_ids_in_view, torso_geom_ids).sum()) if torso_geom_ids else 0
+        total_px = self.width * self.height
+        torso_frac = float(torso_px / total_px)
+        torso_acceptable = bool(torso_frac <= max_torso_fraction)
+
+        is_valid = bool(target_visible and all_instances_visible and torso_acceptable)
+
+        return {
+            "is_valid": is_valid,
+            "target": {
+                "pixels": target_px,
+                "visible": target_visible,
+            },
+            "required_instances": instance_results,
+            "torso_fraction": torso_frac,
+            "torso_acceptable": torso_acceptable,
+            "target_pixels": target_px,
+            "candidate_pixels": total_candidate_pixels,
+            "target_visible": target_visible,
+            "candidate_visible": all_instances_visible,
+        }
+
+    def validate_task_view(
+        self,
+        data: mujoco.MjData,
+        target_geom_names: list[str],
+        required_instances: Dict[str, list[str]],
+        minimum_pixels: int = 50,
+        min_target_pixels: int = 50,
+        max_torso_fraction: float = 0.25,
+    ) -> Dict[str, Union[bool, int, float, dict]]:
+        """Alias for validate_instance_visibility."""
+        return self.validate_instance_visibility(
+            data=data,
+            target_geom_names=target_geom_names,
+            required_instances=required_instances,
+            minimum_pixels=minimum_pixels,
+            min_target_pixels=min_target_pixels,
+            max_torso_fraction=max_torso_fraction,
+        )
+
     def validate_view_quality(
         self,
         data: mujoco.MjData,
@@ -108,7 +212,7 @@ class OffscreenRenderer:
             mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, name)
             for name in target_geom_names
         ]
-        target_ids = [g for g in target_ids if g != -1]
+        target_ids = [g for g in target_ids if g != -1 and self.model.geom_group[g] != 3]
         target_px = int(np.isin(geom_ids_in_view, target_ids).sum()) if target_ids else 0
 
         # Candidate object pixels
@@ -116,14 +220,17 @@ class OffscreenRenderer:
             mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, name)
             for name in candidate_geom_names
         ]
-        cand_ids = [g for g in cand_ids if g != -1]
+        cand_ids = [g for g in cand_ids if g != -1 and self.model.geom_group[g] != 3]
         cand_px = int(np.isin(geom_ids_in_view, cand_ids).sum()) if cand_ids else 0
 
         # Torso body pixels
         torso_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "robot0:torso_lift_link")
         torso_geom_ids = []
         if torso_body_id != -1:
-            torso_geom_ids = [g for g in range(self.model.ngeom) if self.model.geom_bodyid[g] == torso_body_id]
+            torso_geom_ids = [
+                g for g in range(self.model.ngeom)
+                if self.model.geom_bodyid[g] == torso_body_id and self.model.geom_group[g] != 3
+            ]
         torso_px = int(np.isin(geom_ids_in_view, torso_geom_ids).sum()) if torso_geom_ids else 0
         total_px = self.width * self.height
         torso_frac = float(torso_px / total_px)

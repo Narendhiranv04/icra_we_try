@@ -128,18 +128,47 @@ class CounterfactualPairGenerator:
         self.scene_builder = SceneBuilder()
         self.split_planner = SplitPlanner()
 
+    def _format_object_metadata(self, objs_list: List[dict]) -> Dict[str, dict]:
+        from src.environment.scene_builder import ASSET_KEY_MAPPING
+        objs_dict = {}
+        for o in objs_list:
+            name = o["name"]
+            raw_type = o.get("type", "coffee_can")
+            key = o.get("asset_id", ASSET_KEY_MAPPING.get(raw_type, raw_type))
+            meta = self.scene_builder.registry.get_asset(key)
+            objs_dict[name] = {
+                "instance_name": name,
+                "name": name,
+                "type": raw_type,
+                "legacy_type": raw_type,
+                "asset_id": meta.name if meta else key,
+                "canonical_name": meta.display_name if meta else raw_type,
+                "source_dataset": meta.source if meta else ("gso" if key.startswith("gso_") else "ycb"),
+                "source_id": meta.source_id if meta else "",
+                "role": o.get("role", "blocker" if "blocker" in name else ("occupant" if "occupant" in name or name == "coffee_can" else "distractor")),
+                "visual_mesh_identifier": meta.mesh_path if meta else "",
+                "texture_material_identifier": meta.texture_path if meta else "",
+                "collision_proxy_type": meta.collision_type if meta else "box",
+                "position": o["pos"],
+                "orientation": o.get("quat", [1.0, 0.0, 0.0, 0.0]),
+                "quaternion": o.get("quat", [1.0, 0.0, 0.0, 0.0]),
+                "scale": [1.0, 1.0, 1.0],
+                "mass": meta.mass_kg if meta else 0.3,
+            }
+        return objs_dict
+
     def _get_body_geom_names(self, model: mujoco.MjModel, body_name: str) -> List[str]:
-        """Retrieve all geom names attached to a given body name in the MuJoCo model."""
+        """Retrieve visual geom names attached to a given body name in the MuJoCo model."""
         body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name)
         if body_id == -1:
-            return [f"{body_name}_geom"]
+            return [f"{body_name}_visual", f"{body_name}_geom"]
         geoms = []
         for g in range(model.ngeom):
-            if model.geom_bodyid[g] == body_id:
+            if model.geom_bodyid[g] == body_id and model.geom_group[g] != 3:
                 name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, g)
                 if name:
                     geoms.append(name)
-        return geoms if geoms else [f"{body_name}_geom"]
+        return geoms if geoms else [f"{body_name}_visual"]
 
     def _generate_masks_and_visualizations(
         self,
@@ -261,16 +290,20 @@ class CounterfactualPairGenerator:
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
-        cand_geom_names = []
-        for o in stop_objects:
-            cand_geom_names.extend(self._get_body_geom_names(model_stop, o["name"]))
+        stop_req_inst = {o["name"]: self._get_body_geom_names(model_stop, o["name"]) for o in stop_objects}
 
-        val_stop = renderer_stop.validate_view_quality(data_stop, target_geom_names=["B1_lid_panel"], candidate_geom_names=cand_geom_names)
+        val_stop = renderer_stop.validate_instance_visibility(
+            data_stop, target_geom_names=["B1_lid_panel", "B1_lid_geom"], required_instances=stop_req_inst
+        )
         if not val_stop["is_valid"]:
             raise ValueError(f"Task 1 STOP scene view quality validation failed for pair {pair_id}: {val_stop}")
 
         rgb_stop = renderer_stop.render_rgb(data_stop)
+        cand_geom_names = []
+        for o in stop_objects:
+            cand_geom_names.extend(self._get_body_geom_names(model_stop, o["name"]))
         candidate_geoms = cand_geom_names
+
         inst_stop_8, inst_stop_16, cand_stop, target_stop, causal_stop, vis_stop, id_map_stop = (
             self._generate_masks_and_visualizations(
                 renderer_stop, model_stop, data_stop, candidate_geoms, ["B1_lid_panel"], is_stop=True
@@ -296,8 +329,10 @@ class CounterfactualPairGenerator:
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
-
-        val_proceed = renderer_proceed.validate_view_quality(data_proceed, target_geom_names=["B1_lid_panel"], candidate_geom_names=[])
+        proc_req_inst = {o["name"]: self._get_body_geom_names(model_proceed, o["name"]) for o in proceed_objects}
+        val_proceed = renderer_proceed.validate_instance_visibility(
+            data_proceed, target_geom_names=["B1_lid_panel", "B1_lid_geom"], required_instances=proc_req_inst
+        )
         if not val_proceed["is_valid"]:
             raise ValueError(f"Task 1 PROCEED scene view quality validation failed for pair {pair_id}: {val_proceed}")
 
@@ -366,14 +401,7 @@ class CounterfactualPairGenerator:
 
         # Build complete resolved scene specs
         def build_resolved_spec(objs_list: List[dict], label: str, cam_meta: dict) -> Dict[str, Any]:
-            objs_dict = {}
-            for o in objs_list:
-                objs_dict[o["name"]] = {
-                    "name": o["name"],
-                    "type": o["type"],
-                    "position": o["pos"],
-                    "orientation": o.get("quat", [1.0, 0.0, 0.0, 0.0]),
-                }
+            objs_dict = self._format_object_metadata(objs_list)
             return {
                 "task_family": "task_1",
                 "instruction": "Open the box.",
@@ -563,8 +591,13 @@ class CounterfactualPairGenerator:
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
-        cand_geoms_stop = self._get_body_geom_names(model_stop, "coffee_can") + self._get_body_geom_names(model_stop, "occupant")
-        val_stop = renderer_stop.validate_view_quality(data_stop, target_geom_names=["target_region_geom"], candidate_geom_names=cand_geoms_stop)
+        stop_req_inst = {
+            "coffee_can": self._get_body_geom_names(model_stop, "coffee_can"),
+            "occupant": self._get_body_geom_names(model_stop, "occupant"),
+        }
+        val_stop = renderer_stop.validate_instance_visibility(
+            data_stop, target_geom_names=["target_region_geom"], required_instances=stop_req_inst
+        )
         if not val_stop["is_valid"]:
             raise ValueError(f"Task 2 STOP scene view quality validation failed for pair {pair_id}: {val_stop}")
 
@@ -593,8 +626,13 @@ class CounterfactualPairGenerator:
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
-        cand_geoms_proc = self._get_body_geom_names(model_proceed, "coffee_can")
-        val_proceed = renderer_proceed.validate_view_quality(data_proceed, target_geom_names=["target_region_geom"], candidate_geom_names=cand_geoms_proc)
+        proc_req_inst = {
+            "coffee_can": self._get_body_geom_names(model_proceed, "coffee_can"),
+            "occupant": self._get_body_geom_names(model_proceed, "occupant"),
+        }
+        val_proceed = renderer_proceed.validate_instance_visibility(
+            data_proceed, target_geom_names=["target_region_geom"], required_instances=proc_req_inst
+        )
         if not val_proceed["is_valid"]:
             raise ValueError(f"Task 2 PROCEED scene view quality validation failed for pair {pair_id}: {val_proceed}")
 
@@ -652,21 +690,14 @@ class CounterfactualPairGenerator:
 
         # Legacy backward-compatible file copies
         Image.fromarray(cand_stop).save(pair_dir / "stop_culprit_mask.png")
-        Image.fromarray(target_stop).save(pair_dir / "stop_target_mask.png")
+        Image.fromarray(target_stop).save(pair_dir / "stop_lid_mask.png")
         Image.fromarray(cand_proceed).save(pair_dir / "proceed_culprit_mask.png")
-        Image.fromarray(target_proceed).save(pair_dir / "proceed_target_mask.png")
+        Image.fromarray(target_proceed).save(pair_dir / "proceed_lid_mask.png")
 
         declared_intervention_paths = ["objects.occupant.position"]
 
         def build_resolved_spec(objs_list: List[dict], label: str, cam_meta: Dict[str, Any]) -> Dict[str, Any]:
-            objs_dict = {}
-            for o in objs_list:
-                objs_dict[o["name"]] = {
-                    "name": o["name"],
-                    "type": o["type"],
-                    "position": o["pos"],
-                    "orientation": o.get("quat", [1.0, 0.0, 0.0, 0.0]),
-                }
+            objs_dict = self._format_object_metadata(objs_list)
             return {
                 "task_family": "task_2",
                 "instruction": "Place object1 in the target region.",

@@ -37,13 +37,13 @@ class SplitPlanner:
             self.config = {}
 
         id_factors = self.config.get("id_factors", {})
-        self.id_objects: List[str] = id_factors.get("objects", ["coffee_can", "sugar_box", "mug"])
+        self.id_objects: List[str] = id_factors.get("objects", ["coffee_can", "sugar_box", "mug", "gso_coffee_jar", "gso_sugar_jar"])
         self.id_backgrounds: List[str] = id_factors.get("backgrounds", ["bg_neutral_wood"])
         self.id_pos_t1: List[str] = id_factors.get("position_bins_task1", ["centre", "front_left", "front_right"])
         self.id_pos_t2: List[str] = id_factors.get("position_bins_task2", ["centre", "left", "right"])
 
         holdout_d = self.config.get("holdout_distractors", {})
-        self.unseen_objects: List[str] = (holdout_d.get("val", ["cup"]) + holdout_d.get("test", ["bowl"]))
+        self.unseen_objects: List[str] = (holdout_d.get("val", ["cup"]) + holdout_d.get("test", ["bowl", "gso_canister_distractor"]))
         self.unseen_backgrounds: List[str] = self.config.get("holdout_backgrounds", {}).get("unseen", ["bg_blue_counter", "bg_granite_dark"])
 
         self.start_bins: List[str] = ["pick_left", "pick_right", "pick_far_left"]
