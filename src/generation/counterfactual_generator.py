@@ -253,8 +253,8 @@ class CounterfactualPairGenerator:
         stop_b1_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
 
         if blocker_count == 2:
-            xf1 = -0.45
-            xf2 = 0.45
+            xf1 = -0.6
+            xf2 = 0.6
             yf_clamped = max(-0.1, min(0.2, y_frac))
             yf1 = yf_clamped
             yf2 = yf_clamped
