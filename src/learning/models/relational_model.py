@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class TransformerEncoderLayer(nn.Module):
     def __init__(self, d_model=256, nhead=8, dim_feedforward=1024, dropout=0.1):
@@ -103,6 +104,10 @@ class DemoLanguageConditionedRelationalModel(nn.Module):
         z_R = Z_R.mean(dim=1)
         
         logits = self.classifier(z_R)
-        s = -logits
+        
+        # Latent ranking objective
+        z_S_norm = F.normalize(z_S, dim=-1)
+        z_Q_norm = F.normalize(z_R, dim=-1)
+        s = (z_S_norm * z_Q_norm).sum(dim=-1)
         
         return logits, s, Z_R

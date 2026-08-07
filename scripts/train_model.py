@@ -58,16 +58,19 @@ def main():
     train_dataset = LearningDataset(
         index_path=config.get("index_path", "learning_data/index.jsonl"),
         features_dir=config.get("feature_cache_path", "learning_data/features"),
-        split="id",
-        return_masks=config.get("heatmap", False)
+        split="id_train",
+        return_masks=config.get("heatmap", False),
+        train_ratio=config.get("train_ratio", 0.8),
+        seed=config.get("seed", 42)
     )
     
-    # Validation dataset can be unseen_object
     val_dataset = LearningDataset(
         index_path=config.get("index_path", "learning_data/index.jsonl"),
         features_dir=config.get("feature_cache_path", "learning_data/features"),
-        split="unseen_object",
-        return_masks=config.get("heatmap", False)
+        split="id_val",
+        return_masks=config.get("heatmap", False),
+        train_ratio=config.get("train_ratio", 0.8),
+        seed=config.get("seed", 42)
     )
     
     batch_size = config.get("batch_size", 8)

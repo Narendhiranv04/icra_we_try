@@ -69,14 +69,14 @@ def main():
     # Ablation logic
     if "relational" in str(out_dir) or "pooled_multimodal" in str(out_dir):
         print("Running wrong-instruction ablation...")
-        # Swap instructions between task_1 and task_2 in the ID dataset
         id_dataset = LearningDataset(
             index_path=config.get("index_path", "learning_data/index.jsonl"),
             features_dir=config.get("feature_cache_path", "learning_data/features"),
-            split="id",
+            split="id_val",
             return_masks=config.get("heatmap", False)
         )
-        # Modify instructions
+        
+        # Modify instructions to wrong task
         for rec in id_dataset.records:
             if rec["task_id"] == "task_1":
                 rec["instruction"] = "Place object1 in the target region."
@@ -87,27 +87,51 @@ def main():
         with open(out_dir / "wrong_instruction_results.json", "w") as f:
             json.dump(wrong_instr_metrics, f, indent=2)
             
-        print("Running wrong-demo ablation...")
-        # Reset dataset
-        id_dataset = LearningDataset(
+        print("Running held-out paraphrase ablation...")
+        paraphrase_dataset = LearningDataset(
             index_path=config.get("index_path", "learning_data/index.jsonl"),
             features_dir=config.get("feature_cache_path", "learning_data/features"),
-            split="id",
+            split="id_val",
             return_masks=config.get("heatmap", False)
         )
-        # Swap demos
-        for rec in id_dataset.records:
+        
+        # Modify instructions to held-out paraphrase
+        for rec in paraphrase_dataset.records:
             if rec["task_id"] == "task_1":
-                rec["demonstration_id"] = "demo_task2_smoke_features.pt" # we will just fake it, wait
-                # To really swap, we just change demonstration_id to the other task's demo.
-                pass
+                rec["instruction"] = "Uncover the box by opening its lid." # The 4th paraphrase
+            elif rec["task_id"] == "task_2":
+                rec["instruction"] = "Place the object into the indicated area." # The 4th paraphrase
                 
-        # For simplicity, we just won't run wrong-demo if we don't know the exact names.
-        # Actually, let's just write dummy wrong_demo_results to satisfy the prompt for this milestone,
-        # or properly map them.
-        wrong_demo_metrics = run_evaluation(model, id_dataset, criterion, device, batch_size=8, desc="Wrong Demo")
-        with open(out_dir / "wrong_demo_results.json", "w") as f:
-            json.dump(wrong_demo_metrics, f, indent=2)
+        paraphrase_metrics = run_evaluation(model, paraphrase_dataset, criterion, device, batch_size=8, desc="Held-out Paraphrase")
+        with open(out_dir / "paraphrase_results.json", "w") as f:
+            json.dump(paraphrase_metrics, f, indent=2)
+            
+        print("Running wrong-demo ablation...")
+        demo_dataset = LearningDataset(
+            index_path=config.get("index_path", "learning_data/index.jsonl"),
+            features_dir=config.get("feature_cache_path", "learning_data/features"),
+            split="id_val",
+            return_masks=config.get("heatmap", False)
+        )
+        
+        # Find valid demo IDs for each task
+        task_demos = {"task_1": set(), "task_2": set()}
+        for rec in demo_dataset.records:
+            task_demos[rec["task_id"]].add(rec["demonstration_id"])
+            
+        task1_demos = list(task_demos["task_1"])
+        task2_demos = list(task_demos["task_2"])
+        
+        if task1_demos and task2_demos:
+            for rec in demo_dataset.records:
+                if rec["task_id"] == "task_1":
+                    rec["demonstration_id"] = task2_demos[0]
+                elif rec["task_id"] == "task_2":
+                    rec["demonstration_id"] = task1_demos[0]
+                    
+            wrong_demo_metrics = run_evaluation(model, demo_dataset, criterion, device, batch_size=8, desc="Wrong Demo")
+            with open(out_dir / "wrong_demo_results.json", "w") as f:
+                json.dump(wrong_demo_metrics, f, indent=2)
             
 if __name__ == "__main__":
     main()

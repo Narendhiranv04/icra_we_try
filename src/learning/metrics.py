@@ -2,7 +2,7 @@ import torch
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 import numpy as np
 
-def compute_metrics(preds, targets, scores=None, pair_ids=None):
+def compute_metrics(preds, targets, scores=None, pair_ids=None, heat_preds=None, heat_targets=None):
     preds_np = np.array(preds) >= 0.5
     targets_np = np.array(targets)
     
@@ -50,5 +50,34 @@ def compute_metrics(preds, targets, scores=None, pair_ids=None):
                         
         metrics["pla"] = correct_pairs / max(1, total_pairs)
         metrics["total_pairs"] = total_pairs
+        
+    if heat_preds is not None and heat_targets is not None:
+        heat_preds_np = np.array(heat_preds) > 0.5
+        heat_targets_np = np.array(heat_targets) > 0.5
+        
+        stop_iou = []
+        stop_dice = []
+        proceed_fp = []
+        proceed_act = []
+        
+        for i in range(len(targets_np)):
+            hp = heat_preds_np[i]
+            ht = heat_targets_np[i]
+            if targets_np[i] == 1: # STOP
+                intersection = np.logical_and(hp, ht).sum()
+                union = np.logical_or(hp, ht).sum()
+                iou = intersection / max(1, union)
+                dice = (2.0 * intersection) / max(1, hp.sum() + ht.sum())
+                stop_iou.append(iou)
+                stop_dice.append(dice)
+            else: # PROCEED
+                fp_frac = hp.sum() / max(1, hp.size)
+                proceed_fp.append(fp_frac)
+                proceed_act.append(np.array(heat_preds[i]).mean())
+                
+        metrics["stop_iou"] = float(np.mean(stop_iou)) if stop_iou else 0.0
+        metrics["stop_dice"] = float(np.mean(stop_dice)) if stop_dice else 0.0
+        metrics["proceed_fp_frac"] = float(np.mean(proceed_fp)) if proceed_fp else 0.0
+        metrics["proceed_mean_act"] = float(np.mean(proceed_act)) if proceed_act else 0.0
         
     return metrics
