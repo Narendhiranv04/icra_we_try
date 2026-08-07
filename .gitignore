@@ -7,3 +7,5 @@ venv/
 MUJOCO_LOG.TXT
 data/
 output/
+learning_data/
+learning_outputs/

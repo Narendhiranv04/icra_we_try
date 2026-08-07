@@ -1,0 +1,14 @@
+model: "relational"
+seed: 42
+latent_dim: 256
+demo_frames: 4
+batch_size: 4
+learning_rate: 1e-4
+weight_decay: 1e-4
+epochs: 10
+lambda_cls: 1.0
+lambda_rank: 0.5
+lambda_heat: 0.5
+heatmap: true
+mixed_precision: true
+output_path: "learning_outputs/relational_heatmap"
