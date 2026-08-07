@@ -1,8 +1,8 @@
 # Smoke Test Execution Report
 
 ## Overview
-- **Tested Code Commit**: `17d2af942991e20c32e74cf4373cfa785271cf0e`
-- **Report Generation Commit**: `17d2af942991e20c32e74cf4373cfa785271cf0e`
+- **Tested Code Commit**: `e45f63d1342b41beafd2ee40f308824182fef228`
+- **Report Generation Commit**: `e45f63d1342b41beafd2ee40f308824182fef228`
 - **Profile**: `smoke`
 - **Overall Status**: **PASSED**
 - **Unit Tests**: 57 / 57 passed (PASSED)

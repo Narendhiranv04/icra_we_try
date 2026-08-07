@@ -1,7 +1,7 @@
 # Tracked Smoke Benchmark Artifacts
 
 This directory contains representative smoke run outputs for continuous verification of Relational Precondition Benchmark v0.1:
-- `tested_code_commit`: `17d2af942991e20c32e74cf4373cfa785271cf0e`
+- `tested_code_commit`: `e45f63d1342b41beafd2ee40f308824182fef228`
 - `status`: `PASSED`
 - `contact_sheet.png`: Grid layout of query scenes, overlays, and causal violation masks.
 - `demonstration_montage.png`: Key frames showing robot manipulation sequence.
