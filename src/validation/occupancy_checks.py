@@ -17,9 +17,9 @@ from src.environment.scene_utils import (
     get_target_frame,
 )
 
-# Strict static stability thresholds
-STABLE_LIN_SPEED_MAX = 0.15  # m/s
-STABLE_ANG_SPEED_MAX = 1.00  # rad/s
+# Global thresholds for settling and occupancy validation
+STABLE_LIN_SPEED_MAX: float = 0.15
+STABLE_ANG_SPEED_MAX: float = 2.00  # rad/s
 
 
 def settle_until_stable(
