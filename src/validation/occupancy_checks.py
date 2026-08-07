@@ -29,7 +29,7 @@ def settle_until_stable(
     linear_threshold: float = STABLE_LIN_SPEED_MAX,
     angular_threshold: float = STABLE_ANG_SPEED_MAX,
     required_consecutive_steps: int = 20,
-    max_steps: int = 200,
+    max_steps: int = 500,
 ) -> Tuple[bool, int, int, Dict[str, float], Dict[str, float]]:
     """Step simulator until all named bodies maintain speeds below thresholds for consecutive steps."""
     consecutive = 0
@@ -126,7 +126,7 @@ def check_lid_occupancy(
     data: mujoco.MjData,
     lid_geom_name: str = "B1_lid_panel",
     blocker_names: List[str] = None,
-    settle_steps: int = 100,
+    settle_steps: int = 300,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
     """Evaluate whether B1_lid is occupied using footprint overlap, vertical gap, contact, and physical stability.
     
@@ -243,7 +243,7 @@ def check_target_occupancy(
     target_region_geom_name: str = "target_region_geom",
     target_center: Tuple[float, float, float] = None,
     candidate_objects: List[str] = None,
-    settle_steps: int = 100,
+    settle_steps: int = 300,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
     """Evaluate whether target_region is occupied using footprint overlap, vertical gap, contact, and physical stability.
     

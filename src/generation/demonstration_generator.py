@@ -35,6 +35,19 @@ class DemonstrationGenerator:
         self.scene_builder = SceneBuilder()
         self.writer = DemonstrationWriter(base_dir=self.output_dir)
 
+    def _get_body_geom_names(self, model: mujoco.MjModel, body_name: str) -> List[str]:
+        """Retrieve visual geom names attached to a given body name in the MuJoCo model."""
+        body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name)
+        if body_id == -1:
+            return [f"{body_name}_visual", f"{body_name}_geom"]
+        geoms = []
+        for g in range(model.ngeom):
+            if model.geom_bodyid[g] == body_id and model.geom_group[g] != 3:
+                name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, g)
+                if name:
+                    geoms.append(name)
+        return geoms if geoms else [f"{body_name}_visual"]
+
     def generate_task_1_demo(
         self,
         demo_id: str = "demo_task1_001",
@@ -64,7 +77,7 @@ class DemonstrationGenerator:
         # Initial visibility check before motion
         init_view = renderer.validate_instance_visibility(
             data,
-            target_geom_names=["B1_lid_geom"],
+            target_geom_names=["B1_lid_panel", "B1_lid_geom"],
             required_instances={},
         )
 
@@ -74,7 +87,7 @@ class DemonstrationGenerator:
         # Final visibility check after open
         final_view = renderer.validate_instance_visibility(
             data,
-            target_geom_names=["B1_lid_geom"],
+            target_geom_names=["B1_lid_panel", "B1_lid_geom"],
             required_instances={},
         )
         renderer.close()
@@ -187,12 +200,11 @@ class DemonstrationGenerator:
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=TASK_2_RIG.camera_name)
 
         # Initial visibility check before motion
-        obj_geoms = self.scene_builder.registry.get_asset(obj_name)
-        obj_vis_names = [f"{obj_name}_visual"]
+        obj_geoms = self._get_body_geom_names(model, obj_name)
         init_view = renderer.validate_instance_visibility(
             data,
             target_geom_names=["target_region_geom"],
-            required_instances={"object1": obj_vis_names},
+            required_instances={"object1": obj_geoms},
         )
 
         executor = PlaceObjectExecutor(model, data, object_name=obj_name, target_pos=tuple(target_pos))
@@ -202,7 +214,7 @@ class DemonstrationGenerator:
         final_view = renderer.validate_instance_visibility(
             data,
             target_geom_names=["target_region_geom"],
-            required_instances={"object1": obj_vis_names},
+            required_instances={"object1": obj_geoms},
         )
         renderer.close()
 

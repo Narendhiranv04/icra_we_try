@@ -119,7 +119,8 @@ class QueryGenerator:
                 split = splits[idx % len(splits)]
                 ep_seed = seed_base + idx * 17
 
-                assignment = self.split_planner.get_assignment_for_split(split, idx, task_id=task_id)
+                split_idx = idx // len(splits)
+                assignment = self.split_planner.get_assignment_for_split(split, split_idx, task_id=task_id)
 
                 if task_id == "task_1":
                     record = self.counterfactual_gen.generate_task1_pair(
@@ -135,6 +136,7 @@ class QueryGenerator:
                         pair_id=pair_id,
                         target_occupant_type=assignment.object_type,
                         occupant_pos_bin=assignment.position_bin,
+                        object1_start_bin=assignment.object1_start_bin,
                         split=split,
                         seed=ep_seed,
                     )

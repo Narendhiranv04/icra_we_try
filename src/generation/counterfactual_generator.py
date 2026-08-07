@@ -253,12 +253,11 @@ class CounterfactualPairGenerator:
         stop_b1_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
 
         if blocker_count == 2:
-            if abs(x_frac) + abs(y_frac) < 0.1:
-                xf1, yf1 = -0.35, 0.0
-                xf2, yf2 = 0.35, 0.0
-            else:
-                xf1, yf1 = x_frac, y_frac
-                xf2, yf2 = -x_frac, -y_frac
+            xf1 = -0.45
+            xf2 = 0.45
+            yf_clamped = max(-0.1, min(0.2, y_frac))
+            yf1 = yf_clamped
+            yf2 = yf_clamped
             stop_b1_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf1, y_frac=yf1, height_above=0.02).tolist()
             stop_b2_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf2, y_frac=yf2, height_above=0.02).tolist()
             stop_b2_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
@@ -283,7 +282,7 @@ class CounterfactualPairGenerator:
         # ── Render STOP scene ──────────────────────────────────────────
         rig = TASK_1_RIG
         model_stop, data_stop = self.scene_builder.create_environment(
-            stop_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, box_pose=box_pose, box_quat=box_quat
+            stop_objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose, box_pose=box_pose, box_quat=box_quat
         )
         cam_meta_stop = apply_observation_rig(model_stop, data_stop, rig)
         apply_background_spec(model_stop, bg_spec)
@@ -322,7 +321,7 @@ class CounterfactualPairGenerator:
 
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(
-            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, box_pose=box_pose, box_quat=box_quat
+            proceed_objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose, box_pose=box_pose, box_quat=box_quat
         )
         cam_meta_proceed = apply_observation_rig(model_proceed, data_proceed, rig)
         apply_background_spec(model_proceed, bg_spec)
@@ -538,6 +537,7 @@ class CounterfactualPairGenerator:
         pair_id: str,
         target_occupant_type: str = "sugar_box",
         occupant_pos_bin: str = "centre",
+        object1_start_bin: str = "pick_left",
         split: str = "id",
         seed: int = 42,
         target_region_pos: Optional[List[float]] = None,
@@ -569,7 +569,12 @@ class CounterfactualPairGenerator:
 
         proc_occ_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.30, offset_y=y_frac*0.1, height_above=0.07).tolist()
 
-        pick_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.0, height_above=0.07).tolist()
+        if object1_start_bin == "pick_right":
+            pick_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.10, height_above=0.07).tolist()
+        elif object1_start_bin == "pick_far_left":
+            pick_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.35, offset_y=-0.15, height_above=0.07).tolist()
+        else:
+            pick_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=-0.10, height_above=0.07).tolist()
 
         stop_objects = [
             {"name": "coffee_can", "type": "coffee_can", "pos": pick_pos},
@@ -584,7 +589,7 @@ class CounterfactualPairGenerator:
         # ── Render STOP scene ──────────────────────────────────────────
         rig = TASK_2_RIG
         model_stop, data_stop = self.scene_builder.create_environment(
-            stop_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+            stop_objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose, target_region_pos=target_region_pos, target_region_quat=target_region_quat
         )
         cam_meta_stop = apply_observation_rig(model_stop, data_stop, rig)
         apply_background_spec(model_stop, bg_spec)
@@ -619,7 +624,7 @@ class CounterfactualPairGenerator:
 
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(
-            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, target_region_pos=target_region_pos, target_region_quat=target_region_quat
+            proceed_objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose, target_region_pos=target_region_pos, target_region_quat=target_region_quat
         )
         cam_meta_proceed = apply_observation_rig(model_proceed, data_proceed, rig)
         apply_background_spec(model_proceed, bg_spec)
@@ -771,6 +776,7 @@ class CounterfactualPairGenerator:
             "instruction": "Place object1 in the target region.",
             "target_occupant_type": target_occupant_type,
             "occupant_pos_bin": occupant_pos_bin,
+            "object1_start_bin": object1_start_bin,
             "split": split,
             "seed": seed,
             "camera_name": self.camera_name,
@@ -863,10 +869,10 @@ class CounterfactualPairGenerator:
             objects.append({"name": "blocker2", "type": obj_t2, "pos": pos2})
         elif control_subtype == "near_lid_outside_footprint":
             obj_t = object_type or "coffee_can"
-            pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.21, offset_y=0.0, height_above_table=0.04).tolist()
+            pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.0, height_above_table=0.04).tolist()
             objects.append({"name": "blocker1", "type": obj_t, "pos": pos})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose)
+        model, data = self.scene_builder.create_environment(objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose)
         cam_meta = apply_observation_rig(model, data, rig)
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
@@ -1016,7 +1022,7 @@ class CounterfactualPairGenerator:
             objects.append({"name": "occupant1", "type": occ1_t, "pos": pos1})
             objects.append({"name": "occupant2", "type": occ2_t, "pos": pos2})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose)
+        model, data = self.scene_builder.create_environment(objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose)
         cam_meta = apply_observation_rig(model, data, rig)
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
@@ -1173,6 +1179,7 @@ def regenerate_from_metadata(
                 pair_id=pair_id,
                 target_occupant_type=meta.get("target_occupant_type", "sugar_box"),
                 occupant_pos_bin=meta.get("occupant_pos_bin", "centre"),
+                object1_start_bin=meta.get("object1_start_bin", "pick_left"),
                 split=split,
                 seed=seed,
                 target_region_pos=target_region_pos,

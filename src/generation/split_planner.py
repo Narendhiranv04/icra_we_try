@@ -64,37 +64,37 @@ class SplitPlanner:
                 bg = self.id_backgrounds[0]
                 pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)]
                 b_count = 1 if (idx % 2 == 0) else 2
-                start_bin = "pick_left"
-                factor_tuple = (task_id, obj, bg, pos_bin, b_count, lighting_fam)
+                start_bin = "pick_left" if (idx % 2 == 0) else "pick_right"
+                factor_tuple = (task_id, obj, bg, pos_bin, b_count, start_bin, lighting_fam)
             elif split == "unseen_object":
                 obj = self.unseen_objects[idx % len(self.unseen_objects)]
                 bg = self.id_backgrounds[0]
                 pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)]
                 b_count = 1
                 start_bin = "pick_left"
-                factor_tuple = (task_id, obj, bg, pos_bin, b_count, lighting_fam)
+                factor_tuple = (task_id, obj, bg, pos_bin, b_count, start_bin, lighting_fam)
             elif split == "unseen_background":
                 obj = self.id_objects[idx % len(self.id_objects)]
                 bg = self.unseen_backgrounds[idx % len(self.unseen_backgrounds)]
                 pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)]
                 b_count = 1
                 start_bin = "pick_left"
-                factor_tuple = (task_id, obj, bg, pos_bin, b_count, lighting_fam)
+                factor_tuple = (task_id, obj, bg, pos_bin, b_count, start_bin, lighting_fam)
             elif split == "compositional":
-                # Pure compositional split: 100% familiar components, novel factor combination absent from development!
+                # Pure compositional split: 100% familiar components, novel factor combination absent from ID split!
                 obj = self.id_objects[idx % len(self.id_objects)]
-                bg = self.id_backgrounds[0]  # Familiar background
-                pos_bin = self.id_pos_t1[(idx + 1) % len(self.id_pos_t1)]  # Shifted familiar position bin
-                b_count = 2 if (idx % 2 == 0) else 1                        # Swapped familiar count
-                start_bin = "pick_left"
-                factor_tuple = (task_id, obj, bg, pos_bin, b_count, lighting_fam)
+                bg = self.id_backgrounds[0]
+                pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)]
+                b_count = 2 if (idx % 2 == 0) else 1                        # Swapped count relative to ID
+                start_bin = "pick_left" if (idx % 2 == 0) else "pick_right" # Same start_bin sequence so (b_count, start_bin) is novel!
+                factor_tuple = (task_id, obj, bg, pos_bin, b_count, start_bin, lighting_fam)
             else:
                 obj = self.id_objects[idx % len(self.id_objects)]
                 bg = self.id_backgrounds[0]
                 pos_bin = self.id_pos_t1[idx % len(self.id_pos_t1)]
                 b_count = 1
                 start_bin = "pick_left"
-                factor_tuple = (task_id, obj, bg, pos_bin, b_count, lighting_fam)
+                factor_tuple = (task_id, obj, bg, pos_bin, b_count, start_bin, lighting_fam)
 
         else: # Task 2
             if split == "id":
@@ -119,12 +119,12 @@ class SplitPlanner:
                 start_bin = self.start_bins[idx % len(self.start_bins)]
                 factor_tuple = (task_id, obj, bg, pos_bin, start_bin, lighting_fam)
             elif split == "compositional":
-                # Pure compositional split: 100% familiar components, novel factor combination absent from development!
+                # Pure compositional split: 100% familiar components, novel factor combination absent from ID split!
                 obj = self.id_objects[idx % len(self.id_objects)]
-                bg = self.id_backgrounds[0]  # Familiar background
-                pos_bin = self.id_pos_t2[(idx + 1) % len(self.id_pos_t2)]                  # Shifted familiar position bin
+                bg = self.id_backgrounds[0]
+                pos_bin = self.id_pos_t2[idx % len(self.id_pos_t2)]
                 b_count = 1
-                start_bin = self.start_bins[(idx + 1) % len(self.start_bins)]              # Shifted familiar start bin
+                start_bin = self.start_bins[(idx + 1) % len(self.start_bins)] # Shifted start_bin relative to pos_bin!
                 factor_tuple = (task_id, obj, bg, pos_bin, start_bin, lighting_fam)
             else:
                 obj = self.id_objects[idx % len(self.id_objects)]

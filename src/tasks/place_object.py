@@ -344,7 +344,7 @@ class PlaceObjectExecutor:
         # 7. Release & Retreat Phase (15 frames)
         self._deactivate_grasp_weld()
         self._open_gripper_fingers()
-        retreat_pos = target_place + np.array([0.0, 0.0, 0.25])
+        retreat_pos = target_place + np.array([-0.20, 0.0, 0.25])
         retreat_qpos, _, _ = ik.solve(retreat_pos, curr_q, target_rotation=TOP_DOWN_ROTATION)
 
         for step in range(15):
