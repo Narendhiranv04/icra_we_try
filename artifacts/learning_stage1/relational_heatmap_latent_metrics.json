@@ -1,0 +1,13 @@
+{
+  "mean_s_proceed": 0.047312501817941666,
+  "mean_s_stop": -0.045880142599344254,
+  "margin": 0.09319264441728592,
+  "pla": 1.0,
+  "z_S_mean_norm": 14.552282333374023,
+  "z_S_std_norm": 0.04950380325317383,
+  "z_Q_mean_norm": 10.438020706176758,
+  "z_Q_std_norm": 0.5572818517684937,
+  "z_S_mean_variance": 0.1171894297003746,
+  "z_Q_mean_variance": 0.06937272846698761,
+  "collapse_detected": false
+}

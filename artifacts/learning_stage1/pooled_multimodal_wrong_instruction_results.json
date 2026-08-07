@@ -1,0 +1,20 @@
+{
+  "accuracy": 0.75,
+  "balanced_accuracy": 0.75,
+  "f1": 0.6666666666666666,
+  "precision": 1.0,
+  "recall": 0.5,
+  "confusion_matrix": [
+    [
+      2,
+      0
+    ],
+    [
+      1,
+      1
+    ]
+  ],
+  "pla": 1.0,
+  "total_pairs": 2,
+  "loss": 0.6651747822761536
+}

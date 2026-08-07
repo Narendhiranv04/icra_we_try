@@ -25,13 +25,18 @@ At inference time, the model only has access to:
 - **Pooled Multimodal:** Context vector created by mean-pooling demo global features concatenated with the text feature.
 
 ### Relational Model (Cross-Attention)
-1. **Temporal Encoding:** Text token and Demonstration Global tokens are passed through a 2-layer self-attention Transformer.
+1. **Temporal Encoding:** Text token and Demonstration Global tokens are passed through a self-attention Transformer.
 2. **Cross-Attention:** Query patch tokens attend to the temporal context tokens to extract relational compatibility representations.
-3. **Heatmap Decoding:** The 256 spatial tokens are reshaped back to 16x16 and decoded via CNN into a causal violation heatmap.
+3. **Latent Similarity:** The alignment compatibility $s$ is explicitly formulated as the cosine similarity between the L2-normalized predicted latent and the L2-normalized target query latent.
+4. **Heatmap Decoding:** The spatial tokens are reshaped back to 16x16 and decoded via CNN into a causal violation heatmap.
+
+## Preprocessing and Assignment
+- **Demo Assignment:** Demos are deterministically assigned based on the query pair ID via `hashlib.sha256(pair_id.encode())` to ensure absolute stability across runs.
+- **Fail-Hard Manifests:** The index generation process operates with strict fail-hard semantics on malformed metadata, demanding cleanly validated benchmark manifests.
 
 ## Losses
 - **Classification:** `BCEWithLogitsLoss` on the STOP (1) / PROCEED (0) targets.
-- **Ranking Loss:** `MarginRankingLoss`. We enforce that `compatibility(PROCEED) > compatibility(STOP)` for matched causal pairs.
+- **Ranking Loss:** `MarginRankingLoss`. Enforces `compatibility(PROCEED) > compatibility(STOP)` for matched causal pairs.
 - **Heatmap Loss:** Sum of pixel-wise BCE and Dice loss.
 
 ## Running Experiments

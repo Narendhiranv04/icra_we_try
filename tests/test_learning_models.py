@@ -26,7 +26,7 @@ def test_relational_model():
     q_patch = torch.randn(2, 256, 768)
     logits, s, z_R = model(t, d, q_patch)
     assert logits.shape == (2, 1)
-    assert s.shape == (2, 1)
+    assert s.shape == (2,)
     assert z_R.shape == (2, 256, 256) # (B, N, latent_dim)
 
 def test_heatmap_decoder():

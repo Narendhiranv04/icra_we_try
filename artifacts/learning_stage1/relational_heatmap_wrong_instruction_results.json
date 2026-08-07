@@ -1,0 +1,24 @@
+{
+  "accuracy": 1.0,
+  "balanced_accuracy": 1.0,
+  "f1": 1.0,
+  "precision": 1.0,
+  "recall": 1.0,
+  "confusion_matrix": [
+    [
+      2,
+      0
+    ],
+    [
+      0,
+      2
+    ]
+  ],
+  "pla": 1.0,
+  "total_pairs": 2,
+  "stop_iou": 0.2852787487181934,
+  "stop_dice": 0.415398640458221,
+  "proceed_fp_frac": 0.0889568718112245,
+  "proceed_mean_act": 0.4643973708152771,
+  "loss": 1.4919326305389404
+}

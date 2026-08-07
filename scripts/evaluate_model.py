@@ -47,7 +47,7 @@ def main():
         lambda_heat=config.get("lambda_heat", 0.5)
     )
     
-    splits = ["id", "unseen_object", "unseen_background", "compositional"]
+    splits = ["id_train", "id_val", "unseen_object", "unseen_background", "compositional"]
     all_metrics = {}
     
     for split in splits:
@@ -58,8 +58,10 @@ def main():
             return_masks=config.get("heatmap", False)
         )
         if len(dataset) > 0:
-            m = run_evaluation(model, dataset, criterion, device, config.get("batch_size", 8), desc=f"Split {split}")
-            all_metrics[split] = m
+            desc = f"[TRAIN] Split {split}" if split == "id_train" else f"Split {split}"
+            m = run_evaluation(model, dataset, criterion, device, config.get("batch_size", 8), desc=desc)
+            if split != "id_train":
+                all_metrics[split] = m
             
     with open(out_dir / "metrics_by_split.json", "w") as f:
         json.dump(all_metrics, f, indent=2)

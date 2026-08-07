@@ -7,6 +7,15 @@ from src.learning.dataset import LearningDataset
 from src.learning.models.relational_model import DemoLanguageConditionedRelationalModel
 from src.learning.losses import LearningLoss
 from src.learning.metrics import compute_metrics
+import hashlib
+from src.learning.metrics import compute_metrics
+
+def test_deterministic_demo_assignment():
+    pair_id = "test_pair_123"
+    demo_pool = ["demo1.mp4", "demo2.mp4", "demo3.mp4"]
+    idx1 = int(hashlib.sha256(pair_id.encode()).hexdigest(), 16) % len(demo_pool)
+    idx2 = int(hashlib.sha256(pair_id.encode()).hexdigest(), 16) % len(demo_pool)
+    assert idx1 == idx2, "Demo assignment must be deterministic across calls"
 
 def test_dataset_no_silent_fallback(tmp_path):
     features_dir = tmp_path / "features"

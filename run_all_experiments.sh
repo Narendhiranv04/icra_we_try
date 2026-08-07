@@ -20,11 +20,11 @@ python scripts/evaluate_model.py --dir learning_outputs/full_no_ranking
 echo "Running Pooled Multimodal (with Ranking)..."
 python scripts/train_model.py --config configs/learning/pooled_multimodal.yaml
 python scripts/evaluate_model.py --dir learning_outputs/pooled_multimodal
-python scripts/analyze_latents.py --dir learning_outputs/pooled_multimodal || true
+python scripts/analyze_latents.py --dir learning_outputs/pooled_multimodal
 
 echo "Running Relational Model..."
 python scripts/train_model.py --config configs/learning/relational_heatmap.yaml
 python scripts/evaluate_model.py --dir learning_outputs/relational_heatmap
-python scripts/analyze_latents.py --dir learning_outputs/relational_heatmap || true
+python scripts/analyze_latents.py --dir learning_outputs/relational_heatmap
 
 echo "All experiments complete."
