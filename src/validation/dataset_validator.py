@@ -649,7 +649,7 @@ class DatasetValidator:
         # Pass 4: Split Validation
         splits_valid, split_rep = self.validate_splits()
         if not splits_valid:
-            issues.append(f"Split validation failed: leakage detected: {split_rep.get('leakage_checks')}")
+            issues.append(f"Split validation failed: {split_rep.get('all_issues')}")
         logs.append(f"Pass 4 (Split Holdout & Leakage): {'PASSED' if splits_valid else 'FAILED'}.")
 
         # Pass 5: Actual Reproducibility Regeneration

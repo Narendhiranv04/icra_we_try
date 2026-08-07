@@ -24,7 +24,7 @@ FETCH_HOME_QPOS = {
     "robot0:base_lateral_joint": 0.0,
     "robot0:base_yaw_joint": 0.0,
     "robot0:torso_lift_joint": 0.20,
-    "robot0:head_pan_joint": 0.0,
+    "robot0:head_pan_joint": -0.25,
     "robot0:head_tilt_joint": 0.35,
     "robot0:shoulder_pan_joint": 1.32,
     "robot0:shoulder_lift_joint": 1.40,
@@ -167,6 +167,24 @@ def inject_fetch_robot(
         if camera.get("name") == "gripper_camera_rgb":
             camera.set("name", "robot0:gripper_camera_rgb_legacy")
 
+    # Inject canonical egocentric camera into Fetch head optical frame
+    head_optical_frame = None
+    for body in robot_body.iter("body"):
+        if body.get("name") == "robot0:head_camera_rgb_optical_frame":
+            head_optical_frame = body
+            break
+    if head_optical_frame is not None:
+        ET.SubElement(
+            head_optical_frame,
+            "camera",
+            {
+                "name": "robot0:ego_camera",
+                "pos": "0 0 0",
+                "euler": "3.1415 0 0",
+                "fovy": "65",
+            },
+        )
+
     gripper_body = None
     for body in robot_body.iter("body"):
         if body.get("name") == "robot0:gripper_link":
@@ -269,9 +287,19 @@ def inject_fetch_robot(
             )
 
 
-def initialize_robot_qpos(model: mujoco.MjModel, data: mujoco.MjData) -> None:
-    """Set default home qpos for Fetch robot joints."""
+def initialize_robot_qpos(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    head_pan: Optional[float] = None,
+    head_tilt: Optional[float] = None,
+) -> None:
+    """Set default home qpos for Fetch robot joints, with optional head pan/tilt overrides."""
     for j_name, val in FETCH_HOME_QPOS.items():
+        if j_name == "robot0:head_pan_joint" and head_pan is not None:
+            val = head_pan
+        elif j_name == "robot0:head_tilt_joint" and head_tilt is not None:
+            val = head_tilt
+
         j_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, j_name)
         if j_id != -1:
             q_adr = model.jnt_qposadr[j_id]
@@ -316,38 +344,52 @@ class VerticalIK:
         self,
         target: np.ndarray,
         seed: np.ndarray,
-        target_rotation: np.ndarray = TOP_DOWN_ROTATION,
+        target_rotation: Optional[np.ndarray] = TOP_DOWN_ROTATION,
     ) -> Tuple[np.ndarray, float, float]:
         self.data.qpos[self.qpos_addresses] = seed
         for _ in range(500):
             mujoco.mj_forward(self.model, self.data)
             current_rotation = self.data.site_xmat[self.site_id].reshape(3, 3)
             position_error = target - self.data.site_xpos[self.site_id]
-            rotation_error = _rotation_vector(target_rotation @ current_rotation.T)
-            error = np.concatenate((position_error, 0.40 * rotation_error))
-            if np.linalg.norm(position_error) < 0.001 and np.linalg.norm(rotation_error) < math.radians(1.0):
-                break
 
-            jac_pos = np.zeros((3, self.model.nv))
-            jac_rot = np.zeros((3, self.model.nv))
-            mujoco.mj_jacSite(self.model, self.data, jac_pos, jac_rot, self.site_id)
-            jacobian = np.vstack(
-                (
-                    jac_pos[:, self.dof_addresses],
-                    0.40 * jac_rot[:, self.dof_addresses],
+            if target_rotation is not None:
+                rotation_error = _rotation_vector(target_rotation @ current_rotation.T)
+                error = np.concatenate((position_error, 0.40 * rotation_error))
+                if np.linalg.norm(position_error) < 0.001 and np.linalg.norm(rotation_error) < math.radians(1.0):
+                    break
+
+                jac_pos = np.zeros((3, self.model.nv))
+                jac_rot = np.zeros((3, self.model.nv))
+                mujoco.mj_jacSite(self.model, self.data, jac_pos, jac_rot, self.site_id)
+                jacobian = np.vstack(
+                    (
+                        jac_pos[:, self.dof_addresses],
+                        0.40 * jac_rot[:, self.dof_addresses],
+                    )
                 )
-            )
-            damping = 0.0015
-            delta = jacobian.T @ np.linalg.solve(
-                jacobian @ jacobian.T + damping * np.eye(6), error
-            )
+                damping = 0.0015
+                delta = jacobian.T @ np.linalg.solve(
+                    jacobian @ jacobian.T + damping * np.eye(6), error
+                )
+            else:
+                rotation_error = np.zeros(3)
+                error = position_error
+                if np.linalg.norm(position_error) < 0.001:
+                    break
+
+                jac_pos = np.zeros((3, self.model.nv))
+                mujoco.mj_jacSite(self.model, self.data, jac_pos, None, self.site_id)
+                jacobian = jac_pos[:, self.dof_addresses]
+                damping = 0.0015
+                delta = jacobian.T @ np.linalg.solve(
+                    jacobian @ jacobian.T + damping * np.eye(3), error
+                )
+
             current = self.data.qpos[self.qpos_addresses]
             self.data.qpos[self.qpos_addresses] = np.clip(
                 current + np.clip(delta, -0.06, 0.06), self.lower, self.upper
             )
 
-        mujoco.mj_forward(self.model, self.data)
-        current_rotation = self.data.site_xmat[self.site_id].reshape(3, 3)
-        position_error = float(np.linalg.norm(target - self.data.site_xpos[self.site_id]))
-        angle_error = float(np.linalg.norm(_rotation_vector(target_rotation @ current_rotation.T)))
-        return self.data.qpos[self.qpos_addresses].copy(), position_error, angle_error
+        pos_err = float(np.linalg.norm(target - self.data.site_xpos[self.site_id]))
+        rot_err = float(np.linalg.norm(rotation_error))
+        return self.data.qpos[self.qpos_addresses].copy(), pos_err, rot_err

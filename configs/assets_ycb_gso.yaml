@@ -1,0 +1,262 @@
+# YCB and Google Scanned Objects (GSO) Benchmark Asset Registry Configuration
+
+assets:
+  # --- YCB Pantry & Containers ---
+  ycb_coffee_can:
+    name: "ycb_coffee_can"
+    source: "ycb"
+    source_id: "005_tomato_soup_can"
+    display_name: "YCB Coffee Can"
+    category: "pantry"
+    bounding_box_size: [0.100, 0.100, 0.140]
+    mass_kg: 0.414
+    mesh_path: "assets/objects/meshes/ycb/coffee_can/ycb_coffee_can.obj"
+    texture_path: "assets/objects/meshes/ycb/coffee_can/ycb_coffee_can.png"
+    collision_type: "cylinder"
+    collision_params: {radius: 0.050, half_height: 0.070}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  ycb_sugar_box:
+    name: "ycb_sugar_box"
+    source: "ycb"
+    source_id: "004_sugar_box"
+    display_name: "YCB Sugar Box"
+    category: "pantry"
+    bounding_box_size: [0.045, 0.091, 0.176]
+    mass_kg: 0.514
+    mesh_path: "assets/objects/meshes/ycb/sugar_box/ycb_sugar_box.obj"
+    texture_path: "assets/objects/meshes/ycb/sugar_box/ycb_sugar_box.png"
+    collision_type: "box"
+    collision_params: {half_extents: [0.0223, 0.0455, 0.08802]}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  ycb_tea_box:
+    name: "ycb_tea_box"
+    source: "ycb"
+    source_id: "008_pudding_box"
+    display_name: "YCB Tea Box"
+    category: "pantry"
+    bounding_box_size: [0.111, 0.089, 0.039]
+    mass_kg: 0.150
+    mesh_path: "assets/objects/meshes/ycb/tea_box/ycb_tea_box.obj"
+    texture_path: "assets/objects/meshes/ycb/tea_box/ycb_tea_box.png"
+    collision_type: "box"
+    collision_params: {half_extents: [0.0555, 0.0445, 0.01944]}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  # --- YCB Drinkware & Serveware ---
+  ycb_mug:
+    name: "ycb_mug"
+    source: "ycb"
+    source_id: "025_mug"
+    display_name: "YCB Mug"
+    category: "drinkware"
+    bounding_box_size: [0.096, 0.096, 0.080]
+    mass_kg: 0.118
+    mesh_path: "assets/objects/meshes/ycb/mug/ycb_mug.obj"
+    texture_path: "assets/objects/meshes/ycb/mug/ycb_mug.png"
+    collision_type: "hollow_cylinder"
+    collision_params: {radius: 0.040, height: 0.075, wall_thickness: 0.004}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  ycb_cup:
+    name: "ycb_cup"
+    source: "ycb"
+    source_id: "065-a_cups"
+    display_name: "YCB Plastic Cup"
+    category: "drinkware"
+    bounding_box_size: [0.056, 0.056, 0.058]
+    mass_kg: 0.030
+    mesh_path: "assets/objects/meshes/ycb/cup/ycb_cup.obj"
+    texture_path: "assets/objects/meshes/ycb/cup/ycb_cup.png"
+    collision_type: "hollow_cylinder"
+    collision_params: {radius: 0.028, height: 0.055, wall_thickness: 0.003}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["val", "ood"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  ycb_bowl:
+    name: "ycb_bowl"
+    source: "ycb"
+    source_id: "024_bowl"
+    display_name: "YCB Bowl"
+    category: "serveware"
+    bounding_box_size: [0.150, 0.150, 0.055]
+    mass_kg: 0.147
+    mesh_path: "assets/objects/meshes/ycb/bowl/ycb_bowl.obj"
+    texture_path: "assets/objects/meshes/ycb/bowl/ycb_bowl.png"
+    collision_type: "hollow_cylinder"
+    collision_params: {radius: 0.074, height: 0.051, wall_thickness: 0.005}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["test", "ood"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  ycb_plate:
+    name: "ycb_plate"
+    source: "ycb"
+    source_id: "029_plate"
+    display_name: "YCB Plate"
+    category: "serveware"
+    bounding_box_size: [0.240, 0.240, 0.020]
+    mass_kg: 0.279
+    mesh_path: "assets/objects/meshes/ycb/plate/ycb_plate.obj"
+    texture_path: "assets/objects/meshes/ycb/plate/ycb_plate.png"
+    collision_type: "cylinder"
+    collision_params: {radius: 0.120, half_height: 0.010}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["test", "ood"]
+    task_roles: ["distractor"]
+
+  # --- YCB Utensils ---
+  ycb_fork:
+    name: "ycb_fork"
+    source: "ycb"
+    source_id: "030_fork"
+    display_name: "YCB Fork"
+    category: "utensils"
+    bounding_box_size: [0.197, 0.025, 0.015]
+    mass_kg: 0.034
+    mesh_path: "assets/objects/meshes/ycb/fork/ycb_fork.obj"
+    texture_path: "assets/objects/meshes/ycb/fork/ycb_fork.png"
+    collision_type: "box"
+    collision_params: {half_extents: [0.0985, 0.0125, 0.00773]}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["distractor"]
+
+  ycb_spoon:
+    name: "ycb_spoon"
+    source: "ycb"
+    source_id: "031_spoon"
+    display_name: "YCB Spoon"
+    category: "utensils"
+    bounding_box_size: [0.192, 0.040, 0.020]
+    mass_kg: 0.030
+    mesh_path: "assets/objects/meshes/ycb/spoon/ycb_spoon.obj"
+    texture_path: "assets/objects/meshes/ycb/spoon/ycb_spoon.png"
+    collision_type: "compound"
+    collision_params: {handle: [0.006, 0.095], bowl: [0.038, 0.020, 0.01045]}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["distractor"]
+
+  ycb_knife:
+    name: "ycb_knife"
+    source: "ycb"
+    source_id: "032_knife"
+    display_name: "YCB Knife"
+    category: "utensils"
+    bounding_box_size: [0.214, 0.019, 0.015]
+    mass_kg: 0.031
+    mesh_path: "assets/objects/meshes/ycb/knife/ycb_knife.obj"
+    texture_path: "assets/objects/meshes/ycb/knife/ycb_knife.png"
+    collision_type: "box"
+    collision_params: {half_extents: [0.107, 0.0095, 0.00762]}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["distractor"]
+
+  ycb_marker:
+    name: "ycb_marker"
+    source: "ycb"
+    source_id: "040_large_marker"
+    display_name: "YCB Marker"
+    category: "office"
+    bounding_box_size: [0.020, 0.102, 0.020]
+    mass_kg: 0.025
+    mesh_path: "assets/objects/meshes/ycb/marker/ycb_marker.obj"
+    texture_path: "assets/objects/meshes/ycb/marker/ycb_marker.png"
+    collision_type: "capsule"
+    collision_params: {radius: 0.0096, half_length: 0.0508}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["distractor"]
+
+  # --- Google Scanned Objects (GSO) ---
+  gso_kettle:
+    name: "gso_kettle"
+    source: "gso"
+    source_id: "Threshold_Porcelain_Teapot_White"
+    display_name: "GSO Teapot / Kettle"
+    category: "kitchenware"
+    bounding_box_size: [0.140, 0.150, 0.128]
+    mass_kg: 0.800
+    mesh_path: "assets/objects/meshes/gso/kettle/gso_kettle.obj"
+    texture_path: "assets/objects/meshes/gso/kettle/gso_kettle.png"
+    collision_type: "compound"
+    collision_params: {ellipsoid: [0.070, 0.075, 0.064], base: [0.055, 0.006]}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["val", "test", "ood"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  gso_coffee_jar:
+    name: "gso_coffee_jar"
+    source: "gso"
+    source_id: "Nescafe_Instant_Coffee"
+    display_name: "GSO Coffee Jar"
+    category: "pantry"
+    bounding_box_size: [0.086, 0.086, 0.145]
+    mass_kg: 0.300
+    mesh_path: "assets/objects/meshes/gso/coffee_jar/gso_coffee_jar.obj"
+    texture_path: "assets/objects/meshes/gso/coffee_jar/gso_coffee_jar.png"
+    collision_type: "hollow_cylinder"
+    collision_params: {radius: 0.043, height: 0.145, wall_thickness: 0.004}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  gso_sugar_jar:
+    name: "gso_sugar_jar"
+    source: "gso"
+    source_id: "Wilton_Sugar_Sprinkles"
+    display_name: "GSO Sugar Jar"
+    category: "pantry"
+    bounding_box_size: [0.045, 0.045, 0.134]
+    mass_kg: 0.250
+    mesh_path: "assets/objects/meshes/gso/sugar_jar/gso_sugar_jar.obj"
+    texture_path: "assets/objects/meshes/gso/sugar_jar/gso_sugar_jar.png"
+    collision_type: "cylinder"
+    collision_params: {radius: 0.0225, half_height: 0.06724}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["id", "val", "test"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  gso_canister_distractor:
+    name: "gso_canister_distractor"
+    source: "gso"
+    source_id: "Stainless_Steel_Canister"
+    display_name: "GSO Canister"
+    category: "pantry"
+    bounding_box_size: [0.062, 0.062, 0.144]
+    mass_kg: 0.300
+    mesh_path: "assets/objects/meshes/gso/gso_canister_distractor/gso_gso_canister_distractor.obj"
+    texture_path: "assets/objects/meshes/gso/gso_canister_distractor/gso_gso_canister_distractor.png"
+    collision_type: "cylinder"
+    collision_params: {radius: 0.031, half_height: 0.07187}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["test", "ood"]
+    task_roles: ["blocker", "occupant", "distractor"]
+
+  gso_spatula_distractor:
+    name: "gso_spatula_distractor"
+    source: "gso"
+    source_id: "Silicone_Spatula"
+    display_name: "GSO Spatula"
+    category: "utensils"
+    bounding_box_size: [0.236, 0.064, 0.025]
+    mass_kg: 0.060
+    mesh_path: "assets/objects/meshes/gso/gso_spatula_distractor/gso_gso_spatula_distractor.obj"
+    texture_path: "assets/objects/meshes/gso/gso_spatula_distractor/gso_gso_spatula_distractor.png"
+    collision_type: "box"
+    collision_params: {half_extents: [0.118, 0.032, 0.01234]}
+    default_friction: [1.0, 0.005, 0.0001]
+    splits: ["val", "test", "ood"]
+    task_roles: ["distractor"]

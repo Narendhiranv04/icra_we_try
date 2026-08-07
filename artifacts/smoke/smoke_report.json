@@ -1,16 +1,16 @@
 {
-  "tested_code_commit": "3b68e40d7102d7fdd94a739958e19cae3a279c60",
-  "report_generation_commit": "3b68e40d7102d7fdd94a739958e19cae3a279c60",
+  "tested_code_commit": "e45f63d1342b41beafd2ee40f308824182fef228",
+  "report_generation_commit": "e45f63d1342b41beafd2ee40f308824182fef228",
   "profile": "smoke",
   "status": "PASSED",
   "test_summary": {
     "status": "PASSED",
-    "total": 19,
-    "passed": 19,
+    "total": 57,
+    "passed": 57,
     "failed": 0,
     "errors": 0,
     "skipped": 0,
-    "runtime_seconds": 8.87
+    "runtime_seconds": 47.953
   },
   "required_report_statuses": {
     "dataset_validation.json": "PASSED",
@@ -21,8 +21,8 @@
     "control_distribution.json": "PASSED"
   },
   "missing_or_failed_reports": [],
-  "unit_tests_passed": 19,
-  "unit_tests_total": 19,
+  "unit_tests_passed": 57,
+  "unit_tests_total": 57,
   "counterfactual_pairs_generated": 24,
   "positive_controls_generated": 8,
   "tasks_covered": [

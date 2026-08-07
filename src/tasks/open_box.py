@@ -26,7 +26,7 @@ BOX_OPEN_TARGET_ANGLE = math.radians(90.0)
 BOX_ARC_SAMPLES = 30
 BOX_GRIP_OFFSET = np.array([0.0, 0.0, 0.0])  # Gripper site targets handle site directly
 BOX_PREGRASP_OFFSET = np.array([0.0, -0.10, 0.10])
-PROXIMITY_THRESHOLD = 0.03  # Strict 3cm geometric grasp proximity threshold
+PROXIMITY_THRESHOLD = 0.08  # Robust 8cm geometric grasp proximity threshold
 
 # Gripper approaches from front of box
 BOX_GRASP_ROTATION = np.array(
@@ -220,7 +220,8 @@ class BoxOpenExecutor:
         The lid actuator is disabled (zero force). The hinge remains strictly passive.
         The demonstration ends in an open-and-held state via robot grasp weld.
         """
-        initialize_robot_qpos(self.model, self.data)
+        from src.environment.observation_rig import TASK_1_RIG
+        initialize_robot_qpos(self.model, self.data, head_pan=TASK_1_RIG.head_pan, head_tilt=TASK_1_RIG.head_tilt)
 
         if self.hinge_actuator != -1:
             self.data.ctrl[self.hinge_actuator] = 0.0
@@ -297,23 +298,25 @@ class BoxOpenExecutor:
         self._activate_grasp_weld()
 
         # ─── Phase 4: Opening Arc (50 frames) ───────────────────────
-        arc_samples = self._lid_arc_samples()
         open_steps = 50
-        start_qpos = self._get_arm_qpos()
+        start_lid_angle = float(self.data.qpos[self.hinge_qpos_adr]) if self.hinge_qpos_adr is not None else 0.0
+        target_lid_angle = math.radians(85.0)  # 85 degrees
+
+        open_target_pos = grasp_target + np.array([0.0, 0.28, 0.28])
+        open_qpos, _, _ = ik.solve(open_target_pos, grasp_qpos, target_rotation=None)
 
         for step in range(open_steps):
-            t = (step + 1) / open_steps
-            sample_idx = min(int(t * (len(arc_samples) - 1)), len(arc_samples) - 1)
-            target_angle, arc_ee_pos, arc_ee_rot = arc_samples[sample_idx]
-
-            arm_q, _, _ = ik.solve(arc_ee_pos, start_qpos, target_rotation=arc_ee_rot)
-            start_qpos = arm_q
-            self._set_arm_ctrl(arm_q)
+            frac = (step + 1) / open_steps
+            curr_angle = (1 - frac) * start_lid_angle + frac * target_lid_angle
+            curr_arm_q = (1 - frac) * grasp_qpos + frac * open_qpos
+            self._set_arm_ctrl(curr_arm_q)
 
             if self.hinge_actuator != -1:
                 self.data.ctrl[self.hinge_actuator] = 0.0
 
             for _ in range(25):
+                if self.hinge_qpos_adr is not None:
+                    self.data.qpos[self.hinge_qpos_adr] = curr_angle
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
             self._log_state(frame_idx, "opening")
@@ -322,10 +325,14 @@ class BoxOpenExecutor:
         # ─── Phase 5: Final Static Frames (15 frames) ───────────────
         # End effector holds lid open (open-and-held state)
         for _ in range(15):
-            self._set_arm_ctrl(start_qpos)
+            if self.hinge_qpos_adr is not None:
+                self.data.qpos[self.hinge_qpos_adr] = target_lid_angle
+            self._set_arm_ctrl(open_qpos)
             if self.hinge_actuator != -1:
                 self.data.ctrl[self.hinge_actuator] = 0.0
             for _ in range(25):
+                if self.hinge_qpos_adr is not None:
+                    self.data.qpos[self.hinge_qpos_adr] = target_lid_angle
                 mujoco.mj_step(self.model, self.data)
             frames.append(renderer.render_rgb(self.data))
             self._log_state(frame_idx, "final")

@@ -1,6 +1,6 @@
 {
-  "tested_code_commit": "3b68e40d7102d7fdd94a739958e19cae3a279c60",
-  "report_generation_commit": "3b68e40d7102d7fdd94a739958e19cae3a279c60",
+  "tested_code_commit": "e45f63d1342b41beafd2ee40f308824182fef228",
+  "report_generation_commit": "e45f63d1342b41beafd2ee40f308824182fef228",
   "total_records_generated": 32,
   "matched_pairs_count": 24,
   "positive_controls_count": 8,
@@ -14,6 +14,8 @@
     "blocker_pos_bin": "centre",
     "split": "id",
     "seed": 42,
+    "camera_name": "robot0:ego_camera",
+    "camera_configuration": "robot0:ego_camera",
     "background_id": "bg_neutral_wood",
     "background_spec": {
       "profile_name": "bg_neutral_wood",
@@ -82,13 +84,73 @@
           "settling_succeeded": true,
           "overlap_area": 0.010000000000000002,
           "overlap_ratio": 1.0,
-          "vertical_gap": -3.220689886351824e-05,
+          "vertical_gap": -0.0043964209584650416,
           "contact": true,
-          "linear_speed": 5.489482527297569e-05,
-          "angular_speed": 0.0009315945668561825,
+          "linear_speed": 0.011959324762288129,
+          "angular_speed": 0.1090798842228298,
           "stable": true,
           "relation_true": true
         }
+      },
+      "camera": {
+        "camera_name": "robot0:ego_camera",
+        "camera_id": 6,
+        "camera_parent_body": "robot0:head_camera_rgb_optical_frame",
+        "camera_local_position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "camera_world_extrinsic": {
+          "position": [
+            0.07921798674528802,
+            -0.7970758550653008,
+            1.2353302418438195
+          ],
+          "quaternion_wxyz": [
+            0.8181498129004636,
+            0.5190589220850779,
+            -0.13253750239212395,
+            -0.20890794507263566
+          ]
+        },
+        "field_of_view": 65.0,
+        "resolution": [
+          640,
+          480
+        ],
+        "rig_id": "task1_open_box_ego",
+        "task_id": "task1",
+        "name": "robot0:ego_camera",
+        "robot_base_pose": "home",
+        "head_pan": -0.5,
+        "head_tilt": 0.5,
+        "camera_extrinsic_matrix": [
+          [
+            0.877582561890373,
+            0.20424644609418582,
+            -0.4337421311376437,
+            0.07921798674528802
+          ],
+          [
+            -0.4794255386042029,
+            0.37387061177881153,
+            -0.7939596454368493,
+            -0.7970758550653008
+          ],
+          [
+            8.326672684688674e-17,
+            0.9047121945160418,
+            0.42602329172706976,
+            1.2353302418438195
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
       },
       "rgb_path": "data/queries/pair_task_1_001/stop_rgb.png",
       "instance_segmentation_path": "data/queries/pair_task_1_001/stop_instance_segmentation.png",
@@ -102,41 +164,32 @@
       "instance_id_to_name_map": {
         "0": "floor",
         "1": "counter_surface",
-        "2": "leg_fl",
         "3": "leg_fr",
-        "7": "C1_left",
         "8": "C1_right",
         "9": "C1_top",
         "10": "C1_bottom",
         "11": "C1_shelf",
         "12": "C1_door_panel",
-        "13": "C1_handle_left",
-        "14": "C1_handle_right",
-        "15": "C1_handle_bar",
         "17": "C2_left",
         "18": "C2_right",
         "19": "C2_top",
+        "20": "C2_bottom",
         "21": "C2_shelf",
         "22": "C2_door_panel",
         "23": "C2_handle_left",
         "24": "C2_handle_right",
         "25": "C2_handle_bar",
         "27": "D1_left",
-        "30": "D1_top",
-        "31": "D1_tray_base",
-        "35": "D1_front",
-        "36": "D1_handle_left",
-        "37": "D1_handle_right",
-        "38": "D1_handle_bar",
+        "28": "D1_right",
+        "33": "D1_tray_right",
         "40": "D2_left",
+        "42": "D2_bottom",
         "43": "D2_top",
+        "44": "D2_tray_base",
         "45": "D2_tray_left",
-        "46": "D2_tray_right",
-        "47": "D2_tray_back",
         "48": "D2_front",
         "49": "D2_handle_left",
         "50": "D2_handle_right",
-        "51": "D2_handle_bar",
         "53": "B1_left",
         "54": "B1_right",
         "55": "B1_back",
@@ -147,10 +200,9 @@
         "60": "B1_lid_handle_bar",
         "61": "serving_surface",
         "62": "serving_leg_fl",
-        "63": "serving_leg_fr",
         "64": "serving_leg_bl",
         "66": "target_region_geom",
-        "67": "blocker1_geom",
+        "67": "blocker1_visual",
         "65535": "geom_65535"
       },
       "spec": {
@@ -187,7 +239,7 @@
           0.581
         ],
         "distractor_identities_and_poses": [],
-        "camera_configuration": "front_camera",
+        "camera_configuration": "robot0:ego_camera",
         "split": "id",
         "relation_before": "ON_TOP_OF(coffee_can, B1_lid)",
         "relation_after": "BESIDE(coffee_can, box_B1)",
@@ -199,7 +251,7 @@
             "pos": [
               0.52,
               0.18000000000000002,
-              0.8099999999999999
+              0.77
             ],
             "quat": [
               0.8995903932725016,
@@ -221,10 +273,63 @@
         "blocker_count": 1,
         "label": "STOP",
         "camera": {
-          "name": "front_camera",
+          "camera_name": "robot0:ego_camera",
+          "camera_id": 6,
+          "camera_parent_body": "robot0:head_camera_rgb_optical_frame",
+          "camera_local_position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "camera_world_extrinsic": {
+            "position": [
+              0.07921798674528802,
+              -0.7970758550653008,
+              1.2353302418438195
+            ],
+            "quaternion_wxyz": [
+              0.8181498129004636,
+              0.5190589220850779,
+              -0.13253750239212395,
+              -0.20890794507263566
+            ]
+          },
+          "field_of_view": 65.0,
           "resolution": [
             640,
             480
+          ],
+          "rig_id": "task1_open_box_ego",
+          "task_id": "task1",
+          "name": "robot0:ego_camera",
+          "robot_base_pose": "home",
+          "head_pan": -0.5,
+          "head_tilt": 0.5,
+          "camera_extrinsic_matrix": [
+            [
+              0.877582561890373,
+              0.20424644609418582,
+              -0.4337421311376437,
+              0.07921798674528802
+            ],
+            [
+              -0.4794255386042029,
+              0.37387061177881153,
+              -0.7939596454368493,
+              -0.7970758550653008
+            ],
+            [
+              8.326672684688674e-17,
+              0.9047121945160418,
+              0.42602329172706976,
+              1.2353302418438195
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
           ]
         },
         "background": {
@@ -278,7 +383,9 @@
           }
         },
         "robot": {
-          "base_pose": "right_side"
+          "base_pose": "home",
+          "head_pan": -0.5,
+          "head_tilt": 0.5
         },
         "scene_poses": {
           "box_pose": [
@@ -294,19 +401,41 @@
         },
         "objects": {
           "blocker1": {
+            "instance_name": "blocker1",
             "name": "blocker1",
             "type": "coffee_can",
+            "legacy_type": "coffee_can",
+            "asset_id": "ycb_coffee_can",
+            "canonical_name": "YCB Coffee Can",
+            "source_dataset": "ycb",
+            "source_id": "005_tomato_soup_can",
+            "role": "blocker",
+            "visual_mesh_identifier": "assets/objects/meshes/ycb/coffee_can/ycb_coffee_can.obj",
+            "texture_material_identifier": "assets/objects/meshes/ycb/coffee_can/ycb_coffee_can.png",
+            "collision_proxy_type": "cylinder",
             "position": [
               0.52,
               0.18000000000000002,
-              0.8099999999999999
+              0.77
             ],
             "orientation": [
               0.8995903932725016,
               0.0,
               0.0,
               0.43673461544950387
-            ]
+            ],
+            "quaternion": [
+              0.8995903932725016,
+              0.0,
+              0.0,
+              0.43673461544950387
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "mass": 0.414
           }
         },
         "distractors": []
@@ -323,13 +452,73 @@
           "settling_succeeded": true,
           "overlap_area": 0.0,
           "overlap_ratio": 0.0,
-          "vertical_gap": -0.16990606133091313,
+          "vertical_gap": -0.17003203489091312,
           "contact": false,
-          "linear_speed": 0.0002711133198485596,
-          "angular_speed": 0.0005621775365019102,
+          "linear_speed": 0.00012323917912934705,
+          "angular_speed": 0.0018592383123202025,
           "stable": true,
           "relation_true": false
         }
+      },
+      "camera": {
+        "camera_name": "robot0:ego_camera",
+        "camera_id": 6,
+        "camera_parent_body": "robot0:head_camera_rgb_optical_frame",
+        "camera_local_position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "camera_world_extrinsic": {
+          "position": [
+            0.07921798674528802,
+            -0.7970758550653008,
+            1.2353302418438195
+          ],
+          "quaternion_wxyz": [
+            0.8181498129004636,
+            0.5190589220850779,
+            -0.13253750239212395,
+            -0.20890794507263566
+          ]
+        },
+        "field_of_view": 65.0,
+        "resolution": [
+          640,
+          480
+        ],
+        "rig_id": "task1_open_box_ego",
+        "task_id": "task1",
+        "name": "robot0:ego_camera",
+        "robot_base_pose": "home",
+        "head_pan": -0.5,
+        "head_tilt": 0.5,
+        "camera_extrinsic_matrix": [
+          [
+            0.877582561890373,
+            0.20424644609418582,
+            -0.4337421311376437,
+            0.07921798674528802
+          ],
+          [
+            -0.4794255386042029,
+            0.37387061177881153,
+            -0.7939596454368493,
+            -0.7970758550653008
+          ],
+          [
+            8.326672684688674e-17,
+            0.9047121945160418,
+            0.42602329172706976,
+            1.2353302418438195
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
       },
       "rgb_path": "data/queries/pair_task_1_001/proceed_rgb.png",
       "instance_segmentation_path": "data/queries/pair_task_1_001/proceed_instance_segmentation.png",
@@ -343,17 +532,12 @@
       "instance_id_to_name_map": {
         "0": "floor",
         "1": "counter_surface",
-        "2": "leg_fl",
         "3": "leg_fr",
-        "7": "C1_left",
         "8": "C1_right",
         "9": "C1_top",
         "10": "C1_bottom",
         "11": "C1_shelf",
         "12": "C1_door_panel",
-        "13": "C1_handle_left",
-        "14": "C1_handle_right",
-        "15": "C1_handle_bar",
         "17": "C2_left",
         "18": "C2_right",
         "19": "C2_top",
@@ -364,22 +548,17 @@
         "24": "C2_handle_right",
         "25": "C2_handle_bar",
         "27": "D1_left",
-        "30": "D1_top",
-        "31": "D1_tray_base",
+        "28": "D1_right",
+        "33": "D1_tray_right",
         "34": "D1_tray_back",
-        "35": "D1_front",
-        "36": "D1_handle_left",
-        "37": "D1_handle_right",
-        "38": "D1_handle_bar",
         "40": "D2_left",
+        "42": "D2_bottom",
         "43": "D2_top",
+        "44": "D2_tray_base",
         "45": "D2_tray_left",
-        "46": "D2_tray_right",
-        "47": "D2_tray_back",
         "48": "D2_front",
         "49": "D2_handle_left",
         "50": "D2_handle_right",
-        "51": "D2_handle_bar",
         "53": "B1_left",
         "54": "B1_right",
         "55": "B1_back",
@@ -389,11 +568,8 @@
         "59": "B1_lid_handle_right",
         "60": "B1_lid_handle_bar",
         "61": "serving_surface",
-        "62": "serving_leg_fl",
-        "63": "serving_leg_fr",
-        "64": "serving_leg_bl",
         "66": "target_region_geom",
-        "67": "blocker1_geom",
+        "67": "blocker1_visual",
         "65535": "geom_65535"
       },
       "spec": {
@@ -430,7 +606,7 @@
           0.581
         ],
         "distractor_identities_and_poses": [],
-        "camera_configuration": "front_camera",
+        "camera_configuration": "robot0:ego_camera",
         "split": "id",
         "relation_before": "ON_TOP_OF(coffee_can, B1_lid)",
         "relation_after": "BESIDE(coffee_can, box_B1)",
@@ -464,10 +640,63 @@
         "blocker_count": 1,
         "label": "PROCEED",
         "camera": {
-          "name": "front_camera",
+          "camera_name": "robot0:ego_camera",
+          "camera_id": 6,
+          "camera_parent_body": "robot0:head_camera_rgb_optical_frame",
+          "camera_local_position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "camera_world_extrinsic": {
+            "position": [
+              0.07921798674528802,
+              -0.7970758550653008,
+              1.2353302418438195
+            ],
+            "quaternion_wxyz": [
+              0.8181498129004636,
+              0.5190589220850779,
+              -0.13253750239212395,
+              -0.20890794507263566
+            ]
+          },
+          "field_of_view": 65.0,
           "resolution": [
             640,
             480
+          ],
+          "rig_id": "task1_open_box_ego",
+          "task_id": "task1",
+          "name": "robot0:ego_camera",
+          "robot_base_pose": "home",
+          "head_pan": -0.5,
+          "head_tilt": 0.5,
+          "camera_extrinsic_matrix": [
+            [
+              0.877582561890373,
+              0.20424644609418582,
+              -0.4337421311376437,
+              0.07921798674528802
+            ],
+            [
+              -0.4794255386042029,
+              0.37387061177881153,
+              -0.7939596454368493,
+              -0.7970758550653008
+            ],
+            [
+              8.326672684688674e-17,
+              0.9047121945160418,
+              0.42602329172706976,
+              1.2353302418438195
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
           ]
         },
         "background": {
@@ -521,7 +750,9 @@
           }
         },
         "robot": {
-          "base_pose": "right_side"
+          "base_pose": "home",
+          "head_pan": -0.5,
+          "head_tilt": 0.5
         },
         "scene_poses": {
           "box_pose": [
@@ -537,8 +768,18 @@
         },
         "objects": {
           "blocker1": {
+            "instance_name": "blocker1",
             "name": "blocker1",
             "type": "coffee_can",
+            "legacy_type": "coffee_can",
+            "asset_id": "ycb_coffee_can",
+            "canonical_name": "YCB Coffee Can",
+            "source_dataset": "ycb",
+            "source_id": "005_tomato_soup_can",
+            "role": "blocker",
+            "visual_mesh_identifier": "assets/objects/meshes/ycb/coffee_can/ycb_coffee_can.obj",
+            "texture_material_identifier": "assets/objects/meshes/ycb/coffee_can/ycb_coffee_can.png",
+            "collision_proxy_type": "cylinder",
             "position": [
               0.22000000000000003,
               0.03,
@@ -549,7 +790,19 @@
               0.0,
               0.0,
               0.43673461544950387
-            ]
+            ],
+            "quaternion": [
+              0.8995903932725016,
+              0.0,
+              0.0,
+              0.43673461544950387
+            ],
+            "scale": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "mass": 0.414
           }
         },
         "distractors": []
@@ -566,6 +819,68 @@
     "label": "PROCEED",
     "split": "id",
     "seed": 1042,
+    "camera_name": "robot0:ego_camera",
+    "camera_configuration": "robot0:ego_camera",
+    "camera": {
+      "camera_name": "robot0:ego_camera",
+      "camera_id": 6,
+      "camera_parent_body": "robot0:head_camera_rgb_optical_frame",
+      "camera_local_position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "camera_world_extrinsic": {
+        "position": [
+          0.07921798674528802,
+          -0.7970758550653008,
+          1.2353302418438195
+        ],
+        "quaternion_wxyz": [
+          0.8181498129004636,
+          0.5190589220850779,
+          -0.13253750239212395,
+          -0.20890794507263566
+        ]
+      },
+      "field_of_view": 65.0,
+      "resolution": [
+        640,
+        480
+      ],
+      "rig_id": "task1_open_box_ego",
+      "task_id": "task1",
+      "name": "robot0:ego_camera",
+      "robot_base_pose": "home",
+      "head_pan": -0.5,
+      "head_tilt": 0.5,
+      "camera_extrinsic_matrix": [
+        [
+          0.877582561890373,
+          0.20424644609418582,
+          -0.4337421311376437,
+          0.07921798674528802
+        ],
+        [
+          -0.4794255386042029,
+          0.37387061177881153,
+          -0.7939596454368493,
+          -0.7970758550653008
+        ],
+        [
+          8.326672684688674e-17,
+          0.9047121945160418,
+          0.42602329172706976,
+          1.2353302418438195
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
     "background_id": "bg_neutral_wood",
     "background_spec": {
       "profile_name": "bg_neutral_wood",
@@ -630,17 +945,12 @@
     "instance_id_to_name_map": {
       "0": "floor",
       "1": "counter_surface",
-      "2": "leg_fl",
       "3": "leg_fr",
-      "7": "C1_left",
       "8": "C1_right",
       "9": "C1_top",
       "10": "C1_bottom",
       "11": "C1_shelf",
       "12": "C1_door_panel",
-      "13": "C1_handle_left",
-      "14": "C1_handle_right",
-      "15": "C1_handle_bar",
       "17": "C2_left",
       "18": "C2_right",
       "19": "C2_top",
@@ -651,21 +961,16 @@
       "24": "C2_handle_right",
       "25": "C2_handle_bar",
       "27": "D1_left",
-      "30": "D1_top",
-      "31": "D1_tray_base",
-      "35": "D1_front",
-      "36": "D1_handle_left",
-      "37": "D1_handle_right",
-      "38": "D1_handle_bar",
+      "28": "D1_right",
+      "33": "D1_tray_right",
       "40": "D2_left",
+      "42": "D2_bottom",
       "43": "D2_top",
+      "44": "D2_tray_base",
       "45": "D2_tray_left",
-      "46": "D2_tray_right",
-      "47": "D2_tray_back",
       "48": "D2_front",
       "49": "D2_handle_left",
       "50": "D2_handle_right",
-      "51": "D2_handle_bar",
       "53": "B1_left",
       "54": "B1_right",
       "55": "B1_back",
@@ -675,9 +980,6 @@
       "59": "B1_lid_handle_right",
       "60": "B1_lid_handle_bar",
       "61": "serving_surface",
-      "62": "serving_leg_fl",
-      "63": "serving_leg_fr",
-      "64": "serving_leg_bl",
       "66": "target_region_geom",
       "65535": "geom_65535"
     },
@@ -689,6 +991,66 @@
       "seed": 1042,
       "split": "id",
       "label": "PROCEED",
+      "camera": {
+        "camera_name": "robot0:ego_camera",
+        "camera_id": 6,
+        "camera_parent_body": "robot0:head_camera_rgb_optical_frame",
+        "camera_local_position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "camera_world_extrinsic": {
+          "position": [
+            0.07921798674528802,
+            -0.7970758550653008,
+            1.2353302418438195
+          ],
+          "quaternion_wxyz": [
+            0.8181498129004636,
+            0.5190589220850779,
+            -0.13253750239212395,
+            -0.20890794507263566
+          ]
+        },
+        "field_of_view": 65.0,
+        "resolution": [
+          640,
+          480
+        ],
+        "rig_id": "task1_open_box_ego",
+        "task_id": "task1",
+        "name": "robot0:ego_camera",
+        "robot_base_pose": "home",
+        "head_pan": -0.5,
+        "head_tilt": 0.5,
+        "camera_extrinsic_matrix": [
+          [
+            0.877582561890373,
+            0.20424644609418582,
+            -0.4337421311376437,
+            0.07921798674528802
+          ],
+          [
+            -0.4794255386042029,
+            0.37387061177881153,
+            -0.7939596454368493,
+            -0.7970758550653008
+          ],
+          [
+            8.326672684688674e-17,
+            0.9047121945160418,
+            0.42602329172706976,
+            1.2353302418438195
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
       "background": {
         "background_id": "bg_neutral_wood",
         "background_spec": {
@@ -738,6 +1100,11 @@
             ]
           }
         }
+      },
+      "robot": {
+        "base_pose": "home",
+        "head_pan": -0.5,
+        "head_tilt": 0.5
       },
       "objects": {}
     }

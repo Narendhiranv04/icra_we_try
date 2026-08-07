@@ -35,14 +35,31 @@ class DemonstrationGenerator:
         self.scene_builder = SceneBuilder()
         self.writer = DemonstrationWriter(base_dir=self.output_dir)
 
+    def _get_body_geom_names(self, model: mujoco.MjModel, body_name: str) -> List[str]:
+        """Retrieve visual geom names attached to a given body name in the MuJoCo model."""
+        body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name)
+        if body_id == -1:
+            return [f"{body_name}_visual", f"{body_name}_geom"]
+        geoms = []
+        for g in range(model.ngeom):
+            if model.geom_bodyid[g] == body_id and model.geom_group[g] != 3:
+                name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, g)
+                if name:
+                    geoms.append(name)
+        return geoms if geoms else [f"{body_name}_visual"]
+
     def generate_task_1_demo(
         self,
         demo_id: str = "demo_task1_001",
-        robot_base_pose: str = "right_side",
+        robot_base_pose: str = "home",
         background_id: str = "bg_neutral_wood",
         seed: int = 42,
     ) -> str:
         """Generate full structured demonstration for Task 1 (Open Box)."""
+        from src.environment.observation_rig import TASK_1_RIG, apply_observation_rig
+        if robot_base_pose != TASK_1_RIG.robot_base_pose:
+            raise ValueError(f"Uncalibrated base pose override '{robot_base_pose}' rejected for Task 1; expected '{TASK_1_RIG.robot_base_pose}'")
+
         rng = np.random.default_rng(seed)
         model, data = self.scene_builder.create_environment(
             objects_to_spawn=None,
@@ -50,22 +67,47 @@ class DemonstrationGenerator:
             robot_base_pose=robot_base_pose,
         )
 
+        cam_metadata = apply_observation_rig(model, data, TASK_1_RIG)
+
         bg_spec = sample_background_spec(background_id, rng, n_lights=model.nlight)
         apply_background_spec(model, bg_spec)
 
-        renderer = OffscreenRenderer(model, width=self.width, height=self.height)
+        renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=TASK_1_RIG.camera_name)
+
+        # Initial visibility check before motion
+        init_view = renderer.validate_instance_visibility(
+            data,
+            target_geom_names=["B1_lid_panel", "B1_lid_geom"],
+            required_instances={},
+        )
 
         executor = BoxOpenExecutor(model, data)
         frames = executor.run_demonstration(renderer)
+
+        # Final visibility check after open
+        final_view = renderer.validate_instance_visibility(
+            data,
+            target_geom_names=["B1_lid_panel", "B1_lid_geom"],
+            required_instances={},
+        )
         renderer.close()
+
+        temporal_vq = {
+            "is_valid": bool(init_view["is_valid"] and final_view["is_valid"]),
+            "phases": {
+                "initial": init_view,
+                "final_open": final_view,
+            },
+        }
 
         is_valid, metrics, issues = DemonstrationValidator.validate_open_box(executor.state_log)
         val_result = {
-            "is_valid": is_valid,
+            "is_valid": is_valid and temporal_vq["is_valid"],
             "metrics": metrics,
             "issues": issues,
             "demo_id": demo_id,
             "task_family": "open_box",
+            "temporal_view_quality": temporal_vq,
         }
 
         scene_spec = {
@@ -76,6 +118,11 @@ class DemonstrationGenerator:
             "background_id": background_id,
             "background_spec": bg_spec.to_dict(),
             "instruction": "Open the box.",
+            "camera_name": TASK_1_RIG.camera_name,
+            "camera_configuration": TASK_1_RIG.camera_name,
+            "camera_world_extrinsic": cam_metadata["camera_world_extrinsic"],
+            "measured_camera_metadata": cam_metadata,
+            "temporal_view_quality": temporal_vq,
         }
 
         demo_dir = self.writer.save_demonstration(
@@ -102,12 +149,11 @@ class DemonstrationGenerator:
         target_region_pos: list = None,
         target_region_quat: list = None,
     ) -> str:
-        """Generate full structured demonstration for Task 2 (Place Object) using scene-local frame geometry.
+        """Generate full structured demonstration for Task 2 (Place Object) using scene-local frame geometry."""
+        from src.environment.observation_rig import TASK_2_RIG, apply_observation_rig
+        if robot_base_pose != TASK_2_RIG.robot_base_pose:
+            raise ValueError(f"Uncalibrated base pose override '{robot_base_pose}' rejected for Task 2; expected '{TASK_2_RIG.robot_base_pose}'")
 
-        Args:
-            target_region_pos: Optional override for target region world position [x, y, z].
-            target_region_quat: Optional override for target region quaternion [w, x, y, z].
-        """
         rng = np.random.default_rng(seed)
 
         # 1. Resolve start_pos and target_pos from scene geometry local frame
@@ -146,22 +192,48 @@ class DemonstrationGenerator:
             target_region_quat=target_region_quat,
         )
 
+        cam_metadata = apply_observation_rig(model, data, TASK_2_RIG)
+
         bg_spec = sample_background_spec(background_id, rng, n_lights=model.nlight)
         apply_background_spec(model, bg_spec)
 
-        renderer = OffscreenRenderer(model, width=self.width, height=self.height)
+        renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=TASK_2_RIG.camera_name)
+
+        # Initial visibility check before motion
+        obj_geoms = self._get_body_geom_names(model, obj_name)
+        init_view = renderer.validate_instance_visibility(
+            data,
+            target_geom_names=["target_region_geom"],
+            required_instances={"object1": obj_geoms},
+        )
 
         executor = PlaceObjectExecutor(model, data, object_name=obj_name, target_pos=tuple(target_pos))
         frames = executor.run_demonstration(renderer, start_pos=tuple(start_pos))
+
+        # Final visibility check after placement
+        final_view = renderer.validate_instance_visibility(
+            data,
+            target_geom_names=["target_region_geom"],
+            required_instances={"object1": obj_geoms},
+        )
         renderer.close()
+
+        temporal_vq = {
+            "is_valid": bool(init_view["is_valid"] and final_view["is_valid"]),
+            "phases": {
+                "initial": init_view,
+                "final_placed": final_view,
+            },
+        }
 
         is_valid, metrics, issues = DemonstrationValidator.validate_place_object(executor.state_log)
         val_result = {
-            "is_valid": is_valid,
+            "is_valid": is_valid and temporal_vq["is_valid"],
             "metrics": metrics,
             "issues": issues,
             "demo_id": demo_id,
             "task_family": "place_object",
+            "temporal_view_quality": temporal_vq,
         }
 
         scene_spec = {
@@ -181,6 +253,11 @@ class DemonstrationGenerator:
                 "target_region_pos": target_region_pos,
                 "target_region_quat": target_region_quat,
             },
+            "camera_name": TASK_2_RIG.camera_name,
+            "camera_configuration": TASK_2_RIG.camera_name,
+            "camera_world_extrinsic": cam_metadata["camera_world_extrinsic"],
+            "measured_camera_metadata": cam_metadata,
+            "temporal_view_quality": temporal_vq,
         }
 
         demo_dir = self.writer.save_demonstration(

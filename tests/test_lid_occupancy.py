@@ -17,7 +17,7 @@ def test_lid_occupancy_predicates():
     assert len(culprits_clear) == 0
 
     # 2. Lid occupied scene
-    blocker_objs = [{"name": "blocker1", "type": "coffee_can", "pos": [0.52, 0.18, 0.82]}]
+    blocker_objs = [{"name": "blocker1", "type": "sugar_box", "pos": [0.52, 0.18, 0.77]}]
     model_occ, data_occ = builder.create_environment(objects_to_spawn=blocker_objs, settle_steps=100)
     is_occ, culprits, meas_occ = check_lid_occupancy(model_occ, data_occ, blocker_names=["blocker1"])
     assert is_occ, "Lid occupied scene was not detected as occupied!"

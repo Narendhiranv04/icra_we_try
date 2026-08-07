@@ -102,12 +102,12 @@
     <mesh name="mesh_gso_sugar_jar" file="gso/sugar_jar/gso_sugar_jar.obj"/>
     <texture name="tex_gso_sugar_jar" type="2d" file="gso/sugar_jar/gso_sugar_jar.png"/>
     <material name="mat_gso_sugar_jar" texture="tex_gso_sugar_jar" specular="0.25"/>
-    <mesh name="mesh_gso_canister" file="gso/gso_canister_distractor/gso_gso_canister_distractor.obj"/>
-    <texture name="tex_gso_canister" type="2d" file="gso/gso_canister_distractor/gso_gso_canister_distractor.png"/>
-    <material name="mat_gso_canister" texture="tex_gso_canister" specular="0.2"/>
-    <mesh name="mesh_gso_spatula" file="gso/gso_spatula_distractor/gso_gso_spatula_distractor.obj"/>
-    <texture name="tex_gso_spatula" type="2d" file="gso/gso_spatula_distractor/gso_gso_spatula_distractor.png"/>
-    <material name="mat_gso_spatula" texture="tex_gso_spatula" specular="0.25"/>
+    <mesh name="mesh_gso_canister_distractor" file="gso/gso_canister_distractor/gso_gso_canister_distractor.obj"/>
+    <texture name="tex_gso_canister_distractor" type="2d" file="gso/gso_canister_distractor/gso_gso_canister_distractor.png"/>
+    <material name="mat_gso_canister_distractor" texture="tex_gso_canister_distractor" specular="0.2"/>
+    <mesh name="mesh_gso_spatula_distractor" file="gso/gso_spatula_distractor/gso_gso_spatula_distractor.obj"/>
+    <texture name="tex_gso_spatula_distractor" type="2d" file="gso/gso_spatula_distractor/gso_gso_spatula_distractor.png"/>
+    <material name="mat_gso_spatula_distractor" texture="tex_gso_spatula_distractor" specular="0.25"/>
     <material name="mat_coffee_powder" rgba="0.22 0.075 0.025 1" specular="0.05"/>
     <material name="mat_open_jar_rim" rgba="0.12 0.09 0.07 1" specular="0.25"/>
 
@@ -574,8 +574,8 @@
   <!-- GSO distractors are deliberately semantically unrelated to S1. -->
   <body name="gso_canister_distractor" pos="0 0 0">
     <freejoint name="gso_canister_distractor_free"/>
-    <geom name="gso_canister_distractor_visual" type="mesh" mesh="mesh_gso_canister"
-          material="mat_gso_canister" class="visual" mass="0"/>
+    <geom name="gso_canister_distractor_visual" type="mesh" mesh="mesh_gso_canister_distractor"
+          material="mat_gso_canister_distractor" class="visual" mass="0"/>
     <geom name="gso_canister_distractor_collision" type="cylinder" size="0.031 0.07187"
           rgba="0 0 0 0" mass="0.30" group="3"/>
     <site name="gso_canister_distractor_grasp" pos="0 0 0.025" size="0.01" type="sphere"
@@ -584,8 +584,8 @@
 
   <body name="gso_spatula_distractor" pos="0 0 0">
     <freejoint name="gso_spatula_distractor_free"/>
-    <geom name="gso_spatula_distractor_visual" type="mesh" mesh="mesh_gso_spatula"
-          material="mat_gso_spatula" class="visual" mass="0"/>
+    <geom name="gso_spatula_distractor_visual" type="mesh" mesh="mesh_gso_spatula_distractor"
+          material="mat_gso_spatula_distractor" class="visual" mass="0"/>
     <geom name="gso_spatula_distractor_collision" type="box" size="0.118 0.032 0.01234"
           rgba="0 0 0 0" mass="0.06" group="3"/>
     <site name="gso_spatula_distractor_grasp" pos="-0.090 0 0" size="0.01" type="sphere"
