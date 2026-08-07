@@ -15,7 +15,13 @@ import mujoco
 
 from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
-from src.environment.observation_rig import TASK_1_RIG, TASK_2_RIG, get_task_observation_rig
+from src.environment.observation_rig import (
+    TASK_1_RIG,
+    TASK_2_RIG,
+    ObservationRig,
+    get_task_observation_rig,
+    apply_observation_rig,
+)
 from src.environment.robot_integration import initialize_robot_qpos
 from src.validation.occupancy_checks import check_lid_occupancy, check_target_occupancy
 from src.generation.scene_config import EpisodeSpec
@@ -38,6 +44,66 @@ from src.environment.scene_utils import (
     sample_position_in_target,
     sample_position_outside_target,
 )
+
+
+def check_camera_extrinsics_invariant(
+    cam_meta_stop: Dict[str, Any],
+    cam_meta_proceed: Dict[str, Any],
+    rig: ObservationRig,
+    pos_atol: float = 1e-4,
+    quat_atol: float = 1e-4,
+) -> None:
+    """Enforce production invariant that STOP and PROCEED query scenes use identical camera poses."""
+    if cam_meta_stop["camera_name"] != cam_meta_proceed["camera_name"]:
+        raise ValueError(
+            f"Camera name mismatch: STOP='{cam_meta_stop['camera_name']}', PROCEED='{cam_meta_proceed['camera_name']}'"
+        )
+    if cam_meta_stop["resolution"] != cam_meta_proceed["resolution"]:
+        raise ValueError(
+            f"Resolution mismatch: STOP={cam_meta_stop['resolution']}, PROCEED={cam_meta_proceed['resolution']}"
+        )
+    if not math.isclose(cam_meta_stop["field_of_view"], cam_meta_proceed["field_of_view"], abs_tol=1e-3):
+        raise ValueError(
+            f"Camera FOV mismatch: STOP={cam_meta_stop['field_of_view']}, PROCEED={cam_meta_proceed['field_of_view']}"
+        )
+
+    pos_stop = np.array(cam_meta_stop["camera_world_extrinsic"]["position"])
+    pos_proc = np.array(cam_meta_proceed["camera_world_extrinsic"]["position"])
+    if not np.allclose(pos_stop, pos_proc, atol=pos_atol):
+        raise ValueError(
+            f"Camera world position mismatch between STOP and PROCEED: "
+            f"STOP={pos_stop.tolist()}, PROCEED={pos_proc.tolist()}, diff={np.linalg.norm(pos_stop - pos_proc)}"
+        )
+
+    quat_stop = np.array(cam_meta_stop["camera_world_extrinsic"]["quaternion_wxyz"])
+    quat_proc = np.array(cam_meta_proceed["camera_world_extrinsic"]["quaternion_wxyz"])
+    if not np.allclose(quat_stop, quat_proc, atol=quat_atol):
+        raise ValueError(
+            f"Camera world quaternion mismatch between STOP and PROCEED: "
+            f"STOP={quat_stop.tolist()}, PROCEED={quat_proc.tolist()}"
+        )
+
+    base_stop = cam_meta_stop.get("robot_base_pose")
+    base_proc = cam_meta_proceed.get("robot_base_pose")
+    if base_stop != rig.robot_base_pose or base_proc != rig.robot_base_pose:
+        raise ValueError(
+            f"Robot base pose mismatch: expected '{rig.robot_base_pose}', got STOP='{base_stop}', PROCEED='{base_proc}'"
+        )
+
+    pan_stop = cam_meta_stop.get("head_pan")
+    pan_proc = cam_meta_proceed.get("head_pan")
+    if not (math.isclose(pan_stop, rig.head_pan, abs_tol=1e-4) and math.isclose(pan_proc, rig.head_pan, abs_tol=1e-4)):
+        raise ValueError(
+            f"Head pan mismatch: expected {rig.head_pan}, got STOP={pan_stop}, PROCEED={pan_proc}"
+        )
+
+    tilt_stop = cam_meta_stop.get("head_tilt")
+    tilt_proc = cam_meta_proceed.get("head_tilt")
+    if not (math.isclose(tilt_stop, rig.head_tilt, abs_tol=1e-4) and math.isclose(tilt_proc, rig.head_tilt, abs_tol=1e-4)):
+        raise ValueError(
+            f"Head tilt mismatch: expected {rig.head_tilt}, got STOP={tilt_stop}, PROCEED={tilt_proc}"
+        )
+
 
 
 def _yaw_quat(yaw: float) -> List[float]:
@@ -186,10 +252,11 @@ class CounterfactualPairGenerator:
             proceed_objects.append({"name": "blocker2", "type": b2_type, "pos": proc_b2_pos, "quat": stop_b2_quat})
 
         # ── Render STOP scene ──────────────────────────────────────────
+        rig = TASK_1_RIG
         model_stop, data_stop = self.scene_builder.create_environment(
-            stop_objects, settle_steps=100, include_robot=True, robot_base_pose="home", box_pose=box_pose, box_quat=box_quat
+            stop_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, box_pose=box_pose, box_quat=box_quat
         )
-        initialize_robot_qpos(model_stop, data_stop, head_pan=TASK_1_RIG.head_pan, head_tilt=TASK_1_RIG.head_tilt)
+        cam_meta_stop = apply_observation_rig(model_stop, data_stop, rig)
         apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
@@ -222,12 +289,17 @@ class CounterfactualPairGenerator:
 
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(
-            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose="home", box_pose=box_pose, box_quat=box_quat
+            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, box_pose=box_pose, box_quat=box_quat
         )
+        cam_meta_proceed = apply_observation_rig(model_proceed, data_proceed, rig)
         apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
+
+        val_proceed = renderer_proceed.validate_view_quality(data_proceed, target_geom_names=["B1_lid_panel"], candidate_geom_names=[])
+        if not val_proceed["is_valid"]:
+            raise ValueError(f"Task 1 PROCEED scene view quality validation failed for pair {pair_id}: {val_proceed}")
 
         rgb_proceed = renderer_proceed.render_rgb(data_proceed)
         inst_proceed_8, inst_proceed_16, cand_proceed, target_proceed, causal_proceed, vis_proceed, id_map_proceed = (
@@ -243,6 +315,9 @@ class CounterfactualPairGenerator:
 
         if is_occ_proceed:
             raise ValueError(f"Task 1 PROCEED scene for pair {pair_id} was falsely marked as occupied!")
+
+        # Enforce exact camera extrinsics and configuration invariant between STOP and PROCEED
+        check_camera_extrinsics_invariant(cam_meta_stop, cam_meta_proceed, rig)
 
         # Save query images & masks
         stop_rgb_path = pair_dir / "stop_rgb.png"
@@ -290,7 +365,7 @@ class CounterfactualPairGenerator:
             declared_intervention_paths = ["objects.blocker1.position", "objects.blocker2.position"]
 
         # Build complete resolved scene specs
-        def build_resolved_spec(objs_list: List[dict], label: str) -> Dict[str, Any]:
+        def build_resolved_spec(objs_list: List[dict], label: str, cam_meta: dict) -> Dict[str, Any]:
             objs_dict = {}
             for o in objs_list:
                 objs_dict[o["name"]] = {
@@ -309,16 +384,15 @@ class CounterfactualPairGenerator:
                 "position_bin": blocker_pos_bin,
                 "blocker_count": blocker_count,
                 "label": label,
-                "camera": {
-                    "name": self.camera_name,
-                    "resolution": [self.width, self.height],
-                },
+                "camera": cam_meta,
                 "background": {
                     "background_id": bg_profile_name,
                     "background_spec": bg_spec.to_dict(),
                 },
                 "robot": {
-                    "base_pose": "right_side",
+                    "base_pose": rig.robot_base_pose,
+                    "head_pan": rig.head_pan,
+                    "head_tilt": rig.head_tilt,
                 },
                 "scene_poses": {
                     "box_pose": box_pos,
@@ -328,8 +402,8 @@ class CounterfactualPairGenerator:
                 "distractors": [],
             }
 
-        stop_resolved_spec = build_resolved_spec(stop_objects, "STOP")
-        proceed_resolved_spec = build_resolved_spec(proceed_objects, "PROCEED")
+        stop_resolved_spec = build_resolved_spec(stop_objects, "STOP", cam_meta_stop)
+        proceed_resolved_spec = build_resolved_spec(proceed_objects, "PROCEED", cam_meta_proceed)
 
         stop_spec = EpisodeSpec(
             task_family="task_1",
@@ -345,6 +419,7 @@ class CounterfactualPairGenerator:
             split=split,
             relation_before=f"ON_TOP_OF({blocker_type}, B1_lid)",
             relation_after=f"BESIDE({blocker_type}, box_B1)",
+            camera_configuration=self.camera_name,
             objects_to_spawn=stop_objects,
         )
 
@@ -362,6 +437,7 @@ class CounterfactualPairGenerator:
             split=split,
             relation_before=f"ON_TOP_OF({blocker_type}, B1_lid)",
             relation_after=f"BESIDE({blocker_type}, box_B1)",
+            camera_configuration=self.camera_name,
             objects_to_spawn=proceed_objects,
         )
 
@@ -375,6 +451,8 @@ class CounterfactualPairGenerator:
             "blocker_pos_bin": blocker_pos_bin,
             "split": split,
             "seed": seed,
+            "camera_name": self.camera_name,
+            "camera_configuration": self.camera_name,
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
             "declared_intervention_paths": declared_intervention_paths,
@@ -387,6 +465,7 @@ class CounterfactualPairGenerator:
                 "is_occupied": is_occ_stop,
                 "culprits": active_culprits_stop,
                 "measurements": measurements_stop,
+                "camera": cam_meta_stop,
                 "rgb_path": str(stop_rgb_path),
                 "instance_segmentation_path": str(stop_inst_path),
                 "instance_uint16_path": str(stop_inst_npy),
@@ -405,6 +484,7 @@ class CounterfactualPairGenerator:
                 "is_occupied": is_occ_proceed,
                 "culprits": active_culprits_proceed,
                 "measurements": measurements_proceed,
+                "camera": cam_meta_proceed,
                 "rgb_path": str(proceed_rgb_path),
                 "instance_segmentation_path": str(proceed_inst_path),
                 "instance_uint16_path": str(proceed_inst_npy),
@@ -474,13 +554,19 @@ class CounterfactualPairGenerator:
         ]
 
         # ── Render STOP scene ──────────────────────────────────────────
+        rig = TASK_2_RIG
         model_stop, data_stop = self.scene_builder.create_environment(
-            stop_objects, settle_steps=100, include_robot=True, robot_base_pose="home", target_region_pos=target_region_pos, target_region_quat=target_region_quat
+            stop_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, target_region_pos=target_region_pos, target_region_quat=target_region_quat
         )
+        cam_meta_stop = apply_observation_rig(model_stop, data_stop, rig)
         apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
+        cand_geoms_stop = self._get_body_geom_names(model_stop, "coffee_can") + self._get_body_geom_names(model_stop, "occupant")
+        val_stop = renderer_stop.validate_view_quality(data_stop, target_geom_names=["target_region_geom"], candidate_geom_names=cand_geoms_stop)
+        if not val_stop["is_valid"]:
+            raise ValueError(f"Task 2 STOP scene view quality validation failed for pair {pair_id}: {val_stop}")
 
         rgb_stop = renderer_stop.render_rgb(data_stop)
         cand_geoms = self._get_body_geom_names(model_stop, "occupant")
@@ -500,18 +586,22 @@ class CounterfactualPairGenerator:
 
         # ── Render PROCEED scene ───────────────────────────────────────
         model_proceed, data_proceed = self.scene_builder.create_environment(
-            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose="home", target_region_pos=target_region_pos, target_region_quat=target_region_quat
+            proceed_objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose, target_region_pos=target_region_pos, target_region_quat=target_region_quat
         )
+        cam_meta_proceed = apply_observation_rig(model_proceed, data_proceed, rig)
         apply_background_spec(model_proceed, bg_spec)
         mujoco.mj_forward(model_proceed, data_proceed)
 
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
+        cand_geoms_proc = self._get_body_geom_names(model_proceed, "coffee_can")
+        val_proceed = renderer_proceed.validate_view_quality(data_proceed, target_geom_names=["target_region_geom"], candidate_geom_names=cand_geoms_proc)
+        if not val_proceed["is_valid"]:
+            raise ValueError(f"Task 2 PROCEED scene view quality validation failed for pair {pair_id}: {val_proceed}")
 
         rgb_proceed = renderer_proceed.render_rgb(data_proceed)
-        cand_geoms_proc = self._get_body_geom_names(model_proceed, "occupant")
         inst_proceed_8, inst_proceed_16, cand_proceed, target_proceed, causal_proceed, vis_proceed, id_map_proceed = (
             self._generate_masks_and_visualizations(
-                renderer_proceed, model_proceed, data_proceed, cand_geoms_proc, ["target_region_geom"], is_stop=False
+                renderer_proceed, model_proceed, data_proceed, cand_geoms, ["target_region_geom"], is_stop=False
             )
         )
 
@@ -522,6 +612,10 @@ class CounterfactualPairGenerator:
 
         if is_occ_proceed:
             raise ValueError(f"Task 2 PROCEED scene for pair {pair_id} was falsely marked as occupied!")
+
+        # Enforce exact camera extrinsics and configuration invariant between STOP and PROCEED
+        check_camera_extrinsics_invariant(cam_meta_stop, cam_meta_proceed, rig)
+
 
         # Save query images & masks
         stop_rgb_path = pair_dir / "stop_rgb.png"
@@ -564,7 +658,7 @@ class CounterfactualPairGenerator:
 
         declared_intervention_paths = ["objects.occupant.position"]
 
-        def build_resolved_spec(objs_list: List[dict], label: str) -> Dict[str, Any]:
+        def build_resolved_spec(objs_list: List[dict], label: str, cam_meta: Dict[str, Any]) -> Dict[str, Any]:
             objs_dict = {}
             for o in objs_list:
                 objs_dict[o["name"]] = {
@@ -583,16 +677,15 @@ class CounterfactualPairGenerator:
                 "position_bin": occupant_pos_bin,
                 "blocker_count": 1,
                 "label": label,
-                "camera": {
-                    "name": self.camera_name,
-                    "resolution": [self.width, self.height],
-                },
+                "camera": cam_meta,
                 "background": {
                     "background_id": bg_profile_name,
                     "background_spec": bg_spec.to_dict(),
                 },
                 "robot": {
-                    "base_pose": "home",
+                    "base_pose": rig.robot_base_pose,
+                    "head_pan": rig.head_pan,
+                    "head_tilt": rig.head_tilt,
                 },
                 "scene_poses": {
                     "target_center": target_center,
@@ -601,8 +694,8 @@ class CounterfactualPairGenerator:
                 "distractors": [],
             }
 
-        stop_resolved_spec = build_resolved_spec(stop_objects, "STOP")
-        proceed_resolved_spec = build_resolved_spec(proceed_objects, "PROCEED")
+        stop_resolved_spec = build_resolved_spec(stop_objects, "STOP", cam_meta_stop)
+        proceed_resolved_spec = build_resolved_spec(proceed_objects, "PROCEED", cam_meta_proceed)
 
         stop_spec = EpisodeSpec(
             task_family="task_2",
@@ -611,6 +704,7 @@ class CounterfactualPairGenerator:
             seed=seed,
             label="STOP",
             goal_instruction="Place object1 in the target region.",
+            camera_configuration=self.camera_name,
             background_id=bg_profile_name,
             object1_type="coffee_can",
             blocker_or_occupant_types=[target_occupant_type],
@@ -628,6 +722,7 @@ class CounterfactualPairGenerator:
             seed=seed,
             label="PROCEED",
             goal_instruction="Place object1 in the target region.",
+            camera_configuration=self.camera_name,
             background_id=bg_profile_name,
             object1_type="coffee_can",
             blocker_or_occupant_types=[target_occupant_type],
@@ -647,6 +742,8 @@ class CounterfactualPairGenerator:
             "occupant_pos_bin": occupant_pos_bin,
             "split": split,
             "seed": seed,
+            "camera_name": self.camera_name,
+            "camera_configuration": self.camera_name,
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
             "declared_intervention_paths": declared_intervention_paths,
@@ -659,6 +756,7 @@ class CounterfactualPairGenerator:
                 "is_occupied": is_occ_stop,
                 "culprits": active_culprits_stop,
                 "measurements": measurements_stop,
+                "camera": cam_meta_stop,
                 "rgb_path": str(stop_rgb_path),
                 "instance_segmentation_path": str(stop_inst_path),
                 "instance_uint16_path": str(stop_inst_npy),
@@ -677,6 +775,7 @@ class CounterfactualPairGenerator:
                 "is_occupied": is_occ_proceed,
                 "culprits": active_culprits_proceed,
                 "measurements": measurements_proceed,
+                "camera": cam_meta_proceed,
                 "rgb_path": str(proceed_rgb_path),
                 "instance_segmentation_path": str(proceed_inst_path),
                 "instance_uint16_path": str(proceed_inst_npy),
@@ -710,7 +809,8 @@ class CounterfactualPairGenerator:
         ctrl_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, include_robot=True, robot_base_pose="home")
+        rig = TASK_1_RIG
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, include_robot=True, robot_base_pose=rig.robot_base_pose)
         lid_center = get_lid_center(ref_model, ref_data).tolist()
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
@@ -735,7 +835,8 @@ class CounterfactualPairGenerator:
             pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.21, offset_y=0.0, height_above_table=0.04).tolist()
             objects.append({"name": "blocker1", "type": obj_t, "pos": pos})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose="home")
+        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose)
+        cam_meta = apply_observation_rig(model, data, rig)
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 
@@ -745,6 +846,11 @@ class CounterfactualPairGenerator:
         candidate_geoms = []
         for o in objects:
             candidate_geoms.extend(self._get_body_geom_names(model, o["name"]))
+
+        val = renderer.validate_view_quality(data, target_geom_names=["B1_lid_panel"], candidate_geom_names=candidate_geoms)
+        if not val["is_valid"]:
+            raise ValueError(f"Task 1 positive control {control_id} view quality validation failed: {val}")
+
         inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
             renderer, model, data, candidate_geoms, ["B1_lid_panel"], is_stop=False
         )
@@ -791,9 +897,15 @@ class CounterfactualPairGenerator:
             "seed": seed,
             "split": split,
             "label": "PROCEED",
+            "camera": cam_meta,
             "background": {
                 "background_id": bg_profile_name,
                 "background_spec": bg_spec.to_dict(),
+            },
+            "robot": {
+                "base_pose": rig.robot_base_pose,
+                "head_pan": rig.head_pan,
+                "head_tilt": rig.head_tilt,
             },
             "objects": {o["name"]: o for o in objects},
         }
@@ -808,6 +920,9 @@ class CounterfactualPairGenerator:
             "label": "PROCEED",
             "split": split,
             "seed": seed,
+            "camera_name": self.camera_name,
+            "camera_configuration": self.camera_name,
+            "camera": cam_meta,
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
             "is_occupied": is_occ,
@@ -842,7 +957,8 @@ class CounterfactualPairGenerator:
         ctrl_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, include_robot=True, robot_base_pose="home")
+        rig = TASK_2_RIG
+        ref_model, ref_data = self.scene_builder.create_environment(settle_steps=0, include_robot=True, robot_base_pose=rig.robot_base_pose)
         target_center = get_target_center(ref_model, ref_data).tolist()
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
@@ -869,7 +985,8 @@ class CounterfactualPairGenerator:
             objects.append({"name": "occupant1", "type": occ1_t, "pos": pos1})
             objects.append({"name": "occupant2", "type": occ2_t, "pos": pos2})
 
-        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose="home")
+        model, data = self.scene_builder.create_environment(objects, settle_steps=100, include_robot=True, robot_base_pose=rig.robot_base_pose)
+        cam_meta = apply_observation_rig(model, data, rig)
         apply_background_spec(model, bg_spec)
         mujoco.mj_forward(model, data)
 
@@ -881,6 +998,12 @@ class CounterfactualPairGenerator:
             for o in objects:
                 if o["name"] != "coffee_can":
                     candidate_geoms.extend(self._get_body_geom_names(model, o["name"]))
+
+        cand_geoms_ctrl = self._get_body_geom_names(model, "coffee_can") + candidate_geoms
+        val = renderer.validate_view_quality(data, target_geom_names=["target_region_geom"], candidate_geom_names=cand_geoms_ctrl)
+        if not val["is_valid"]:
+            raise ValueError(f"Task 2 positive control {control_id} view quality validation failed: {val}")
+
         inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
             renderer, model, data, candidate_geoms, ["target_region_geom"], is_stop=False
         )
@@ -927,9 +1050,15 @@ class CounterfactualPairGenerator:
             "seed": seed,
             "split": split,
             "label": "PROCEED",
+            "camera": cam_meta,
             "background": {
                 "background_id": bg_profile_name,
                 "background_spec": bg_spec.to_dict(),
+            },
+            "robot": {
+                "base_pose": rig.robot_base_pose,
+                "head_pan": rig.head_pan,
+                "head_tilt": rig.head_tilt,
             },
             "objects": {o["name"]: o for o in objects},
         }
@@ -944,6 +1073,9 @@ class CounterfactualPairGenerator:
             "label": "PROCEED",
             "split": split,
             "seed": seed,
+            "camera_name": self.camera_name,
+            "camera_configuration": self.camera_name,
+            "camera": cam_meta,
             "background_id": bg_profile_name,
             "background_spec": bg_spec.to_dict(),
             "is_occupied": is_occ,

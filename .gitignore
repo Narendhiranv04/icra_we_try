@@ -6,3 +6,4 @@ venv/
 .env
 MUJOCO_LOG.TXT
 data/
+output/

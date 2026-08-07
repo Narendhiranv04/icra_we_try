@@ -38,7 +38,7 @@ class EpisodeSpec:
     box_pose: List[float] = field(default_factory=lambda: [0.52, 0.18, 0.58])
     target_pose: List[float] = field(default_factory=lambda: [-0.10, -0.20, 0.581])
     distractor_identities_and_poses: List[Dict[str, Any]] = field(default_factory=list)
-    camera_configuration: str = "front_camera"
+    camera_configuration: str = "robot0:ego_camera"
     split: str = "id"
     relation_before: str = ""
     relation_after: str = ""

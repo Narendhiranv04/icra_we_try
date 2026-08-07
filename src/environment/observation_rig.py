@@ -120,3 +120,34 @@ def get_camera_extrinsic_matrix(
     extrinsic[:3, :3] = rot
     extrinsic[:3, 3] = pos
     return extrinsic
+
+
+def apply_observation_rig(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    rig: ObservationRig,
+) -> Dict[str, Any]:
+    """Apply an ObservationRig to a scene's model and data state.
+    
+    Sets exact head_pan and head_tilt, calls mj_forward, and returns measured camera metadata.
+    """
+    from src.environment.robot_integration import initialize_robot_qpos
+    from src.environment.renderer import OffscreenRenderer
+
+    initialize_robot_qpos(model, data, head_pan=rig.head_pan, head_tilt=rig.head_tilt)
+    mujoco.mj_forward(model, data)
+
+    renderer = OffscreenRenderer(model, width=rig.resolution[0], height=rig.resolution[1], camera_name=rig.camera_name)
+    metadata = renderer.get_camera_metadata(data)
+    renderer.close()
+
+    metadata["rig_id"] = rig.rig_id
+    metadata["task_id"] = rig.task_id
+    metadata["name"] = rig.camera_name
+    metadata["camera_name"] = rig.camera_name
+    metadata["robot_base_pose"] = rig.robot_base_pose
+    metadata["head_pan"] = rig.head_pan
+    metadata["head_tilt"] = rig.head_tilt
+    metadata["camera_extrinsic_matrix"] = get_camera_extrinsic_matrix(model, data, rig.camera_name).tolist()
+    return metadata
+
