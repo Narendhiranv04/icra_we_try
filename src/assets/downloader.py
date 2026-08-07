@@ -28,3 +28,12 @@ class AssetDownloader:
                 continue
             status[name] = asset.exists_on_disk
         return status
+
+
+def ensure_asset_available(asset_name: str) -> Path:
+    """Ensure that the given asset exists locally and return its mesh path."""
+    registry = AssetRegistry()
+    asset = registry.get_asset(asset_name)
+    if asset is None or not asset.exists_on_disk:
+        raise FileNotFoundError(f"Asset '{asset_name}' not available on disk.")
+    return asset.mesh_path

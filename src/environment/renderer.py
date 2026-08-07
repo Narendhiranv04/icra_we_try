@@ -165,8 +165,8 @@ class OffscreenRenderer:
         Returns:
             int32 segmentation numpy array of shape (height, width, 2) [geom_id, object_id].
         """
-        self.renderer.update_scene(data, camera=self.camera_id)
         self.renderer.enable_segmentation_rendering()
+        self.renderer.update_scene(data, camera=self.camera_id)
         seg_mask = self.renderer.render()
         self.renderer.disable_segmentation_rendering()
         return seg_mask

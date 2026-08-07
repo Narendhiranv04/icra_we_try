@@ -1,0 +1,30 @@
+{
+  "task1_open_box_ego": {
+    "task_id": "task1",
+    "head_pan": 0.3084657409989255,
+    "head_tilt": 0.5083412929771687,
+    "analytical_pan": 0.5084657409989255,
+    "analytical_tilt": 0.5083412929771687,
+    "metrics": {
+      "score": -1000.0,
+      "target_pixels": 0,
+      "candidate_pixels": 0,
+      "torso_fraction": 0.0,
+      "roi_distance": 1.0
+    }
+  },
+  "task2_place_object_ego": {
+    "task_id": "task2",
+    "head_pan": -0.23837731623444228,
+    "head_tilt": 0.6217450632528438,
+    "analytical_pan": -0.03837731623444227,
+    "analytical_tilt": 0.7717450632528439,
+    "metrics": {
+      "score": -1000.0,
+      "target_pixels": 0,
+      "candidate_pixels": 0,
+      "torso_fraction": 0.0,
+      "roi_distance": 1.0
+    }
+  }
+}

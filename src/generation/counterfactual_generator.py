@@ -15,6 +15,8 @@ import mujoco
 
 from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
+from src.environment.observation_rig import TASK_1_RIG, TASK_2_RIG, get_task_observation_rig
+from src.environment.robot_integration import initialize_robot_qpos
 from src.validation.occupancy_checks import check_lid_occupancy, check_target_occupancy
 from src.generation.scene_config import EpisodeSpec
 from src.generation.background_randomization import (
@@ -59,6 +61,19 @@ class CounterfactualPairGenerator:
         self.camera_name = camera_name
         self.scene_builder = SceneBuilder()
         self.split_planner = SplitPlanner()
+
+    def _get_body_geom_names(self, model: mujoco.MjModel, body_name: str) -> List[str]:
+        """Retrieve all geom names attached to a given body name in the MuJoCo model."""
+        body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name)
+        if body_id == -1:
+            return [f"{body_name}_geom"]
+        geoms = []
+        for g in range(model.ngeom):
+            if model.geom_bodyid[g] == body_id:
+                name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, g)
+                if name:
+                    geoms.append(name)
+        return geoms if geoms else [f"{body_name}_geom"]
 
     def _generate_masks_and_visualizations(
         self,
@@ -129,15 +144,15 @@ class CounterfactualPairGenerator:
         bg_profile_name = SPLIT_BACKGROUNDS.get(split, "bg_neutral_wood")
         bg_spec = sample_background_spec(bg_profile_name, rng, n_lights=ref_model.nlight)
 
-        # Normalized lid local fractions for position bins
+        # Normalized lid local fractions for position bins (must be strictly within [-0.25, 0.25] to stay on lid)
         pos_fracs = {
             "centre": (0.0, 0.0),
-            "front_left": (-0.6, -0.5),
-            "front_right": (0.6, -0.5),
-            "rear_left": (-0.6, 0.5),
-            "rear_right": (0.6, 0.5),
-            "opening_edge": (0.0, -0.6),
-            "hinge_side": (0.0, 0.6),
+            "front_left": (-0.2, -0.2),
+            "front_right": (0.2, -0.2),
+            "rear_left": (-0.2, 0.2),
+            "rear_right": (0.2, 0.2),
+            "opening_edge": (0.0, -0.2),
+            "hinge_side": (0.0, 0.2),
         }
         x_frac, y_frac = pos_fracs.get(blocker_pos_bin, (0.0, 0.0))
         stop_b1_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
@@ -149,8 +164,8 @@ class CounterfactualPairGenerator:
             else:
                 xf1, yf1 = x_frac, y_frac
                 xf2, yf2 = -x_frac, -y_frac
-            stop_b1_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf1, y_frac=yf1, height_above=0.06).tolist()
-            stop_b2_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf2, y_frac=yf2, height_above=0.06).tolist()
+            stop_b1_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf1, y_frac=yf1, height_above=0.02).tolist()
+            stop_b2_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=xf2, y_frac=yf2, height_above=0.02).tolist()
             stop_b2_quat = _yaw_quat(float(rng.uniform(-math.pi, math.pi)))
 
             b2_type = "sugar_box" if blocker_type != "sugar_box" else "mug"
@@ -159,7 +174,7 @@ class CounterfactualPairGenerator:
                 {"name": "blocker2", "type": b2_type, "pos": stop_b2_pos, "quat": stop_b2_quat},
             ]
         else:
-            stop_b1_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=x_frac, y_frac=y_frac, height_above=0.06).tolist()
+            stop_b1_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=x_frac, y_frac=y_frac, height_above=0.02).tolist()
             stop_objects = [{"name": "blocker1", "type": blocker_type, "pos": stop_b1_pos, "quat": stop_b1_quat}]
 
         # PROCEED objects: placed beside the box in box local frame
@@ -174,13 +189,21 @@ class CounterfactualPairGenerator:
         model_stop, data_stop = self.scene_builder.create_environment(
             stop_objects, settle_steps=100, include_robot=True, robot_base_pose="home", box_pose=box_pose, box_quat=box_quat
         )
+        initialize_robot_qpos(model_stop, data_stop, head_pan=TASK_1_RIG.head_pan, head_tilt=TASK_1_RIG.head_tilt)
         apply_background_spec(model_stop, bg_spec)
         mujoco.mj_forward(model_stop, data_stop)
 
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
+        cand_geom_names = []
+        for o in stop_objects:
+            cand_geom_names.extend(self._get_body_geom_names(model_stop, o["name"]))
+
+        val_stop = renderer_stop.validate_view_quality(data_stop, target_geom_names=["B1_lid_panel"], candidate_geom_names=cand_geom_names)
+        if not val_stop["is_valid"]:
+            raise ValueError(f"Task 1 STOP scene view quality validation failed for pair {pair_id}: {val_stop}")
 
         rgb_stop = renderer_stop.render_rgb(data_stop)
-        candidate_geoms = ["blocker1_geom"] + (["blocker2_geom"] if blocker_count == 2 else [])
+        candidate_geoms = cand_geom_names
         inst_stop_8, inst_stop_16, cand_stop, target_stop, causal_stop, vis_stop, id_map_stop = (
             self._generate_masks_and_visualizations(
                 renderer_stop, model_stop, data_stop, candidate_geoms, ["B1_lid_panel"], is_stop=True
@@ -460,9 +483,10 @@ class CounterfactualPairGenerator:
         renderer_stop = OffscreenRenderer(model_stop, width=self.width, height=self.height, camera_name=self.camera_name)
 
         rgb_stop = renderer_stop.render_rgb(data_stop)
+        cand_geoms = self._get_body_geom_names(model_stop, "occupant")
         inst_stop_8, inst_stop_16, cand_stop, target_stop, causal_stop, vis_stop, id_map_stop = (
             self._generate_masks_and_visualizations(
-                renderer_stop, model_stop, data_stop, ["occupant_geom"], ["target_region_geom"], is_stop=True
+                renderer_stop, model_stop, data_stop, cand_geoms, ["target_region_geom"], is_stop=True
             )
         )
 
@@ -484,9 +508,10 @@ class CounterfactualPairGenerator:
         renderer_proceed = OffscreenRenderer(model_proceed, width=self.width, height=self.height, camera_name=self.camera_name)
 
         rgb_proceed = renderer_proceed.render_rgb(data_proceed)
+        cand_geoms_proc = self._get_body_geom_names(model_proceed, "occupant")
         inst_proceed_8, inst_proceed_16, cand_proceed, target_proceed, causal_proceed, vis_proceed, id_map_proceed = (
             self._generate_masks_and_visualizations(
-                renderer_proceed, model_proceed, data_proceed, ["occupant_geom"], ["target_region_geom"], is_stop=False
+                renderer_proceed, model_proceed, data_proceed, cand_geoms_proc, ["target_region_geom"], is_stop=False
             )
         )
 
@@ -717,7 +742,9 @@ class CounterfactualPairGenerator:
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
         rgb = renderer.render_rgb(data)
 
-        candidate_geoms = [f"{o['name']}_geom" for o in objects]
+        candidate_geoms = []
+        for o in objects:
+            candidate_geoms.extend(self._get_body_geom_names(model, o["name"]))
         inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
             renderer, model, data, candidate_geoms, ["B1_lid_panel"], is_stop=False
         )
@@ -849,7 +876,11 @@ class CounterfactualPairGenerator:
         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
         rgb = renderer.render_rgb(data)
 
-        candidate_geoms = [f"{o['name']}_geom" for o in objects if o["name"] != "coffee_can"] if control_subtype != "empty_target" else []
+        candidate_geoms = []
+        if control_subtype != "empty_target":
+            for o in objects:
+                if o["name"] != "coffee_can":
+                    candidate_geoms.extend(self._get_body_geom_names(model, o["name"]))
         inst_8, inst_16, cand, target, causal, vis, id_map = self._generate_masks_and_visualizations(
             renderer, model, data, candidate_geoms, ["target_region_geom"], is_stop=False
         )

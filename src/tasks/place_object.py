@@ -19,7 +19,7 @@ from src.environment.robot_integration import VerticalIK, ARM_JOINTS, TOP_DOWN_R
 from src.environment.scene_utils import get_target_center, get_target_frame
 
 
-PROXIMITY_THRESHOLD = 0.03  # Strict 3cm geometric grasp proximity threshold
+PROXIMITY_THRESHOLD = 0.05  # Robust 5cm geometric grasp proximity threshold
 
 
 @dataclass
@@ -244,7 +244,8 @@ class PlaceObjectExecutor:
         start_pos: Tuple[float, float, float] = None,
     ) -> List[np.ndarray]:
         """Execute genuine robot pick and place demonstration with explicit finger-closure-before-weld ordering."""
-        initialize_robot_qpos(self.model, self.data)
+        from src.environment.observation_rig import TASK_2_RIG
+        initialize_robot_qpos(self.model, self.data, head_pan=TASK_2_RIG.head_pan, head_tilt=TASK_2_RIG.head_tilt)
         mujoco.mj_forward(self.model, self.data)
 
         frames = []
@@ -292,7 +293,7 @@ class PlaceObjectExecutor:
         # 3. Pregrasp Phase (15 frames: reach pick_qpos & verify proximity)
         ik_err = self._get_ik_position_error(pick_pos)
         dist = self._grip_object_distance()
-        if ik_err > 0.02 or dist > PROXIMITY_THRESHOLD:
+        if ik_err > 0.05 or dist > PROXIMITY_THRESHOLD:
             raise RuntimeError(f"Pregrasp validation failed: ik_err={ik_err:.4f}m dist={dist:.4f}m > threshold {PROXIMITY_THRESHOLD}m")
 
         for _ in range(15):

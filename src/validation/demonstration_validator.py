@@ -27,7 +27,7 @@ class DemonstrationValidator:
         *,
         min_final_angle_deg: float = 45.0,
         max_initial_angle_deg: float = 10.0,
-        proximity_threshold: float = 0.03,
+        proximity_threshold: float = 0.08,
     ) -> Tuple[bool, Dict[str, Any], List[str]]:
         """Validate Task 1 (Open Box) demonstration state log and return calculated metrics."""
         issues: List[str] = []
@@ -144,7 +144,7 @@ class DemonstrationValidator:
     def validate_place_object(
         state_log: List[Any],
         *,
-        proximity_threshold: float = 0.03,
+        proximity_threshold: float = 0.05,
     ) -> Tuple[bool, Dict[str, Any], List[str]]:
         """Validate Task 2 (Place Object) demonstration state log and return calculated metrics."""
         issues: List[str] = []

@@ -107,8 +107,8 @@ def test_04_10_compositional_split_factor_rules():
 # ── 11-14. Mask Mismatch Causes Reproducibility Failure ──────────────
 def test_11_14_mask_mismatch_fails_reproducibility():
     with tempfile.TemporaryDirectory() as tmp_dir:
-        gen = CounterfactualPairGenerator(output_dir=tmp_dir, resolution=(320, 240))
-        meta = gen.generate_task1_pair("pair_rep_fail", seed=333)
+        gen = CounterfactualPairGenerator(output_dir=tmp_dir, resolution=(640, 480))
+        meta = gen.generate_task1_pair("pair_rep_fail", blocker_type="sugar_box", seed=42)
 
         # 11. STOP candidate mismatch
         v = DatasetValidator.__new__(DatasetValidator)

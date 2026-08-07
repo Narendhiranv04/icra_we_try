@@ -38,7 +38,7 @@ class DemonstrationGenerator:
     def generate_task_1_demo(
         self,
         demo_id: str = "demo_task1_001",
-        robot_base_pose: str = "right_side",
+        robot_base_pose: str = "home",
         background_id: str = "bg_neutral_wood",
         seed: int = 42,
     ) -> str:
@@ -49,6 +49,10 @@ class DemonstrationGenerator:
             include_robot=True,
             robot_base_pose=robot_base_pose,
         )
+
+        from src.environment.observation_rig import TASK_1_RIG
+        from src.environment.robot_integration import initialize_robot_qpos
+        initialize_robot_qpos(model, data, head_pan=TASK_1_RIG.head_pan, head_tilt=TASK_1_RIG.head_tilt)
 
         bg_spec = sample_background_spec(background_id, rng, n_lights=model.nlight)
         apply_background_spec(model, bg_spec)
@@ -145,6 +149,10 @@ class DemonstrationGenerator:
             target_region_pos=target_region_pos,
             target_region_quat=target_region_quat,
         )
+
+        from src.environment.observation_rig import TASK_2_RIG
+        from src.environment.robot_integration import initialize_robot_qpos
+        initialize_robot_qpos(model, data, head_pan=TASK_2_RIG.head_pan, head_tilt=TASK_2_RIG.head_tilt)
 
         bg_spec = sample_background_spec(background_id, rng, n_lights=model.nlight)
         apply_background_spec(model, bg_spec)
