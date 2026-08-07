@@ -5,8 +5,8 @@ PYTHON_BIN="${PYTHON_BIN:-python}"
 export MUJOCO_GL=${MUJOCO_GL:-egl}
 export PYTHONPATH=.
 
-# Clean previous smoke data selectively to avoid wiping pilot reports/data
-rm -rf data/demos data/queries data/manifests/smoke_* data/reports/pytest_results.xml data/reports/test_summary.json data/reports/dataset_validation.json data/reports/split_validation.json data/reports/reproducibility_report.json data/reports/demonstration_validation.json data/reports/demonstration_distinctness.json data/reports/control_distribution.json
+# Clean previous smoke data
+rm -rf data/smoke_demos/open_box/demo_task1_smoke* data/smoke_demos/place_object/demo_task2_smoke* data/smoke_queries/pair_* data/smoke_queries/control_* data/manifests/smoke_* data/reports/smoke_*
 mkdir -p data/reports
 
 echo "======================================================="
@@ -24,16 +24,16 @@ from src.generation.demonstration_generator import DemonstrationGenerator
 from src.validation.demonstration_validator import DemonstrationValidator
 from src.validation.demonstration_distinctness import DemonstrationDistinctnessValidator
 
-demo_gen = DemonstrationGenerator(output_dir='data/demos')
+demo_gen = DemonstrationGenerator(output_dir='data/smoke_demos')
 p1 = demo_gen.generate_task_1_demo('demo_task1_smoke', background_id='bg_neutral_wood', seed=42)
 p2 = demo_gen.generate_task_2_demo('demo_task2_smoke', obj_name='coffee_can', start_bin='pick_left', target_bin='centre', background_id='bg_neutral_wood', seed=43)
 
-val1, rep1 = DemonstrationValidator.generate_demonstration_validation_report('data/demos', 'data/reports/demonstration_validation.json')
-print(f'Demonstration Validation Status: {val1}')
-if not val1:
+val, rep = DemonstrationValidator.generate_demonstration_validation_report('data/smoke_demos', 'data/reports/smoke_demonstration_validation.json')
+print(f'Demonstration Validation Status: {val}')
+if not val:
     raise RuntimeError('Demonstration validation failed!')
 
-dist_val = DemonstrationDistinctnessValidator('data/demos')
+dist_val = DemonstrationDistinctnessValidator('data/smoke_demos')
 dist_valid, dist_rep = dist_val.validate_all_demos()
 print(f'Demonstration Distinctness Validation Status: {dist_valid}')
 if not dist_valid:

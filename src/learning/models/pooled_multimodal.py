@@ -55,6 +55,10 @@ class PooledMultimodalBaseline(nn.Module):
         
         logits = self.classifier(c)
         
-        # Compatibility score is higher for PROCEED (y=0) and lower for STOP (y=1).
-        s = -logits
+        # Explicit latent ranking compatibility
+        import torch.nn.functional as F
+        z_c_norm = F.normalize(z_context, p=2, dim=-1)
+        z_q_norm = F.normalize(z_q, p=2, dim=-1)
+        s = torch.sum(z_c_norm * z_q_norm, dim=-1)
+        
         return logits, s

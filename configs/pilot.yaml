@@ -2,6 +2,7 @@
 profile_name: "pilot"
 seed: 100
 output_dir: "data"
+query_output_dir: "data/pilot_queries"
 
 demo_generation:
   num_demos_per_task: 3

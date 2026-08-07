@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from PIL import Image
 import cv2
-import json
+import torchvision.transforms as T
 
 from src.learning.dataset import LearningDataset
 from scripts.train_model import get_model
@@ -21,7 +21,14 @@ def generate_heatmaps():
         from src.learning.models.heatmap_decoder import CausalHeatmapDecoder
         model.heatmap_decoder = CausalHeatmapDecoder(latent_dim=config.get("latent_dim", 256))
         
-    model.load_state_dict(torch.load(out_dir / "best.ckpt", map_location="cpu", weights_only=True))
+    ckpt_path = out_dir / "best.ckpt"
+    if not ckpt_path.exists():
+        ckpt_path = out_dir / "last.ckpt"
+        if not ckpt_path.exists():
+            print("No checkpoints found, skipping heatmap extraction.")
+            return
+
+    model.load_state_dict(torch.load(ckpt_path, map_location="cpu", weights_only=True))
     model.eval()
 
     ds = LearningDataset(
@@ -33,6 +40,15 @@ def generate_heatmaps():
 
     out_heat = Path("artifacts/learning_stage1/heatmaps")
     out_heat.mkdir(parents=True, exist_ok=True)
+
+    rgb_transform = T.Compose([
+        T.Resize(224, interpolation=T.InterpolationMode.BICUBIC),
+        T.CenterCrop(224)
+    ])
+    mask_transform = T.Compose([
+        T.Resize(224, interpolation=T.InterpolationMode.NEAREST),
+        T.CenterCrop(224)
+    ])
 
     saved = 0
     for i in range(len(ds)):
@@ -56,9 +72,12 @@ def generate_heatmaps():
         
         record = ds.records[i]
         rgb_path = record["query_rgb_path"]
-        orig = cv2.imread(rgb_path)
-        if orig is not None:
-            orig = cv2.resize(orig, (224, 224))
+        
+        if os.path.exists(rgb_path):
+            img_pil = Image.open(rgb_path).convert("RGB")
+            img_cropped = rgb_transform(img_pil)
+            orig = cv2.cvtColor(np.array(img_cropped), cv2.COLOR_RGB2BGR)
+            
             overlay = cv2.addWeighted(orig, 0.5, heatmap_colored, 0.5, 0)
             
             label = record["label"]
@@ -69,8 +88,9 @@ def generate_heatmaps():
             
             mask_path = record["causal_mask_path"]
             if mask_path and os.path.exists(mask_path):
-                mask = cv2.imread(mask_path)
-                mask = cv2.resize(mask, (224, 224))
+                m_pil = Image.open(mask_path).convert("L")
+                m_cropped = mask_transform(m_pil)
+                mask = np.array(m_cropped)
                 cv2.imwrite(f"{prefix}_gt_mask.jpg", mask)
                 
             saved += 1

@@ -17,7 +17,7 @@ def test_pooled_multimodal():
     q = torch.randn(2, 768)
     logits, s = model(t, d, q)
     assert logits.shape == (2, 1)
-    assert s.shape == (2, 1)
+    assert s.shape == (2,)
 
 def test_relational_model():
     model = DemoLanguageConditionedRelationalModel(num_demo_frames=4)

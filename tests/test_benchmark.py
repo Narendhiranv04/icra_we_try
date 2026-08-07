@@ -440,3 +440,37 @@ def test_38_40_release_verification_state(tmp_path):
         assert not prod_artifacts_dir.exists(), "verify_release_state created artifacts/smoke/ — production pollution!"
 
     assert result is True, f"Release verification failed; check {tmp_path}/reports/release_verification.json"
+
+def test_smoke_cleanup_does_not_delete_pilot_data(tmp_path):
+    # Mock data directories
+    data_dir = tmp_path / "data"
+    pilot_queries = data_dir / "pilot_queries"
+    smoke_queries = data_dir / "smoke_queries"
+    pilot_demos = data_dir / "pilot_demos"
+    smoke_demos = data_dir / "smoke_demos"
+    manifests = data_dir / "manifests"
+    
+    for d in [pilot_queries, smoke_queries, pilot_demos, smoke_demos, manifests]:
+        d.mkdir(parents=True)
+        
+    (pilot_queries / "pair_1.json").touch()
+    (smoke_queries / "pair_1.json").touch()
+    (pilot_demos / "demo_task1").mkdir()
+    (smoke_demos / "demo_task1_smoke").mkdir()
+    (manifests / "pilot_manifest.jsonl").touch()
+    (manifests / "smoke_manifest.jsonl").touch()
+    
+    import subprocess
+    import os
+    
+    script = """
+    # Clean previous smoke data
+    rm -rf data/smoke_demos/open_box/demo_task1_smoke* data/smoke_demos/place_object/demo_task2_smoke* data/smoke_queries/pair_* data/smoke_queries/control_* data/manifests/smoke_* data/reports/smoke_*
+    """
+    
+    subprocess.run(["bash", "-c", script], cwd=tmp_path)
+    
+    # Assert pilot data is preserved
+    assert (pilot_queries / "pair_1.json").exists()
+    assert (pilot_demos / "demo_task1").exists()
+    assert (manifests / "pilot_manifest.jsonl").exists()

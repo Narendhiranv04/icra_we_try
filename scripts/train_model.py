@@ -40,10 +40,15 @@ def get_model(config):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
+    parser.add_argument("--seed", type=int, default=None)
     args = parser.parse_args()
     
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
+        
+    if args.seed is not None:
+        config["seed"] = args.seed
+        config["output_path"] = f"{config['output_path']}_seed{args.seed}"
         
     out_dir = Path(config["output_path"])
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -94,8 +99,11 @@ def main():
     
     scaler = torch.cuda.amp.GradScaler() if config.get("mixed_precision", True) and device.type == "cuda" else None
     
-    epochs = config.get("epochs", 30)
+    epochs = config.get("epochs", 50)
     best_val_loss = float('inf')
+    best_epoch = -1
+    patience = config.get("patience", 7)
+    epochs_no_improve = 0
     
     history = {"train": [], "val": []}
     
@@ -110,9 +118,19 @@ def main():
         
         if val_metrics["loss"] < best_val_loss:
             best_val_loss = val_metrics["loss"]
+            best_epoch = epoch + 1
+            epochs_no_improve = 0
             torch.save(model.state_dict(), out_dir / "best.ckpt")
+        else:
+            epochs_no_improve += 1
             
         torch.save(model.state_dict(), out_dir / "last.ckpt")
+        
+        if epochs_no_improve >= patience:
+            print(f"Early stopping triggered after {epoch+1} epochs.")
+            break
+            
+    history["best_epoch"] = best_epoch
         
     with open(out_dir / "metrics.json", "w") as f:
         json.dump(history, f, indent=2)

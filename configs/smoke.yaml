@@ -2,6 +2,7 @@
 profile_name: "smoke"
 seed: 42
 output_dir: "data"
+query_output_dir: "data/smoke_queries"
 
 demo_generation:
   num_demos_per_task: 2

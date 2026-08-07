@@ -155,4 +155,8 @@ def validate_epoch(model, dataloader, criterion, device):
         all_heat_targets if all_heat_targets else None
     )
     metrics["loss"] = total_loss / max(1, len(dataloader))
+    metrics["_raw_preds"] = all_preds
+    metrics["_raw_targets"] = all_targets
+    metrics["_raw_scores"] = all_scores
+    metrics["_raw_pair_ids"] = all_pair_ids
     return metrics

@@ -6,7 +6,7 @@ export MUJOCO_GL=${MUJOCO_GL:-egl}
 export PYTHONPATH=.
 
 # Clean previous pilot data
-rm -rf data/demos/open_box/demo_task1* data/demos/place_object/demo_task2* data/queries/pair_* data/queries/control_* data/manifests/pilot_* data/reports/pilot_*
+rm -rf data/pilot_demos/open_box/demo_task1* data/pilot_demos/place_object/demo_task2* data/pilot_queries/pair_* data/pilot_queries/control_* data/manifests/pilot_* data/reports/pilot_*
 mkdir -p data/reports
 
 echo "======================================================="
@@ -26,7 +26,7 @@ from src.generation.demonstration_generator import DemonstrationGenerator
 from src.validation.demonstration_validator import DemonstrationValidator
 from src.validation.demonstration_distinctness import DemonstrationDistinctnessValidator
 
-demo_gen = DemonstrationGenerator(output_dir='data/demos')
+demo_gen = DemonstrationGenerator(output_dir='data/pilot_demos')
 
 bgs = ['bg_neutral_wood', 'bg_blue_counter', 'bg_granite_dark']
 objs = ['coffee_can', 'sugar_box', 'mug']
@@ -45,12 +45,12 @@ for i in range(1, 4):
     path = demo_gen.generate_task_2_demo(demo_id, obj_name=objs[i-1], start_bin=start_bins[i-1], target_bin=target_bins[i-1], background_id=bgs[i-1], seed=200+i)
     demos_t2.append(path)
 
-val, rep = DemonstrationValidator.generate_demonstration_validation_report('data/demos', 'data/reports/pilot_demonstration_validation.json')
+val, rep = DemonstrationValidator.generate_demonstration_validation_report('data/pilot_demos', 'data/reports/pilot_demonstration_validation.json')
 print(f'Pilot Demonstration Validation: {val}')
 if not val:
     raise RuntimeError('Pilot demonstration validation failed!')
 
-dist_val = DemonstrationDistinctnessValidator('data/demos')
+dist_val = DemonstrationDistinctnessValidator('data/pilot_demos')
 dist_valid, dist_rep = dist_val.validate_all_demos()
 print(f'Pilot Demonstration Distinctness Validation: {dist_valid}')
 if not dist_valid:

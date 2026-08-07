@@ -40,6 +40,7 @@ def main():
 
     total_queries = 0
     total_pairs = 0
+    controls_ignored = 0
     task_counts = Counter()
     split_counts = Counter()
 
@@ -49,6 +50,10 @@ def main():
             for line in f:
                 if not line.strip(): continue
                 pair_data = json.loads(line)
+                
+                if pair_data.get("sample_type") == "positive_control":
+                    controls_ignored += 1
+                    continue
                 
                 if "stop" not in pair_data or "proceed" not in pair_data:
                     raise ValueError(f"Pair does not have both stop and proceed mates: {pair_data.keys()}")
@@ -131,6 +136,7 @@ def main():
                 split_counts[split] += 1
 
     print(f"Built learning index with {total_pairs} pairs ({total_queries} queries).")
+    print(f"Controls ignored: {controls_ignored}")
     print(f"Demos discovered: {len(pilot_demos)}")
     print(f"Counts by task: {dict(task_counts)}")
     print(f"Counts by split: {dict(split_counts)}")

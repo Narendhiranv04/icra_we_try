@@ -88,7 +88,7 @@ class QueryGenerator:
             self.config = yaml.safe_load(f)
 
         self.output_dir = Path(self.config.get("output_dir", "data"))
-        self.queries_dir = self.output_dir / "queries"
+        self.queries_dir = Path(self.config.get("query_output_dir", self.output_dir / "queries"))
         self.manifests_dir = self.output_dir / "manifests"
         self.manifests_dir.mkdir(parents=True, exist_ok=True)
 
