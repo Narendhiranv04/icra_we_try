@@ -11,5 +11,5 @@ lambda_rank: 0.5
 lambda_heat: 0.5
 heatmap: true
 mixed_precision: true
-output_path: "learning_outputs/relational_heatmap"
+output_path: "learning_outputs/relational_heatmap_gate"
 split_seed: 42

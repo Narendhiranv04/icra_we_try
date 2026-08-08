@@ -10,5 +10,5 @@ lambda_rank: 0.0 # No ranking for query_only
 lambda_heat: 0.0
 heatmap: false
 mixed_precision: true
-output_path: "learning_outputs/query_only"
+output_path: "learning_outputs/query_only_gate"
 split_seed: 42
