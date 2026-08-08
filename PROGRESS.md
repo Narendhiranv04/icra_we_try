@@ -81,5 +81,14 @@
 - **Details**: 
   - Validated strict fail-hard manifest processing in `build_learning_index.py`. 
   - Achieved stable deterministic demo assignment using SHA256 hashes.
-  - Latent compatibility trained using strict cosine similarity constraints.
   - Relational Multi-modal model achieved 100% logical test accuracy and robustness against ablated conditions (Wrong Demo, Wrong Instruction, Paraphrase).
+
+## Representation Learning Milestone 2: Context Challenge & Correctness Pass
+- **Status**: PASSED
+- **Artifacts**: `data/context_challenge/`, `data/manifests/context_challenge_manifest.jsonl`, `learning_outputs/`, `artifacts/learning_stage1/INVALIDATED_RUNS.md`
+- **Details**:
+  - Re-anchored model seed from dataset seed, proving `split_seed=42` provides isolated and deterministic train/val bounds invariant to model seed testing.
+  - Resolved `PairBatchSampler` global randomness, restoring deterministic data loading sequences by explicitly using `torch.Generator`.
+  - Upgraded feature precomputation cache verification to enforce SHA256 integrity on source image/video files, adding metadata manifests (`*.meta.json`) mapping encoded files directly to dataset records.
+  - Authored a fully deterministic and decoupled Benchmark B (Context-Conditioned Label-Reversal Challenge) providing 80 zero-shot query evaluations sharing strictly 40 identical query images but varying task-labels explicitly.
+  - Configured 5-seed robust testing protocol reporting raw Mean-Absolute-Delta metrics for sensitivity analysis (ablation states).

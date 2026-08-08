@@ -16,10 +16,10 @@ from src.learning.losses import LearningLoss
 from scripts.train_model import get_model
 
 def run_evaluation(model, dataset, criterion, device, batch_size=8, desc=""):
-    sampler = PairBatchSampler(dataset, batch_size)
+    sampler = PairBatchSampler(dataset, batch_size, seed=42)
     loader = DataLoader(dataset, batch_sampler=sampler, num_workers=2)
     metrics = validate_epoch(model, loader, criterion, device)
-    print(f"[{desc}] Loss: {metrics['loss']:.4f} | Acc: {metrics['accuracy']:.4f} | PLA: {metrics.get('pla', 0):.4f}")
+    print(f"[{desc}] Loss: {metrics['loss']:.4f} | Acc: {metrics['accuracy']:.4f} | Latent PLA: {metrics.get('latent_pla', 0):.4f}")
     return metrics
 
 def compare_metrics(baseline, perturbed):
@@ -32,16 +32,23 @@ def compare_metrics(baseline, perturbed):
     res = {
         "accuracy": perturbed["accuracy"],
         "f1": perturbed.get("f1", 0),
-        "pla": perturbed.get("pla", 0),
+        "latent_pla": perturbed.get("latent_pla", 0),
     }
     
-    if len(b_preds) > 0 and len(b_preds) == len(p_preds):
+        b_logits = np.array(baseline.get("_raw_logits", []))
+        p_logits = np.array(perturbed.get("_raw_logits", []))
+        
         b_class = (b_preds > 0.5).astype(int)
         p_class = (p_preds > 0.5).astype(int)
         flips = (b_class != p_class).mean()
-        delta_logit = np.abs(np.log(p_preds / (1 - p_preds + 1e-9)) - np.log(b_preds / (1 - b_preds + 1e-9))).mean()
+        
+        if len(b_logits) > 0 and len(b_logits) == len(p_logits):
+            delta_logit = np.abs(p_logits - b_logits).mean()
+            res["mean_delta_logit"] = float(delta_logit)
+            
+        delta_prob = np.abs(p_preds - b_preds).mean()
         res["flip_rate"] = float(flips)
-        res["mean_delta_logit"] = float(delta_logit)
+        res["mean_delta_prob"] = float(delta_prob)
         res["mean_confidence"] = float(np.abs(p_preds - 0.5).mean() * 2)
         
     if len(b_scores) > 0 and len(b_scores) == len(p_scores):
@@ -88,7 +95,9 @@ def main():
             index_path=config.get("index_path", "learning_data/index.jsonl"),
             features_dir=config.get("feature_cache_path", "learning_data/features"),
             split=split,
-            return_masks=config.get("heatmap", False)
+            return_masks=config.get("heatmap", False),
+            seed=config.get("seed", 42),
+            split_seed=config.get("split_seed", 42)
         )
         if len(dataset) > 0:
             desc = f"[TRAIN] Split {split}" if split == "id_train" else f"Split {split}"
@@ -110,83 +119,68 @@ def main():
         print("Running Conditioning Diagnostics...")
         ablation_results = {}
         
-        def run_ablation(dataset_mod_func, name):
+        def run_ablation(ablation_mode, name):
+            res_all = {}
+            for split in splits:
+                ds = LearningDataset(
+                    index_path=config.get("index_path", "learning_data/index.jsonl"),
+                    features_dir=config.get("feature_cache_path", "learning_data/features"),
+                    split=split,
+                    return_masks=config.get("heatmap", False),
+                    seed=config.get("seed", 42),
+                    split_seed=config.get("split_seed", 42),
+                    ablation_mode=ablation_mode
+                )
+                if len(ds) == 0: continue
+                m = run_evaluation(model, ds, criterion, device, batch_size=8, desc=f"{name} {split}")
+                
+                # We need baseline for this split
+                baseline_split = all_metrics.get(split) if split != "id_val" else baseline_id_val
+                if baseline_split:
+                    # all_metrics might not have raw arrays saved. We should only do compare_metrics if raw arrays exist.
+                    # Since we stripped raw arrays for save, let's just get them!
+                    # Actually, we need to run baseline for all splits with raw arrays.
+                    pass
+            
+            # Since compare_metrics needs raw arrays, let's just evaluate id_val for ablation comparison.
+            # But the prompt said "RUN CONDITIONING DIAGNOSTICS ON ALL EVAL SPLITS... on id_val, unseen_object, unseen_background, compositional".
+            # So we must collect the full metrics. We can store raw metrics in `baselines_raw = {}`.
+            pass
+
+        baselines_raw = {}
+        for split in splits:
             ds = LearningDataset(
                 index_path=config.get("index_path", "learning_data/index.jsonl"),
                 features_dir=config.get("feature_cache_path", "learning_data/features"),
-                split="id_val",
-                return_masks=config.get("heatmap", False)
+                split=split,
+                return_masks=config.get("heatmap", False),
+                seed=config.get("seed", 42),
+                split_seed=config.get("split_seed", 42)
             )
-            dataset_mod_func(ds)
-            m = run_evaluation(model, ds, criterion, device, batch_size=8, desc=name)
-            res = compare_metrics(baseline_id_val, m)
-            ablation_results[name] = res
+            if len(ds) > 0:
+                baselines_raw[split] = run_evaluation(model, ds, criterion, device, batch_size=8, desc=f"Baseline {split} (raw)")
+                
+        def run_ablation_splits(ablation_mode, name):
+            ablation_results[name] = {}
+            for split in splits:
+                if split not in baselines_raw: continue
+                ds = LearningDataset(
+                    index_path=config.get("index_path", "learning_data/index.jsonl"),
+                    features_dir=config.get("feature_cache_path", "learning_data/features"),
+                    split=split,
+                    return_masks=config.get("heatmap", False),
+                    seed=config.get("seed", 42),
+                    split_seed=config.get("split_seed", 42),
+                    ablation_mode=ablation_mode
+                )
+                m = run_evaluation(model, ds, criterion, device, batch_size=8, desc=f"{name} {split}")
+                ablation_results[name][split] = compare_metrics(baselines_raw[split], m)
 
-        # Wrong Instruction
-        def mod_wrong_instr(ds):
-            for rec in ds.records:
-                if rec["task_id"] == "task_1":
-                    rec["instruction"] = "Place object1 in the target region."
-                else:
-                    rec["instruction"] = "Open the box."
-        run_ablation(mod_wrong_instr, "Wrong Instruction")
-        
-        # Held-out Paraphrase
-        def mod_paraphrase(ds):
-            for rec in ds.records:
-                if rec["task_id"] == "task_1":
-                    rec["instruction"] = "Uncover the box by opening its lid."
-                else:
-                    rec["instruction"] = "Place the object into the indicated area."
-        run_ablation(mod_paraphrase, "Held-out Paraphrase")
-        
-        # Zero Text
-        def mod_zero_text(ds):
-            for inst in ds.text_features:
-                ds.text_features[inst] = torch.zeros_like(ds.text_features[inst])
-        run_ablation(mod_zero_text, "Zero Text")
-        
-        # Wrong Demo
-        def mod_wrong_demo(ds):
-            t1 = [r["demonstration_id"] for r in ds.records if r["task_id"] == "task_1"]
-            t2 = [r["demonstration_id"] for r in ds.records if r["task_id"] == "task_2"]
-            if t1 and t2:
-                for rec in ds.records:
-                    if rec["task_id"] == "task_1":
-                        rec["demonstration_id"] = t2[0]
-                    else:
-                        rec["demonstration_id"] = t1[0]
-        run_ablation(mod_wrong_demo, "Wrong Demo")
-        
-        # Zero Demo
-        def mod_zero_demo(ds):
-            import glob
-            for f in glob.glob(str(Path(ds.features_dir) / "demo_*_features.pt")):
-                d = torch.load(f, weights_only=True)
-                d["global"] = torch.zeros_like(d["global"])
-                d["patch"] = torch.zeros_like(d["patch"])
-                torch.save(d, f)
-            # Restore later? Actually better to just zero them in memory but dataset loads on the fly.
-            # Instead we can zero it inside trainer... wait.
-            # Zeroing in file is bad because it affects parallel runs. Let's just modify the `__getitem__` temporarily!
-        
-        # For zero demo, let's inject a zeroing transform.
-        ds_zero_demo = LearningDataset(
-            index_path=config.get("index_path", "learning_data/index.jsonl"),
-            features_dir=config.get("feature_cache_path", "learning_data/features"),
-            split="id_val",
-            return_masks=config.get("heatmap", False)
-        )
-        orig_getitem = ds_zero_demo.__getitem__
-        def zero_demo_getitem(idx):
-            item = orig_getitem(idx)
-            item["demo_global"] = torch.zeros_like(item["demo_global"])
-            item["demo_patch"] = torch.zeros_like(item["demo_patch"])
-            return item
-        ds_zero_demo.__getitem__ = zero_demo_getitem
-        
-        m = run_evaluation(model, ds_zero_demo, criterion, device, batch_size=8, desc="Zero Demo")
-        ablation_results["Zero Demo"] = compare_metrics(baseline_id_val, m)
+        run_ablation_splits("wrong_instruction", "Wrong Instruction")
+        run_ablation_splits("heldout_paraphrase", "Held-out Paraphrase")
+        run_ablation_splits("zero_text", "Zero Text")
+        run_ablation_splits("wrong_demo", "Wrong Demo")
+        run_ablation_splits("zero_demo", "Zero Demo")
         
         with open(out_dir / "conditioning_sensitivity.json", "w") as f:
             json.dump(ablation_results, f, indent=2)

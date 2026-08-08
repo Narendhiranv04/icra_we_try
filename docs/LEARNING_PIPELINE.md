@@ -32,12 +32,27 @@ At inference time, the model only has access to:
 
 ## Preprocessing and Assignment
 - **Demo Assignment:** Demos are deterministically assigned based on the query pair ID via `hashlib.sha256(pair_id.encode())` to ensure absolute stability across runs.
+- **Cache Provenance Safety:** Cached `*.pt` files are verified against a `.meta.json` file storing the source data `SHA256` hash. If the underlying data changes, the cache safely re-evaluates or errors out.
+- **Seed Isolation:** Train/val splits are controlled strictly by `split_seed`, while model architecture initialization and mini-batch shuffling are controlled by the model `seed`. This ensures identical train/val sets across multi-seed evaluations.
 - **Fail-Hard Manifests:** The index generation process operates with strict fail-hard semantics on malformed metadata, demanding cleanly validated benchmark manifests.
 
 ## Losses
 - **Classification:** `BCEWithLogitsLoss` on the STOP (1) / PROCEED (0) targets.
 - **Ranking Loss:** `MarginRankingLoss`. Enforces `compatibility(PROCEED) > compatibility(STOP)` for matched causal pairs.
 - **Heatmap Loss:** Sum of pixel-wise BCE and Dice loss.
+
+## Diagnostics and Benchmarks
+
+### Conditioning Diagnostics
+Dynamic ablation modes evaluate how the model relies on the conditioning vectors.
+- `wrong_instruction`: Swaps the instruction for the opposite task.
+- `heldout_paraphrase`: Evaluates on a semantically equivalent but lexically disjoint phrase.
+- `zero_text`: Zeroes out the text embedding.
+- `wrong_demo`: Swaps the demonstration video to the opposite task.
+- `zero_demo`: Zeroes out the visual demonstration features.
+
+### Benchmark B: Context Challenge
+A strictly controlled subset of scenes where a single query RGB image inherently represents **both tasks** but with inverted semantics (Task 1: STOP, Task 2: PROCEED). Models that bypass multi-modal conditioning (e.g. Query-Only) score exactly 0% on reversal metrics.
 
 ## Running Experiments
 
@@ -58,8 +73,16 @@ python scripts/train_model.py --config configs/learning/relational_heatmap.yaml
 
 ### Evaluation
 ```bash
-python scripts/evaluate_model.py --dir learning_outputs/relational_heatmap
+python scripts/evaluate_model.py --dir learning_outputs/relational_heatmap_seed42
+python scripts/evaluate_context_challenge.py --experiment-dir learning_outputs/relational_heatmap_seed42
 ```
+
+### Multi-seed Protocol
+For rigorous results, always use the 5-seed automated script:
+```bash
+./run_all_experiments.sh
+```
+This runs 5 model seeds (`11`, `23`, `42`, `67`, `101`), evaluates on Benchmark A (with ablations) and Benchmark B (Context Challenge), and generates aggregated bootstapped metrics.
 
 ## GPU Requirements
 The architecture is designed to train on a 16 GB VRAM GPU. The use of frozen encoders heavily mitigates memory limits.

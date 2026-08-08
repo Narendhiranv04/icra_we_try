@@ -68,12 +68,12 @@ def test_pla_correctness():
     pair_ids = ["p1", "p1"]
     
     m = compute_metrics(preds, targets, scores=scores, pair_ids=pair_ids)
-    assert m["pla"] == 1.0
+    assert m["latent_pla"] == 1.0
     
     # Incorrect pair
-    scores_bad = [0.2, 0.8]
-    m_bad = compute_metrics(preds, targets, scores=scores_bad, pair_ids=pair_ids)
-    assert m_bad["pla"] == 0.0
+    scores2 = [0.2, 0.8] # s(proceed) < s(stop)
+    m2 = compute_metrics(preds, targets, scores=scores2, pair_ids=pair_ids)
+    assert m2["latent_pla"] == 0.0
 
 def test_relational_forward_shapes():
     model = DemoLanguageConditionedRelationalModel(text_dim=384, vision_dim=768, latent_dim=256, num_demo_frames=4)

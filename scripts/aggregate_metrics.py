@@ -50,7 +50,8 @@ def main():
         print(f"Aggregated metrics for {model_dir}")
         
         # Aggregate condition sensitivity if it exists
-        cond_paths = glob.glob(f"learning_outputs/{model_dir}_seed*/conditioning_sensitivity.json")
+        cond_paths = [f"learning_outputs/{model_dir}_seed{s}/conditioning_sensitivity.json" for s in seeds]
+        cond_paths = [p for p in cond_paths if Path(p).exists()]
         if cond_paths:
             cond_metrics = []
             for cp in cond_paths:
@@ -61,15 +62,41 @@ def main():
             conditions = cond_metrics[0].keys()
             for c in conditions:
                 agg_cond[c] = {}
-                for m in cond_metrics[0][c].keys():
-                    vals = [cm[c].get(m, 0) for cm in cond_metrics]
-                    if isinstance(vals[0], (int, float)):
-                        agg_cond[c][m] = {
+                splits_in_cond = cond_metrics[0][c].keys()
+                for split in splits_in_cond:
+                    agg_cond[c][split] = {}
+                    for m in cond_metrics[0][c][split].keys():
+                        vals = [cm[c][split].get(m, 0) for cm in cond_metrics if c in cm and split in cm[c]]
+                        if vals and isinstance(vals[0], (int, float)):
+                            agg_cond[c][split][m] = {
+                                "mean": float(np.mean(vals)),
+                                "std": float(np.std(vals))
+                            }
+            with open(out_base / "conditioning_sensitivity.json", "w") as f:
+                json.dump(agg_cond, f, indent=2)
+                
+        # Aggregate Context Challenge results
+        ctx_paths = [f"learning_outputs/{model_dir}_seed{s}/context_challenge_results.json" for s in seeds]
+        ctx_paths = [p for p in ctx_paths if Path(p).exists()]
+        if ctx_paths:
+            ctx_metrics = []
+            for cp in ctx_paths:
+                with open(cp) as f:
+                    ctx_metrics.append(json.load(f))
+                    
+            agg_ctx = {}
+            ctx_conditions = ctx_metrics[0].keys()
+            for c in ctx_conditions:
+                agg_ctx[c] = {}
+                for m in ctx_metrics[0][c].keys():
+                    vals = [cm[c].get(m, 0) for cm in ctx_metrics if c in cm]
+                    if vals and isinstance(vals[0], (int, float)):
+                        agg_ctx[c][m] = {
                             "mean": float(np.mean(vals)),
                             "std": float(np.std(vals))
                         }
-            with open(out_base / "conditioning_sensitivity.json", "w") as f:
-                json.dump(agg_cond, f, indent=2)
+            with open(out_base / "context_challenge_results.json", "w") as f:
+                json.dump(agg_ctx, f, indent=2)
                 
 if __name__ == "__main__":
     main()

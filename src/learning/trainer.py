@@ -9,7 +9,7 @@ import os
 def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, accumulation_steps=1):
     model.train()
     total_loss = 0
-    all_preds, all_targets, all_scores, all_pair_ids = [], [], [], []
+    all_preds, all_targets, all_scores, all_pair_ids, all_task_ids = [], [], [], [], []
     all_heat_preds, all_heat_targets = [], []
     
     for i, batch in enumerate(dataloader):
@@ -21,6 +21,7 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
         targets = batch["label"].to(device)
         masks = batch["mask"].to(device)
         pair_ids = batch["pair_id"]
+        task_ids = batch["task_id"]
         
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             if hasattr(model, "forward"):
@@ -78,6 +79,7 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
             if s is not None:
                 all_scores.extend(s.detach().cpu().numpy())
             all_pair_ids.extend(pair_ids)
+            all_task_ids.extend(task_ids)
             if heat_logits is not None:
                 all_heat_preds.extend(torch.sigmoid(heat_logits).detach().cpu().numpy())
                 all_heat_targets.extend(masks.cpu().numpy())
@@ -87,7 +89,8 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
         all_scores if all_scores else None, 
         all_pair_ids if all_pair_ids else None,
         all_heat_preds if all_heat_preds else None,
-        all_heat_targets if all_heat_targets else None
+        all_heat_targets if all_heat_targets else None,
+        task_ids=all_task_ids if all_task_ids else None
     )
     metrics["loss"] = total_loss / len(dataloader)
     return metrics
@@ -95,7 +98,7 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
 def validate_epoch(model, dataloader, criterion, device):
     model.eval()
     total_loss = 0
-    all_preds, all_targets, all_scores, all_pair_ids = [], [], [], []
+    all_preds, all_targets, all_scores, all_pair_ids, all_task_ids, all_logits = [], [], [], [], [], []
     all_heat_preds, all_heat_targets = [], []
     
     with torch.no_grad():
@@ -107,6 +110,7 @@ def validate_epoch(model, dataloader, criterion, device):
             targets = batch["label"].to(device)
             masks = batch["mask"].to(device)
             pair_ids = batch["pair_id"]
+            task_ids = batch["task_id"]
             
             with torch.cuda.amp.autocast():
                 import inspect
@@ -139,10 +143,12 @@ def validate_epoch(model, dataloader, criterion, device):
             
             if logits is not None:
                 all_preds.extend(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
+                all_logits.extend(logits.squeeze(-1).cpu().numpy())
                 all_targets.extend(targets.cpu().numpy())
                 if s is not None:
                     all_scores.extend(s.cpu().numpy())
                 all_pair_ids.extend(pair_ids)
+                all_task_ids.extend(task_ids)
                 if heat_logits is not None:
                     all_heat_preds.extend(torch.sigmoid(heat_logits).cpu().numpy())
                     all_heat_targets.extend(masks.cpu().numpy())
@@ -152,10 +158,12 @@ def validate_epoch(model, dataloader, criterion, device):
         all_scores if all_scores else None, 
         all_pair_ids if all_pair_ids else None,
         all_heat_preds if all_heat_preds else None,
-        all_heat_targets if all_heat_targets else None
+        all_heat_targets if all_heat_targets else None,
+        task_ids=all_task_ids if all_task_ids else None
     )
     metrics["loss"] = total_loss / max(1, len(dataloader))
     metrics["_raw_preds"] = all_preds
+    metrics["_raw_logits"] = all_logits
     metrics["_raw_targets"] = all_targets
     metrics["_raw_scores"] = all_scores
     metrics["_raw_pair_ids"] = all_pair_ids

@@ -10,8 +10,14 @@ import torchvision.transforms as T
 from src.learning.dataset import LearningDataset
 from scripts.train_model import get_model
 
+import argparse
+
 def generate_heatmaps():
-    out_dir = Path("learning_outputs/relational_heatmap")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--experiment-dir", default="learning_outputs/relational_heatmap_seed42")
+    args = parser.parse_args()
+    
+    out_dir = Path(args.experiment_dir)
     with open(out_dir / "resolved_config.yaml") as f:
         config = yaml.safe_load(f)
 
@@ -38,8 +44,14 @@ def generate_heatmaps():
         return_masks=True
     )
 
-    out_heat = Path("artifacts/learning_stage1/heatmaps")
+    out_heat = Path(f"artifacts/learning_stage1/heatmaps_{out_dir.name}")
     out_heat.mkdir(parents=True, exist_ok=True)
+    
+    metadata = {
+        "experiment_dir": str(out_dir),
+        "split": "id_val",
+        "samples": []
+    }
 
     rgb_transform = T.Compose([
         T.Resize(224, interpolation=T.InterpolationMode.BICUBIC),
@@ -93,7 +105,16 @@ def generate_heatmaps():
                 mask = np.array(m_cropped)
                 cv2.imwrite(f"{prefix}_gt_mask.jpg", mask)
                 
+            metadata["samples"].append({
+                "sample_id": record["sample_id"],
+                "task": record["task_id"],
+                "label": label,
+                "prefix": f"sample_{i}_{label}"
+            })
             saved += 1
+            
+    with open(out_heat / "extraction_metadata.json", "w") as f:
+        json.dump(metadata, f, indent=2)
 
 if __name__ == "__main__":
     generate_heatmaps()

@@ -7,6 +7,14 @@ import argparse
 from pathlib import Path
 from tqdm import tqdm
 from PIL import Image
+import hashlib
+
+def compute_sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while chunk := f.read(8192):
+            h.update(chunk)
+    return h.hexdigest()
 
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -63,6 +71,7 @@ def main():
     parser.add_argument("--index", default="learning_data/index.jsonl")
     parser.add_argument("--out_dir", default="learning_data/features")
     parser.add_argument("--num_demo_frames", type=int, default=4)
+    parser.add_argument("--force", action="store_true", help="Force recomputation of features")
     args = parser.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -102,9 +111,22 @@ def main():
     logging.info("Processing demonstrations...")
     for rec in tqdm(records):
         demo_path = rec.get("demonstration_video_path")
-        if not demo_path or demo_path in demos_processed:
+        if not demo_path or not os.path.exists(demo_path) or demo_path in demos_processed:
             continue
             
+        demo_id = rec["demonstration_id"]
+        out_path = out_dir / f"demo_{demo_id}_features.pt"
+        meta_path = out_dir / f"demo_{demo_id}_features.meta.json"
+        
+        file_hash = compute_sha256(demo_path)
+        
+        if not args.force and out_path.exists() and meta_path.exists():
+            with open(meta_path, "r") as f:
+                meta = json.load(f)
+            if meta.get("source_sha256") == file_hash and meta.get("num_frames") == args.num_demo_frames:
+                demos_processed.add(demo_path)
+                continue
+
         demo_frames = extract_frames(demo_path, num_frames=args.num_demo_frames)
         if not demo_frames:
             continue
@@ -118,21 +140,39 @@ def main():
             "global": global_feat.to(torch.float32).cpu(),
             "patch": patch_feat.to(torch.float32).cpu()
         }
-        torch.save(feat_dict, out_dir / f"demo_{demo_id}_features.pt")
+        torch.save(feat_dict, out_path)
+        
+        meta = {
+            "demo_id": demo_id,
+            "source_path": demo_path,
+            "source_sha256": file_hash,
+            "encoder_id": "dinov2_vitb14",
+            "num_frames": args.num_demo_frames
+        }
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2)
+            
         demos_processed.add(demo_path)
 
     # Query features
     logging.info("Processing queries...")
     for rec in tqdm(records):
         sample_id = rec["sample_id"]
-        out_path = out_dir / f"query_{sample_id}_features.pt"
-        if out_path.exists():
-            continue
-            
         rgb_path = rec.get("query_rgb_path")
         if not rgb_path or not os.path.exists(rgb_path):
             continue
             
+        out_path = out_dir / f"query_{sample_id}_features.pt"
+        meta_path = out_dir / f"query_{sample_id}_features.meta.json"
+        
+        file_hash = compute_sha256(rgb_path)
+        
+        if not args.force and out_path.exists() and meta_path.exists():
+            with open(meta_path, "r") as f:
+                meta = json.load(f)
+            if meta.get("source_sha256") == file_hash:
+                continue
+
         img = Image.open(rgb_path).convert("RGB")
         with torch.amp.autocast(device_type="cuda" if device=="cuda" else "cpu", dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16):
             global_feat, patch_feat = vision_enc([img])
@@ -142,6 +182,15 @@ def main():
             "patch": patch_feat.squeeze(0).to(torch.float32).cpu()
         }
         torch.save(feat_dict, out_path)
+        
+        meta = {
+            "sample_id": sample_id,
+            "source_path": rgb_path,
+            "source_sha256": file_hash,
+            "encoder_id": "dinov2_vitb14"
+        }
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2)
 
     logging.info("Precomputation finished.")
 
