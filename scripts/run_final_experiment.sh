@@ -2,10 +2,10 @@
 set -e
 
 echo "1. Generating full Benchmark-B dataset..."
-MUJOCO_GL=egl conda run -n infeasibility-latent python scripts/generate_context_challenge.py
+PYTHONPATH=. MUJOCO_GL=egl conda run -n infeasibility-latent python scripts/generate_context_challenge.py
 
 echo "2. Precomputing features..."
-conda run -n infeasibility-latent python scripts/precompute_features.py --index data/manifests/context_challenge_manifest.jsonl --out_dir data/features_context --force
+PYTHONPATH=. conda run -n infeasibility-latent python scripts/precompute_features.py --index data/manifests/context_challenge_manifest.jsonl --out_dir data/features_context --force
 
 # Helper to run the evaluation suite for a single model config and seed
 run_eval_suite() {
@@ -16,11 +16,11 @@ run_eval_suite() {
     echo "Running Evaluation Suite for ${name} (Seed ${seed})..."
     local out_dir="learning_outputs/${name}_seed${seed}"
     
-    conda run -n infeasibility-latent python scripts/train_model.py --config ${config} --seed ${seed}
-    conda run -n infeasibility-latent python scripts/evaluate_model.py --dir ${out_dir}
-    conda run -n infeasibility-latent python scripts/evaluate_context_challenge.py --experiment-dir ${out_dir} --index data/manifests/context_challenge_manifest.jsonl
-    conda run -n infeasibility-latent python scripts/bootstrap_metrics.py --experiment-dir ${out_dir}
-    conda run -n infeasibility-latent python scripts/aggregate_metrics.py --base-dir learning_outputs --experiment-name ${name}
+    PYTHONPATH=. conda run -n infeasibility-latent python scripts/train_model.py --config ${config} --seed ${seed}
+    PYTHONPATH=. conda run -n infeasibility-latent python scripts/evaluate_model.py --dir ${out_dir}
+    PYTHONPATH=. conda run -n infeasibility-latent python scripts/evaluate_context_challenge.py --experiment-dir ${out_dir} --index data/manifests/context_challenge_manifest.jsonl
+    PYTHONPATH=. conda run -n infeasibility-latent python scripts/bootstrap_metrics.py --experiment-dir ${out_dir}
+    PYTHONPATH=. conda run -n infeasibility-latent python scripts/aggregate_metrics.py --base-dir learning_outputs --experiment-name ${name}
 }
 
 # The 5-seed protocol requires seeds 42, 43, 44, 45, 46.
@@ -44,9 +44,9 @@ run_eval_suite "configs/learning/full_no_ranking.yaml" 42 "full_no_ranking"
 run_eval_suite "configs/learning/pooled_multimodal.yaml" 42 "pooled_multimodal"
 
 echo "Extracting final heatmaps for Relational Model seed 42..."
-conda run -n infeasibility-latent python scripts/extract_heatmaps.py --experiment-dir learning_outputs/relational_heatmap_seed42 --index data/manifests/context_challenge_manifest.jsonl --out-dir artifacts/learning_stage1/heatmaps
+PYTHONPATH=. conda run -n infeasibility-latent python scripts/extract_heatmaps.py --experiment-dir learning_outputs/relational_heatmap_seed42 --index data/manifests/context_challenge_manifest.jsonl --out-dir artifacts/learning_stage1/heatmaps
 
 echo "Analyzing latents for Relational Model seed 42..."
-conda run -n infeasibility-latent python scripts/analyze_latents.py --experiment-dir learning_outputs/relational_heatmap_seed42 || true
+PYTHONPATH=. conda run -n infeasibility-latent python scripts/analyze_latents.py --experiment-dir learning_outputs/relational_heatmap_seed42 || true
 
 echo "Final Experiment Complete!"
