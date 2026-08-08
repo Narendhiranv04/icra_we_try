@@ -185,13 +185,12 @@ def main():
             scenes = {}
             for i in range(len(preds)):
                 pid = pair_ids[i]
-                scene_id = pid.rsplit("_", 1)[0] # Extract scene_id from context_scene_XXX_A
                 state = states[i]
                 
-                if scene_id not in scenes:
-                    scenes[scene_id] = {"preds": [], "targets": [], "state": state}
-                scenes[scene_id]["preds"].append(preds[i])
-                scenes[scene_id]["targets"].append(targets[i])
+                if pid not in scenes:
+                    scenes[pid] = {"preds": [], "targets": [], "state": state}
+                scenes[pid]["preds"].append(preds[i])
+                scenes[pid]["targets"].append(targets[i])
                 
             units = []
             for scene_id, data in scenes.items():

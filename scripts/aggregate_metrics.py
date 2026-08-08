@@ -21,8 +21,7 @@ def main():
             exp_dir = Path(f"learning_outputs/{model_dir}_seed{seed}")
             metrics_path = exp_dir / "metrics_by_split.json"
             if not metrics_path.exists():
-                print(f"Warning: {metrics_path} missing.")
-                continue
+                raise RuntimeError(f"Error: {metrics_path} missing for model {model_dir} seed {seed}.")
             with open(metrics_path) as f:
                 seed_metrics.append({"seed": seed, "metrics": json.load(f)})
 
@@ -38,7 +37,12 @@ def main():
         for split in splits:
             agg[split] = {}
             for metric in seed_metrics[0]["metrics"][split].keys():
-                vals = [s["metrics"][split].get(metric, 0) for s in seed_metrics]
+                vals = []
+                for s in seed_metrics:
+                    if metric not in s["metrics"][split]:
+                        raise RuntimeError(f"Metric {metric} missing in split {split} for seed {s['seed']}")
+                    vals.append(s["metrics"][split][metric])
+                    
                 if isinstance(vals[0], (int, float)):
                     agg[split][metric] = {
                         "mean": float(np.mean(vals)),
@@ -50,23 +54,27 @@ def main():
         print(f"Aggregated metrics for {model_dir}")
 
         # Aggregate condition sensitivity if it exists
-        cond_paths = [f"learning_outputs/{model_dir}_seed{s}/conditioning_sensitivity.json" for s in seeds]
-        cond_paths = [p for p in cond_paths if Path(p).exists()]
-        if cond_paths:
+        cond_paths = [Path(f"learning_outputs/{model_dir}_seed{s}/conditioning_sensitivity.json") for s in seeds]
+        if all(p.exists() for p in cond_paths):
             cond_metrics = []
-            for cp in cond_paths:
+            for cp, s in zip(cond_paths, seeds):
                 with open(cp) as f:
-                    cond_metrics.append(json.load(f))
+                    cond_metrics.append({"seed": s, "metrics": json.load(f)})
 
             agg_cond = {}
-            conditions = cond_metrics[0].keys()
+            conditions = cond_metrics[0]["metrics"].keys()
             for c in conditions:
                 agg_cond[c] = {}
-                splits_in_cond = cond_metrics[0][c].keys()
+                splits_in_cond = cond_metrics[0]["metrics"][c].keys()
                 for split in splits_in_cond:
                     agg_cond[c][split] = {}
-                    for m in cond_metrics[0][c][split].keys():
-                        vals = [cm[c][split].get(m, 0) for cm in cond_metrics if c in cm and split in cm[c]]
+                    for m in cond_metrics[0]["metrics"][c][split].keys():
+                        vals = []
+                        for cm in cond_metrics:
+                            if m not in cm["metrics"][c][split]:
+                                raise RuntimeError(f"Metric {m} missing in cond {c} split {split} for seed {cm['seed']}")
+                            vals.append(cm["metrics"][c][split][m])
+                            
                         if vals and isinstance(vals[0], (int, float)):
                             agg_cond[c][split][m] = {
                                 "mean": float(np.mean(vals)),
@@ -76,20 +84,24 @@ def main():
                 json.dump(agg_cond, f, indent=2)
 
         # Aggregate Context Challenge results
-        ctx_paths = [f"learning_outputs/{model_dir}_seed{s}/context_challenge_results.json" for s in seeds]
-        ctx_paths = [p for p in ctx_paths if Path(p).exists()]
-        if ctx_paths:
+        ctx_paths = [Path(f"learning_outputs/{model_dir}_seed{s}/context_challenge_results.json") for s in seeds]
+        if all(p.exists() for p in ctx_paths):
             ctx_metrics = []
-            for cp in ctx_paths:
+            for cp, s in zip(ctx_paths, seeds):
                 with open(cp) as f:
-                    ctx_metrics.append(json.load(f))
+                    ctx_metrics.append({"seed": s, "metrics": json.load(f)})
 
             agg_ctx = {}
-            ctx_conditions = ctx_metrics[0].keys()
+            ctx_conditions = ctx_metrics[0]["metrics"].keys()
             for c in ctx_conditions:
                 agg_ctx[c] = {}
-                for m in ctx_metrics[0][c].keys():
-                    vals = [cm[c].get(m, 0) for cm in ctx_metrics if c in cm]
+                for m in ctx_metrics[0]["metrics"][c].keys():
+                    vals = []
+                    for cm in ctx_metrics:
+                        if m not in cm["metrics"][c]:
+                            raise RuntimeError(f"Metric {m} missing in ctx {c} for seed {cm['seed']}")
+                        vals.append(cm["metrics"][c][m])
+                        
                     if vals and isinstance(vals[0], (int, float)):
                         agg_ctx[c][m] = {
                             "mean": float(np.mean(vals)),
@@ -99,24 +111,29 @@ def main():
                 json.dump(agg_ctx, f, indent=2)
 
         # Aggregate Bootstrap results
-        boot_paths = [f"learning_outputs/{model_dir}_seed{s}/bootstrap_results.json" for s in seeds]
-        boot_paths = [p for p in boot_paths if Path(p).exists()]
-        if boot_paths:
+        boot_paths = [Path(f"learning_outputs/{model_dir}_seed{s}/bootstrap_results.json") for s in seeds]
+        if all(p.exists() for p in boot_paths):
             boot_metrics = []
-            for bp in boot_paths:
+            for bp, s in zip(boot_paths, seeds):
                 with open(bp) as f:
-                    boot_metrics.append(json.load(f))
+                    boot_metrics.append({"seed": s, "metrics": json.load(f)})
 
             agg_boot = {}
-            boot_splits = boot_metrics[0].keys()
+            boot_splits = boot_metrics[0]["metrics"].keys()
             for split in boot_splits:
                 agg_boot[split] = {}
-                for m in boot_metrics[0][split].keys():
-                    # Do not average the bounds across seeds, keep them separate per-seed
-                    seed_vals = [{"seed": seeds[i], "mean": boot_metrics[i][split][m]["mean"],
-                                  "lower": boot_metrics[i][split][m]["lower"],
-                                  "upper": boot_metrics[i][split][m]["upper"]} 
-                                 for i in range(len(boot_metrics)) if split in boot_metrics[i] and m in boot_metrics[i][split]]
+                for m in boot_metrics[0]["metrics"][split].keys():
+                    seed_vals = []
+                    for i in range(len(boot_metrics)):
+                        if split not in boot_metrics[i]["metrics"] or m not in boot_metrics[i]["metrics"][split]:
+                            raise RuntimeError(f"Metric {m} missing in bootstrap split {split} for seed {boot_metrics[i]['seed']}")
+                        bm = boot_metrics[i]["metrics"][split][m]
+                        seed_vals.append({
+                            "seed": boot_metrics[i]["seed"],
+                            "mean": bm["mean"],
+                            "lower": bm["lower"],
+                            "upper": bm["upper"]
+                        })
 
                     if seed_vals:
                         agg_boot[split][m] = {

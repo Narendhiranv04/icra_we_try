@@ -47,7 +47,7 @@ def main():
         config = yaml.safe_load(f)
         
     if args.seed is not None:
-        config["seed"] = args.seed
+        config["model_seed"] = args.seed
         config["output_path"] = f"{config['output_path']}_seed{args.seed}"
         
     out_dir = Path(config["output_path"])
@@ -56,9 +56,13 @@ def main():
     # Save resolved config
     with open(out_dir / "resolved_config.yaml", "w") as f:
         yaml.dump(config, f)
-        
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.manual_seed(config.get("seed", 42))
+    
+    model_seed = config.get("model_seed", 42)
+    split_seed = config.get("split_seed", 42)
+    sampler_seed = config.get("sampler_seed", 42)
+    
+    torch.manual_seed(model_seed)
     
     train_dataset = LearningDataset(
         index_path=config.get("index_path", "learning_data/index.jsonl"),
@@ -66,8 +70,8 @@ def main():
         split="id_train",
         return_masks=config.get("heatmap", False),
         train_ratio=config.get("train_ratio", 0.8),
-        seed=config.get("seed", 42),
-        split_seed=config.get("split_seed", 42)
+        seed=model_seed,
+        split_seed=split_seed
     )
     
     val_dataset = LearningDataset(
@@ -76,14 +80,24 @@ def main():
         split="id_val",
         return_masks=config.get("heatmap", False),
         train_ratio=config.get("train_ratio", 0.8),
-        seed=config.get("seed", 42),
-        split_seed=config.get("split_seed", 42)
+        seed=model_seed,
+        split_seed=split_seed
     )
     
     batch_size = config.get("batch_size", 8)
     
-    train_sampler = PairBatchSampler(train_dataset, batch_size, seed=config.get("sampler_seed", 42))
-    val_sampler = PairBatchSampler(val_dataset, batch_size, seed=config.get("sampler_seed", 42))
+    train_sampler = PairBatchSampler(train_dataset, batch_size, seed=sampler_seed)
+    val_sampler = PairBatchSampler(val_dataset, batch_size, seed=sampler_seed)
+    
+    # Log and assert train/val pair memberships
+    train_pairs = sorted(list(set(r["pair_id"] for r in train_dataset.records)))
+    val_pairs = sorted(list(set(r["pair_id"] for r in val_dataset.records)))
+    assert not set(train_pairs).intersection(set(val_pairs)), "Train and Val pairs overlap!"
+    
+    with open(out_dir / "train_pairs.json", "w") as f:
+        json.dump(train_pairs, f, indent=2)
+    with open(out_dir / "val_pairs.json", "w") as f:
+        json.dump(val_pairs, f, indent=2)
     
     train_loader = DataLoader(train_dataset, batch_sampler=train_sampler, num_workers=2)
     val_loader = DataLoader(val_dataset, batch_sampler=val_sampler, num_workers=2)

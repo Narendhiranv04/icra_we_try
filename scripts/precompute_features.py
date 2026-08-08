@@ -51,7 +51,7 @@ def extract_frames(video_path, num_frames=4):
 
     if total_frames == 0:
         logging.warning(f"No frames in {video_path}")
-        return frames
+        return frames, []
 
     # Deterministic temporal sampling
     indices = [int(i * (total_frames - 1) / max(1, num_frames - 1)) for i in range(num_frames)]
@@ -99,11 +99,12 @@ def main():
 
     torch.save(text_features, out_dir / "text_features.pt")
     
+    canonical_text = json.dumps(PARAPHRASES, sort_keys=True)
     text_meta = {
         "cache_schema_version": CACHE_SCHEMA_VERSION,
-        "encoder_id": "SentenceTransformer", # Placeholder or correct encoder
+        "encoder_id": "sentence-transformers/all-MiniLM-L6-v2",
         "preprocessing_signature": "mean_pooling",
-        "exact_text_hash": compute_sha256(out_dir / "text_features.pt"), # Or just save the hash of the dict keys
+        "exact_text_hash": hashlib.sha256(canonical_text.encode('utf-8')).hexdigest(),
         "phrases": PARAPHRASES
     }
     with open(out_dir / "text_features.meta.json", "w") as f:
@@ -141,7 +142,10 @@ def main():
         if not args.force and out_path.exists() and meta_path.exists():
             with open(meta_path, "r") as f:
                 meta = json.load(f)
-            if meta.get("source_sha256") == file_hash and meta.get("num_frames") == args.num_demo_frames:
+            if (meta.get("source_sha256") == file_hash and 
+                meta.get("num_frames") == args.num_demo_frames and 
+                meta.get("encoder_id") == "dinov2_vitb14" and 
+                "sampled_frame_indices" in meta):
                 demos_processed.add(demo_path)
                 continue
 
@@ -190,7 +194,7 @@ def main():
         if not args.force and out_path.exists() and meta_path.exists():
             with open(meta_path, "r") as f:
                 meta = json.load(f)
-            if meta.get("source_sha256") == file_hash:
+            if meta.get("source_sha256") == file_hash and meta.get("encoder_id") == "dinov2_vitb14":
                 continue
 
         img = Image.open(rgb_path).convert("RGB")

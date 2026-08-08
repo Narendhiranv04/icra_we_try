@@ -143,10 +143,10 @@ def run_latent_analysis(model, dataset, device, out_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", required=True, help="Path to learning_outputs/<experiment_name>")
+    parser.add_argument("--experiment-dir", required=True, help="Path to learning_outputs/<experiment_name>")
     args = parser.parse_args()
     
-    out_dir = Path(args.dir)
+    out_dir = Path(args.experiment_dir)
     with open(out_dir / "resolved_config.yaml", "r") as f:
         config = yaml.safe_load(f)
         

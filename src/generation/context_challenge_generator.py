@@ -63,58 +63,59 @@ class ContextChallengeGenerator:
             current_seed = seed + attempt
             rng = np.random.default_rng(current_seed)
 
-            while True:
-                # Randomize assets
-                blocker_type = rng.choice(VALID_BLOCKERS)
-                occupant_type = rng.choice(VALID_OCCUPANTS)
-                bg = rng.choice(VALID_BGS)
+            # Randomize assets
+            blocker_type = rng.choice(VALID_BLOCKERS)
+            occupant_type = rng.choice(VALID_OCCUPANTS)
+            bg = rng.choice(VALID_BGS)
 
-                box_pose = [0.0, -0.2, 0.58]
-                target_pos = [0.0, 0.3, 0.0]
+            box_pose = [0.0, -0.2, 0.58]
+            target_pos = [0.0, 0.3, 0.0]
 
-                ref_model, ref_data = self.scene_builder.create_environment(
-                    settle_steps=0, include_robot=True, robot_base_pose="home",
-                    box_pose=box_pose, target_region_pos=target_pos
-                )
+            ref_model, ref_data = self.scene_builder.create_environment(
+                settle_steps=0, include_robot=True, robot_base_pose="home",
+                box_pose=box_pose, target_region_pos=target_pos
+            )
 
-                objects = [
-                    {"name": "coffee_can", "type": "coffee_can",
-                     "pos": sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.1, height_above=0.07).tolist()}
-                ]
+            objects = [
+                {"name": "coffee_can", "type": "coffee_can",
+                 "pos": sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.1, height_above=0.07).tolist()}
+            ]
 
-                if state in ["A", "C"]: # Lid blocked
-                    lid_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.02).tolist()
-                    objects.append({"name": "blocker", "type": blocker_type, "pos": lid_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
-                else: # Lid clear
-                    beside_pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.3, offset_y=-0.15, height_above_table=0.04).tolist()
-                    objects.append({"name": "blocker", "type": blocker_type, "pos": beside_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+            if state in ["A", "C"]: # Lid blocked
+                lid_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.02).tolist()
+                objects.append({"name": "blocker", "type": blocker_type, "pos": lid_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+            else: # Lid clear
+                beside_pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.3, offset_y=-0.15, height_above_table=0.04).tolist()
+                objects.append({"name": "blocker", "type": blocker_type, "pos": beside_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
 
-                if state in ["B", "C"]: # Target blocked
-                    occ_pos = sample_position_in_target(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.07).tolist()
-                    objects.append({"name": "occupant", "type": occupant_type, "pos": occ_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
-                else: # Target clear
-                    out_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.3, offset_y=0.0, height_above=0.07).tolist()
-                    objects.append({"name": "occupant", "type": occupant_type, "pos": out_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+            if state in ["B", "C"]: # Target blocked
+                occ_pos = sample_position_in_target(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.07).tolist()
+                objects.append({"name": "occupant", "type": occupant_type, "pos": occ_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+            else: # Target clear
+                out_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.3, offset_y=0.0, height_above=0.07).tolist()
+                objects.append({"name": "occupant", "type": occupant_type, "pos": out_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
 
-                # Render Scene
-                rig = CONTEXT_CHALLENGE_RIG
-                model, data = self.scene_builder.create_environment(
-                    objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose,
-                    box_pose=box_pose, target_region_pos=target_pos
-                )
+            # Render Scene
+            rig = CONTEXT_CHALLENGE_RIG
+            model, data = self.scene_builder.create_environment(
+                objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose,
+                box_pose=box_pose, target_region_pos=target_pos
+            )
 
-                # Physics validation
-                is_lid_occ, _, _ = check_lid_occupancy(model, data, blocker_names=["blocker"])
-                is_targ_occ, _, _ = check_target_occupancy(model, data, candidate_objects=["occupant"])
+            # Physics validation
+            is_lid_occ, _, _ = check_lid_occupancy(model, data, blocker_names=["blocker"])
+            is_targ_occ, _, _ = check_target_occupancy(model, data, candidate_objects=["occupant"])
 
-                valid = True
-                if state == "A" and (not is_lid_occ or is_targ_occ): valid = False
-                if state == "B" and (is_lid_occ or not is_targ_occ): valid = False
-                if state == "C" and (not is_lid_occ or not is_targ_occ): valid = False
-                if state == "D" and (is_lid_occ or is_targ_occ): valid = False
+            valid = True
+            if state == "A" and (not is_lid_occ or is_targ_occ): valid = False
+            if state == "B" and (is_lid_occ or not is_targ_occ): valid = False
+            if state == "C" and (not is_lid_occ or not is_targ_occ): valid = False
+            if state == "D" and (is_lid_occ or is_targ_occ): valid = False
 
-                if valid:
-                    break
+            if not valid:
+                del model, data, ref_model, ref_data
+                import gc; gc.collect()
+                continue
 
             bg_spec = sample_background_spec(bg, rng, n_lights=model.nlight)
             apply_background_spec(model, bg_spec)
@@ -253,7 +254,10 @@ class ContextChallengeGenerator:
 
             return records
 
-        raise RuntimeError(f"Exceeded max_attempts ({max_attempts}) generating scene {scene_id} in state {state}.")
+        raise RuntimeError(
+            f"Exceeded max_attempts ({max_attempts}) generating scene {scene_id} in state {state}. "
+            f"Initial seed: {seed}, last attempted seed: {current_seed}."
+        )
 
 if __name__ == "__main__":
     generator = ContextChallengeGenerator()

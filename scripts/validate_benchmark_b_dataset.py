@@ -101,11 +101,27 @@ def main():
                 print(f"Missing demo {demo_path}")
                 return 1
                 
+    t1_demos = set()
+    t2_demos = set()
     for state, count in state_counts.items():
         if count != 10:
             print(f"Expected 10 scenes for state {state}, got {count}")
             return 1
             
+    for r in records:
+        if r["task_id"] == "task_1":
+            t1_demos.add(r["demonstration_id"])
+        elif r["task_id"] == "task_2":
+            t2_demos.add(r["demonstration_id"])
+
+    if len(t1_demos) != 3:
+        print(f"Expected exactly 3 unique Task 1 demos, found {len(t1_demos)}: {t1_demos}")
+        return 1
+        
+    if len(t2_demos) != 3:
+        print(f"Expected exactly 3 unique Task 2 demos, found {len(t2_demos)}: {t2_demos}")
+        return 1
+
     print("Benchmark-B dataset validated successfully.")
     return 0
 

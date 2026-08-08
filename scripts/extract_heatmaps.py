@@ -24,6 +24,8 @@ def get_git_commit():
 def generate_heatmaps():
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment-dir", default="learning_outputs/relational_heatmap_seed42")
+    parser.add_argument("--index", default="data/manifests/context_challenge_manifest.jsonl")
+    parser.add_argument("--out_dir", default="artifacts/learning_stage1/heatmaps")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -42,7 +44,7 @@ def generate_heatmaps():
     model.load_state_dict(torch.load(ckpt_path, map_location="cpu", weights_only=True))
     model.eval()
 
-    out_heat = Path("artifacts/learning_stage1/heatmaps")
+    out_heat = Path(args.out_dir)
     out_heat.mkdir(parents=True, exist_ok=True)
 
     metadata = {
@@ -65,7 +67,7 @@ def generate_heatmaps():
 
     for split in splits_to_evaluate:
         try:
-            index_p = "data/manifests/context_challenge_manifest.jsonl" if split == "context_challenge" else config.get("index_path", "learning_data/index.jsonl")
+            index_p = args.index if split == "context_challenge" else config.get("index_path", "learning_data/index.jsonl")
             feat_p = "data/features_context" if split == "context_challenge" else config.get("feature_cache_path", "learning_data/features")
             ds = LearningDataset(
                 index_path=index_p,

@@ -19,18 +19,19 @@ def test_generator_bounded_retry():
         with pytest.raises(RuntimeError, match="Exceeded max_attempts"):
             gen.generate_scene("test_scene", "A", seed=42, max_attempts=3)
 
-def test_seed_isolation_dataset():
+def test_seed_isolation_dataset(tmp_path):
     # Test that split_seed determines splits independently of general seed
     # Create a dummy index
-    with open("tmp_index.jsonl", "w") as f:
+    index_file = tmp_path / "tmp_index.jsonl"
+    with open(index_file, "w") as f:
         for i in range(10):
             f.write(json.dumps({"pair_id": f"p{i}", "split": "id", "sample_id": f"s{i}", "task_id": "task_1", "instruction": "Open the box.", "label": "STOP", "demonstration_id": "d1"}) + "\n")
             
     # Mock text and features to exist
     with patch('pathlib.Path.exists', return_value=True), patch('torch.load', return_value={"Open the box.": torch.zeros(1), "global": torch.zeros(1), "patch": torch.zeros(1)}):
-        ds1 = LearningDataset(index_path="tmp_index.jsonl", features_dir="tmp", split="id_train", train_ratio=0.8, seed=42, split_seed=100)
-        ds2 = LearningDataset(index_path="tmp_index.jsonl", features_dir="tmp", split="id_train", train_ratio=0.8, seed=99, split_seed=100)
-        ds3 = LearningDataset(index_path="tmp_index.jsonl", features_dir="tmp", split="id_train", train_ratio=0.8, seed=42, split_seed=200)
+        ds1 = LearningDataset(index_path=str(index_file), features_dir="tmp", split="id_train", train_ratio=0.8, seed=42, split_seed=100)
+        ds2 = LearningDataset(index_path=str(index_file), features_dir="tmp", split="id_train", train_ratio=0.8, seed=99, split_seed=100)
+        ds3 = LearningDataset(index_path=str(index_file), features_dir="tmp", split="id_train", train_ratio=0.8, seed=42, split_seed=200)
         
         pairs1 = set([r["pair_id"] for r in ds1.records])
         pairs2 = set([r["pair_id"] for r in ds2.records])

@@ -21,6 +21,10 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
     model.eval()
     all_preds, all_targets, all_logits = [], [], []
     all_scores = []
+    
+    all_pair_ids = []
+    all_task_ids = []
+    all_states = []
 
     # Store predictions by pair_id to check consistency
     pair_preds = {}
@@ -76,6 +80,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
             all_preds.extend(preds)
             all_targets.extend(targets_np)
             all_logits.extend(logits.squeeze(-1).cpu().numpy())
+            all_pair_ids.extend(pair_ids)
+            all_task_ids.extend(task_ids)
+            all_states.extend(states)
             
             if s is not None:
                 if "all_scores" not in locals(): all_scores = []
@@ -85,18 +92,17 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
                 latents = out[2]
                 if latents is not None:
                     if "all_latents" not in locals(): all_latents = []
-                    # Average over spatial dimensions for simpler storage
                     if latents.dim() == 4:
                         latents = latents.mean(dim=(2, 3))
+                    elif latents.dim() == 3:
+                        latents = latents.mean(dim=1)
                     all_latents.extend(latents.cpu().numpy())
 
-    # Re-collect ordered pairs and states
-    ordered_pair_ids = []
-    ordered_states = []
-    for pid, p_list in pair_preds.items():
-        if len(p_list) == 2:
-            ordered_pair_ids.extend([pid, pid])
-            ordered_states.extend([pair_states[pid], pair_states[pid]])
+    assert len(all_preds) == len(all_targets) == len(all_logits) == len(all_pair_ids) == len(all_task_ids) == len(all_states), "Raw arrays length mismatch"
+    if "all_scores" in locals() and len(all_scores) > 0:
+        assert len(all_scores) == len(all_preds), "Scores length mismatch"
+    if "all_latents" in locals() and len(all_latents) > 0:
+        assert len(all_latents) == len(all_preds), "Latents length mismatch"
 
     # Calculate metrics
     preds_cls = np.array(all_preds) >= 0.5
@@ -169,8 +175,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
         "_raw_preds": all_preds,
         "_raw_logits": all_logits,
         "_raw_targets": all_targets,
-        "_raw_pair_ids": ordered_pair_ids,
-        "_raw_states": ordered_states
+        "_raw_pair_ids": all_pair_ids,
+        "_raw_task_ids": all_task_ids,
+        "_raw_states": all_states
     }
 
     if "all_scores" in locals() and len(all_scores) > 0:
