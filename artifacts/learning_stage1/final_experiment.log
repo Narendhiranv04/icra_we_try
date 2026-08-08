@@ -1,0 +1,7 @@
+1. Generating full Benchmark-B dataset...
+Traceback (most recent call last):
+  File "/home/projects/long-horizon/infeasibiilty-latent/scripts/generate_context_challenge.py", line 3, in <module>
+    from src.generation.context_challenge_generator import ContextChallengeGenerator
+ModuleNotFoundError: No module named 'src'
+
+ERROR conda.cli.main_run:execute(127): `conda run python scripts/generate_context_challenge.py` failed. (See above for error)
