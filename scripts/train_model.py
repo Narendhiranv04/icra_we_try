@@ -111,8 +111,12 @@ def main():
         train_metrics = train_epoch(model, train_loader, optimizer, criterion, device, scaler, config.get("accumulation_steps", 1))
         val_metrics = validate_epoch(model, val_loader, criterion, device)
         
-        history["train"].append(train_metrics)
-        history["val"].append(val_metrics)
+        # Clean up raw arrays before saving to history to avoid JSON errors
+        train_clean = {k: float(v) if isinstance(v, (int, float, torch.Tensor)) else v for k, v in train_metrics.items() if not k.startswith('_raw')}
+        val_clean = {k: float(v) if isinstance(v, (int, float, torch.Tensor)) else v for k, v in val_metrics.items() if not k.startswith('_raw')}
+        
+        history["train"].append(train_clean)
+        history["val"].append(val_clean)
         
         print(f"Epoch {epoch+1}/{epochs} | Train Loss: {train_metrics['loss']:.4f} | Val Loss: {val_metrics['loss']:.4f} | Val Acc: {val_metrics['accuracy']:.4f} | Val PLA: {val_metrics.get('pla', 0):.4f}")
         
