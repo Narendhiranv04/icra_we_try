@@ -133,15 +133,18 @@ class ContextChallengeGenerator:
         # Visibility validation
         if targ_mask_1.sum() < 500:
             renderer.close()
+            del renderer, model, data, ref_model, ref_data; import gc; gc.collect()
             return self.generate_scene(scene_id, state, seed=seed+1)
         if state in ["A", "C"] and cand_mask_1.sum() < 50:
             renderer.close()
+            del renderer, model, data, ref_model, ref_data; import gc; gc.collect()
             return self.generate_scene(scene_id, state, seed=seed+1)
         causal_mask_1 = np.maximum(cand_mask_1, targ_mask_1) if state in ["A", "C"] else np.zeros_like(cand_mask_1)
 
         # Validate task 1 mask
         if state in ["A", "C"] and causal_mask_1.sum() == 0:
             renderer.close()
+            del renderer, model, data, ref_model, ref_data; import gc; gc.collect()
             return self.generate_scene(scene_id, state, seed=seed+1)
 
         # Generate Task 2 Masks
@@ -151,19 +154,22 @@ class ContextChallengeGenerator:
 
         if targ_mask_2.sum() < 500:
             renderer.close()
+            del renderer, model, data, ref_model, ref_data; import gc; gc.collect()
             return self.generate_scene(scene_id, state, seed=seed+1)
         if state in ["B", "C"] and cand_mask_2.sum() < 50:
             renderer.close()
+            del renderer, model, data, ref_model, ref_data; import gc; gc.collect()
             return self.generate_scene(scene_id, state, seed=seed+1)
         causal_mask_2 = np.maximum(cand_mask_2, targ_mask_2) if state in ["B", "C"] else np.zeros_like(cand_mask_2)
 
         # Validate task 2 mask
         if state in ["B", "C"] and causal_mask_2.sum() == 0:
             renderer.close()
+            del renderer, model, data, ref_model, ref_data; import gc; gc.collect()
             return self.generate_scene(scene_id, state, seed=seed+1)
 
         renderer.close()
-
+        
         rgb_path = scene_dir / "rgb.png"
         mask1_path = scene_dir / "task1_causal_mask.png"
         mask2_path = scene_dir / "task2_causal_mask.png"
