@@ -75,8 +75,19 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
             all_preds.extend(preds)
             all_targets.extend(targets_np)
             all_logits.extend(logits.squeeze(-1).cpu().numpy())
-            if "pair_id" not in locals().get("all_pair_ids", {}):
-                pass
+            
+            if s is not None:
+                if "all_scores" not in locals(): all_scores = []
+                all_scores.extend(s.cpu().numpy())
+                
+            if isinstance(out, tuple) and len(out) == 3:
+                latents = out[2]
+                if latents is not None:
+                    if "all_latents" not in locals(): all_latents = []
+                    # Average over spatial dimensions for simpler storage
+                    if latents.dim() == 4:
+                        latents = latents.mean(dim=(2, 3))
+                    all_latents.extend(latents.cpu().numpy())
 
     # Re-collect ordered pairs and states
     ordered_pair_ids = []
@@ -237,13 +248,61 @@ def main():
         "generic_text": {k: v for k, v in generic_metrics.items() if k.startswith("_raw")},
         "generic_wrong_demo": {k: v for k, v in wrong_demo_metrics.items() if k.startswith("_raw")}
     }
+    
+    # Convert numpy arrays/types to float for JSON
+    def to_float_list(d):
+        out = {}
+        for k, v in d.items():
+            if isinstance(v, list):
+                out[k] = [float(x) if isinstance(x, np.generic) else (x.tolist() if isinstance(x, np.ndarray) else x) for x in v]
+        return out
+    
+    raw_results["standard"] = to_float_list(raw_results["standard"])
+    raw_results["generic_text"] = to_float_list(raw_results["generic_text"])
+    raw_results["generic_wrong_demo"] = to_float_list(raw_results["generic_wrong_demo"])
+
     with open(out_dir / "context_challenge_results_raw.json", "w") as f:
         json.dump(raw_results, f)
 
+    # Compute Phase O delta metrics
+    def compute_deltas(baseline, perturbed):
+        b_preds = np.array(baseline.get("_raw_preds", []))
+        p_preds = np.array(perturbed.get("_raw_preds", []))
+        b_logits = np.array(baseline.get("_raw_logits", []))
+        p_logits = np.array(perturbed.get("_raw_logits", []))
+        b_scores = np.array(baseline.get("_raw_scores", []))
+        p_scores = np.array(perturbed.get("_raw_scores", []))
+        b_lat = baseline.get("_raw_latents", [])
+        p_lat = perturbed.get("_raw_latents", [])
+        
+        res = {}
+        if len(b_logits) > 0 and len(b_logits) == len(p_logits):
+            res["mean_delta_logit"] = float(np.abs(p_logits - b_logits).mean())
+        if len(b_preds) > 0 and len(b_preds) == len(p_preds):
+            res["mean_delta_prob"] = float(np.abs(p_preds - b_preds).mean())
+            b_class = (b_preds > 0.5).astype(int)
+            p_class = (p_preds > 0.5).astype(int)
+            res["flip_rate"] = float((b_class != p_class).mean())
+        if len(b_scores) > 0 and len(b_scores) == len(p_scores):
+            res["mean_delta_compatibility"] = float(np.abs(p_scores - b_scores).mean())
+        if len(b_lat) > 0 and len(b_lat) == len(p_lat):
+            b_lat, p_lat = np.array(b_lat), np.array(p_lat)
+            norm_b = np.linalg.norm(b_lat, axis=1)
+            norm_p = np.linalg.norm(p_lat, axis=1)
+            norm_b[norm_b == 0] = 1e-8
+            norm_p[norm_p == 0] = 1e-8
+            cos_sim = np.sum(b_lat * p_lat, axis=1) / (norm_b * norm_p)
+            res["mean_latent_cosine_change"] = float(1.0 - cos_sim.mean())
+        return res
+
+    generic_metrics["deltas_vs_wrong_demo"] = compute_deltas(generic_metrics, wrong_demo_metrics)
+
     # Cleanup raw arrays for JSON
     for m in [standard_metrics, generic_metrics, wrong_demo_metrics]:
-        for k in ["_raw_preds", "_raw_logits", "_raw_targets", "_raw_pair_ids", "_raw_states"]:
-            m.pop(k, None)
+        keys = list(m.keys())
+        for k in keys:
+            if k.startswith("_raw"):
+                m.pop(k, None)
 
     results = {
         "standard": standard_metrics,
