@@ -14,8 +14,10 @@ def bootstrap_confidence_interval(metrics_list, n_iterations=2000, ci=0.95):
     for _ in tqdm(range(n_iterations), desc="Bootstrapping", leave=False):
         indices = np.random.randint(0, n, n)
         for k in keys:
-            sample_mean = np.mean([metrics_list[i][k] for i in indices])
-            bootstrapped_means[k].append(sample_mean)
+            values = [metrics_list[i][k] for i in indices if k in metrics_list[i]]
+            if values:
+                sample_mean = np.mean(values)
+                bootstrapped_means[k].append(sample_mean)
             
     results = {}
     lower_pct = (1 - ci) / 2 * 100
