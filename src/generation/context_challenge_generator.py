@@ -66,7 +66,7 @@ class ContextChallengeGenerator:
             occupant_type = rng.choice(VALID_OCCUPANTS)
             bg = rng.choice(VALID_BGS)
 
-            box_pose = [0.0, -0.2, 0.0]
+            box_pose = [0.0, -0.2, 0.58]
             target_pos = [0.0, 0.3, 0.0]
 
             ref_model, ref_data = self.scene_builder.create_environment(
