@@ -13,20 +13,21 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.learning.dataset import LearningDataset
 from src.learning.metrics import compute_metrics
+from src.learning.utils import resolve_checkpoint
 from scripts.train_model import get_model
 
 def evaluate_context(model, dataset, device, desc="Context Challenge"):
     model.eval()
     all_preds, all_targets, all_logits = [], [], []
     all_scores = []
-    
+
     # Store predictions by pair_id to check consistency
     pair_preds = {}
     pair_targets = {}
     pair_states = {}
-    
+
     loader = DataLoader(dataset, batch_size=8, shuffle=False)
-    
+
     with torch.no_grad():
         for batch in tqdm(loader, desc=desc):
             text_feat = batch["text_feat"].to(device)
@@ -35,8 +36,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
             demo_global = batch["demo_global"].to(device)
             targets = batch["label"].to(device)
             pair_ids = batch["pair_id"]
+            task_ids = batch["task_id"]
             states = batch.get("state", [""] * len(targets)) # Dataset must return state!
-            
+
             with torch.amp.autocast(device_type="cuda" if device=="cuda" else "cpu"):
                 import inspect
                 sig = inspect.signature(model.forward)
@@ -46,9 +48,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
                 if "query_global" in sig.parameters: kwargs["query_global"] = query_global
                 if "query_patch" in sig.parameters: kwargs["query_patch"] = query_patch
                 if "x" in sig.parameters: kwargs["x"] = query_global
-                
+
                 out = model(**kwargs)
-                
+
                 logits, s = None, None
                 if isinstance(out, tuple):
                     if len(out) == 3:
@@ -57,25 +59,25 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
                         logits, s = out
                 else:
                     logits = out
-                    
+
             preds = torch.sigmoid(logits.squeeze(-1)).cpu().numpy()
             targets_np = targets.cpu().numpy()
-            
+
             for i in range(len(preds)):
                 pid = pair_ids[i]
                 if pid not in pair_preds:
                     pair_preds[pid] = []
                     pair_targets[pid] = []
                     pair_states[pid] = states[i]
-                pair_preds[pid].append(preds[i])
+                pair_preds[pid].append((preds[i], task_ids[i]))
                 pair_targets[pid].append(targets_np[i])
-                
+
             all_preds.extend(preds)
             all_targets.extend(targets_np)
             all_logits.extend(logits.squeeze(-1).cpu().numpy())
             if "pair_id" not in locals().get("all_pair_ids", {}):
                 pass
-                
+
     # Re-collect ordered pairs and states
     ordered_pair_ids = []
     ordered_states = []
@@ -83,34 +85,48 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
         if len(p_list) == 2:
             ordered_pair_ids.extend([pid, pid])
             ordered_states.extend([pair_states[pid], pair_states[pid]])
-            
+
     # Calculate metrics
     preds_cls = np.array(all_preds) >= 0.5
     targets_np = np.array(all_targets)
     acc = (preds_cls == targets_np).mean()
-    
+
     # Calculate reversal (A, B) vs non-reversal (C, D) accuracy
     rev_preds, rev_targets = [], []
     non_preds, non_targets = [], []
-    
+
     context_pair_consistency = 0
     reversal_acc_sum = 0
     rev_pairs = 0
     flip_count = 0
-    
+
+    state_correct = {"A": 0, "B": 0, "C": 0, "D": 0}
+    state_total = {"A": 0, "B": 0, "C": 0, "D": 0}
+    task_correct = {"task_1": 0, "task_2": 0}
+    task_total = {"task_1": 0, "task_2": 0}
+
     for pid, p_list in pair_preds.items():
         if len(p_list) == 2:
-            p1, p2 = p_list[0] >= 0.5, p_list[1] >= 0.5
+            p1, p2 = p_list[0][0] >= 0.5, p_list[1][0] >= 0.5
             t1, t2 = pair_targets[pid][0], pair_targets[pid][1]
+            tid1, tid2 = p_list[0][1], p_list[1][1]
             state = pair_states[pid]
-            
+
             is_correct = (p1 == t1) and (p2 == t2)
             if is_correct:
                 context_pair_consistency += 1
-                
+
             if p1 != p2:
                 flip_count += 1
-                
+
+            state_correct[state] += int(p1 == t1) + int(p2 == t2)
+            state_total[state] += 2
+
+            task_correct[tid1] += int(p1 == t1)
+            task_total[tid1] += 1
+            task_correct[tid2] += int(p2 == t2)
+            task_total[tid2] += 1
+
             if state in ["A", "B"]:
                 rev_pairs += 1
                 if is_correct:
@@ -120,9 +136,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
             else:
                 non_preds.extend([p1, p2])
                 non_targets.extend([t1, t2])
-                
+
     total_pairs = len([p for p in pair_preds.values() if len(p) == 2])
-    
+
     metrics = {
         "accuracy": float(acc),
         "reversal_accuracy": float(reversal_acc_sum / max(1, rev_pairs)),
@@ -130,13 +146,19 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
         "context_flip_rate": float(flip_count / max(1, total_pairs)),
         "reversal_states_acc": float((np.array(rev_preds) == np.array(rev_targets)).mean()) if rev_preds else 0.0,
         "non_reversal_states_acc": float((np.array(non_preds) == np.array(non_targets)).mean()) if non_preds else 0.0,
+        "state_A_acc": float(state_correct["A"] / max(1, state_total["A"])),
+        "state_B_acc": float(state_correct["B"] / max(1, state_total["B"])),
+        "state_C_acc": float(state_correct["C"] / max(1, state_total["C"])),
+        "state_D_acc": float(state_correct["D"] / max(1, state_total["D"])),
+        "task_1_acc": float(task_correct["task_1"] / max(1, task_total["task_1"])),
+        "task_2_acc": float(task_correct["task_2"] / max(1, task_total["task_2"])),
         "_raw_preds": all_preds,
         "_raw_logits": all_logits,
         "_raw_targets": all_targets,
         "_raw_pair_ids": ordered_pair_ids,
         "_raw_states": ordered_states
     }
-    
+
     print(f"[{desc}] Acc: {metrics['accuracy']:.4f} | Reversal Acc: {metrics['reversal_accuracy']:.4f} | Pair Cons: {metrics['context_pair_consistency']:.4f}")
     return metrics
 
@@ -147,30 +169,25 @@ def main():
     parser.add_argument("--precompute", action="store_true", help="Precompute context challenge features")
     parser.add_argument("--index", default="data/manifests/context_challenge_manifest.jsonl")
     args = parser.parse_args()
-    
+
     if args.precompute:
         os.system(f"python3 scripts/precompute_features.py --index {args.index} --out_dir data/features_context --force")
-        
+
     out_dir = Path(args.experiment_dir)
     with open(out_dir / "resolved_config.yaml") as f:
         config = yaml.safe_load(f)
-        
+
     model = get_model(config).to(args.device)
-    
-    ckpt_path = out_dir / "best.ckpt"
-    if not ckpt_path.exists():
-        ckpt_path = out_dir / "last.ckpt"
-        if not ckpt_path.exists():
-            raise FileNotFoundError(f"No checkpoint found in {out_dir}")
-            return
+
+    ckpt_path = resolve_checkpoint(out_dir)
     model.load_state_dict(torch.load(ckpt_path, map_location=args.device, weights_only=True))
-    
+
     # Needs a way to pass states in dataset. We will inject it!
     class ContextDataset(LearningDataset):
         def __init__(self, *args_tuple, generic_text=False, **kwargs):
             super().__init__(*args_tuple, **kwargs)
             self.generic_text = generic_text
-            
+
         def __getitem__(self, idx):
             item = super().__getitem__(idx)
             item["state"] = self.records[idx].get("state", "")
@@ -180,7 +197,7 @@ def main():
                 else:
                     item["text_feat"] = torch.zeros_like(item["text_feat"])
             return item
-            
+
     dataset = ContextDataset(
         index_path=args.index,
         features_dir="data/features_context",
@@ -189,10 +206,10 @@ def main():
         seed=42,
         split_seed=42
     )
-    
+
     # 1. Standard evaluation
     standard_metrics = evaluate_context(model, dataset, args.device, desc="Context Challenge (Standard)")
-    
+
     # 2. Generic Demo Diagnostic
     # Force instruction to "Perform the demonstrated task."
     ds_generic = ContextDataset(
@@ -203,7 +220,7 @@ def main():
         generic_text=True
     )
     generic_metrics = evaluate_context(model, ds_generic, args.device, desc="Context Challenge (Generic Text)")
-    
+
     ds_generic_wrong_demo = ContextDataset(
         index_path=args.index,
         features_dir="data/features_context",
@@ -213,7 +230,7 @@ def main():
     )
     ds_generic_wrong_demo.ablation_mode = "wrong_demo"
     wrong_demo_metrics = evaluate_context(model, ds_generic_wrong_demo, args.device, desc="Context Challenge (Generic + Wrong Demo)")
-    
+
     # Save raw arrays for bootstrapping
     raw_results = {
         "standard": {k: v for k, v in standard_metrics.items() if k.startswith("_raw")},
@@ -227,13 +244,13 @@ def main():
     for m in [standard_metrics, generic_metrics, wrong_demo_metrics]:
         for k in ["_raw_preds", "_raw_logits", "_raw_targets", "_raw_pair_ids", "_raw_states"]:
             m.pop(k, None)
-            
+
     results = {
         "standard": standard_metrics,
         "generic_text": generic_metrics,
         "generic_wrong_demo": wrong_demo_metrics
     }
-    
+
     with open(out_dir / "context_challenge_results.json", "w") as f:
         json.dump(results, f, indent=2)
 

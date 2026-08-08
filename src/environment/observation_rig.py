@@ -59,6 +59,19 @@ TASK_2_RIG = ObservationRig(
     resolution=(640, 480),
 )
 
+CONTEXT_CHALLENGE_RIG = ObservationRig(
+    rig_id="context_challenge_ego",
+    task_id="context",
+    robot_base_pose="home",
+    head_pan=0.25,
+    head_tilt=0.60,
+    camera_name="robot0:ego_camera",
+    camera_mount_transform={"pos": [0.0, 0.0, 0.0], "euler": "3.1415 0 0"},
+    look_at_target=[0.25, 0.1, 0.5],
+    fovy=70.0,
+    resolution=(640, 480),
+)
+
 
 def get_task_observation_rig(task_id: str) -> ObservationRig:
     """Retrieve default task-aware observation rig for task1 or task2."""
@@ -128,7 +141,7 @@ def apply_observation_rig(
     rig: ObservationRig,
 ) -> Dict[str, Any]:
     """Apply an ObservationRig to a scene's model and data state.
-    
+
     Sets exact head_pan and head_tilt, calls mj_forward, and returns measured camera metadata.
     """
     from src.environment.robot_integration import initialize_robot_qpos

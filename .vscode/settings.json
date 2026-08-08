@@ -1,0 +1,37 @@
+{
+  "files.exclude": {
+    "**/data/**": true,
+    "**/learning_data/**": true,
+    "**/learning_outputs/**": true,
+    "**/output/**": true,
+    "**/artifacts/**": true
+  },
+
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.pytest_cache/**": true,
+    "**/__pycache__/**": true,
+    "**/data/**": true,
+    "**/learning_data/**": true,
+    "**/learning_outputs/**": true,
+    "**/output/**": true,
+    "**/artifacts/**": true
+  },
+
+  "search.exclude": {
+    "**/data/**": true,
+    "**/learning_data/**": true,
+    "**/learning_outputs/**": true,
+    "**/output/**": true,
+    "**/artifacts/**": true
+  },
+
+  "python.analysis.exclude": [
+    "**/data/**",
+    "**/learning_data/**",
+    "**/learning_outputs/**",
+    "**/output/**",
+    "**/artifacts/**"
+  ]
+}

@@ -6,17 +6,17 @@ import sys
 
 def main():
     base_dirs = [
-        "query_only", "language_query", "demo_query", 
+        "query_only", "language_query", "demo_query",
         "full_no_ranking", "pooled_multimodal", "relational_heatmap"
     ]
-    
+
     seeds = [11, 23, 42, 67, 101]
-    
+
     for model_dir in base_dirs:
         seed_metrics = []
         out_base = Path(f"artifacts/learning_stage1/{model_dir}")
         out_base.mkdir(parents=True, exist_ok=True)
-        
+
         for seed in seeds:
             exp_dir = Path(f"learning_outputs/{model_dir}_seed{seed}")
             metrics_path = exp_dir / "metrics_by_split.json"
@@ -25,13 +25,13 @@ def main():
                 continue
             with open(metrics_path) as f:
                 seed_metrics.append({"seed": seed, "metrics": json.load(f)})
-                
+
         if not seed_metrics:
             continue
-            
+
         with open(out_base / "seed_metrics.json", "w") as f:
             json.dump(seed_metrics, f, indent=2)
-            
+
         # Aggregate
         splits = seed_metrics[0]["metrics"].keys()
         agg = {}
@@ -46,9 +46,9 @@ def main():
                     }
         with open(out_base / "aggregate_metrics.json", "w") as f:
             json.dump(agg, f, indent=2)
-            
+
         print(f"Aggregated metrics for {model_dir}")
-        
+
         # Aggregate condition sensitivity if it exists
         cond_paths = [f"learning_outputs/{model_dir}_seed{s}/conditioning_sensitivity.json" for s in seeds]
         cond_paths = [p for p in cond_paths if Path(p).exists()]
@@ -57,7 +57,7 @@ def main():
             for cp in cond_paths:
                 with open(cp) as f:
                     cond_metrics.append(json.load(f))
-                    
+
             agg_cond = {}
             conditions = cond_metrics[0].keys()
             for c in conditions:
@@ -74,7 +74,7 @@ def main():
                             }
             with open(out_base / "conditioning_sensitivity.json", "w") as f:
                 json.dump(agg_cond, f, indent=2)
-                
+
         # Aggregate Context Challenge results
         ctx_paths = [f"learning_outputs/{model_dir}_seed{s}/context_challenge_results.json" for s in seeds]
         ctx_paths = [p for p in ctx_paths if Path(p).exists()]
@@ -83,7 +83,7 @@ def main():
             for cp in ctx_paths:
                 with open(cp) as f:
                     ctx_metrics.append(json.load(f))
-                    
+
             agg_ctx = {}
             ctx_conditions = ctx_metrics[0].keys()
             for c in ctx_conditions:
@@ -97,6 +97,36 @@ def main():
                         }
             with open(out_base / "context_challenge_results.json", "w") as f:
                 json.dump(agg_ctx, f, indent=2)
-                
+
+        # Aggregate Bootstrap results
+        boot_paths = [f"learning_outputs/{model_dir}_seed{s}/bootstrap_results.json" for s in seeds]
+        boot_paths = [p for p in boot_paths if Path(p).exists()]
+        if boot_paths:
+            boot_metrics = []
+            for bp in boot_paths:
+                with open(bp) as f:
+                    boot_metrics.append(json.load(f))
+
+            agg_boot = {}
+            boot_splits = boot_metrics[0].keys()
+            for split in boot_splits:
+                agg_boot[split] = {}
+                for m in boot_metrics[0][split].keys():
+                    # Average the bounds over seeds?
+                    # The prompt says: "Calculate 95% CIs using 2000 draws for primary metrics".
+                    # Typically, we can average the bootstrapped bounds across seeds.
+                    vals_mean = [bm[split][m]["mean"] for bm in boot_metrics if split in bm]
+                    vals_lower = [bm[split][m]["lower"] for bm in boot_metrics if split in bm]
+                    vals_upper = [bm[split][m]["upper"] for bm in boot_metrics if split in bm]
+
+                    if vals_mean:
+                        agg_boot[split][m] = {
+                            "mean": float(np.mean(vals_mean)),
+                            "lower": float(np.mean(vals_lower)),
+                            "upper": float(np.mean(vals_upper))
+                        }
+            with open(out_base / "bootstrap_results.json", "w") as f:
+                json.dump(agg_boot, f, indent=2)
+
 if __name__ == "__main__":
     main()

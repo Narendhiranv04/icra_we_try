@@ -19,6 +19,7 @@ for seed in "${seeds[@]}"; do
         python scripts/train_model.py --config configs/learning/${config}.yaml --seed $seed
         python scripts/evaluate_model.py --dir learning_outputs/${config}_seed${seed}
         python scripts/evaluate_context_challenge.py --experiment-dir learning_outputs/${config}_seed${seed}
+        python scripts/bootstrap_metrics.py --experiment-dir learning_outputs/${config}_seed${seed}
     done
 done
 

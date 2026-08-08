@@ -1,0 +1,1703 @@
+diff --git a/artifacts/learning_stage1/pytest.xml b/artifacts/learning_stage1/pytest.xml
+index 5b77d73..3b740c4 100644
+--- a/artifacts/learning_stage1/pytest.xml
++++ b/artifacts/learning_stage1/pytest.xml
+@@ -1 +1 @@
+-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="68" time="71.687" timestamp="2026-08-08T00:02:20.323233+05:30" hostname="pop-os"><testcase classname="tests.test_asset_registry" name="test_asset_registry_loading" time="0.012" /><testcase classname="tests.test_asset_registry" name="test_asset_disk_verification" time="0.010" /><testcase classname="tests.test_asset_registry" name="test_asset_filtering" time="0.010" /><testcase classname="tests.test_benchmark" name="test_01_task2_gripper_closes_before_weld" time="5.015" /><testcase classname="tests.test_benchmark" name="test_02_task2_weld_before_closure_injection_fails" time="0.000" /><testcase classname="tests.test_benchmark" name="test_03_task2_closure_settling_frames_exist" time="4.287" /><testcase classname="tests.test_benchmark" name="test_04_10_compositional_split_factor_rules" time="0.001" /><testcase classname="tests.test_benchmark" name="test_11_14_mask_mismatch_fails_reproducibility" time="3.084" /><testcase classname="tests.test_benchmark" name="test_15_18_positive_control_geometric_distinction" time="2.995" /><testcase classname="tests.test_benchmark" name="test_19_21_control_annotation_files" time="0.754" /><testcase classname="tests.test_benchmark" name="test_22_23_multi_object_control_mask_coverage" time="1.550" /><testcase classname="tests.test_benchmark" name="test_24_26_demonstration_report_metrics" time="7.595" /><testcase classname="tests.test_benchmark" name="test_27_28_rotated_task1_pair_generation" time="1.376" /><testcase classname="tests.test_benchmark" name="test_29_31_rotated_task2_pair_and_demo" time="5.748" /><testcase classname="tests.test_benchmark" name="test_32_35_missing_elements_raise_errors" time="0.224" /><testcase classname="tests.test_benchmark" name="test_36_readme_pilot_command_references_shell_script" time="0.001" /><testcase classname="tests.test_benchmark" name="test_37_reproducibility_status_cannot_pass_with_nonzero_mismatch" time="0.000" /><testcase classname="tests.test_benchmark" name="test_38_40_release_verification_state" time="0.015" /><testcase classname="tests.test_benchmark" name="test_smoke_cleanup_does_not_delete_pilot_data" time="0.006" /><testcase classname="tests.test_counterfactual_pairs" name="test_counterfactual_pair_generation" time="2.683" /><testcase classname="tests.test_egocentric_rigs" name="test_01_task1_demo_and_query_share_rig_id" time="0.000" /><testcase classname="tests.test_egocentric_rigs" name="test_02_task1_demo_query_camera_extrinsics_match" time="0.748" /><testcase classname="tests.test_egocentric_rigs" name="test_03_task2_demo_query_camera_extrinsics_match" time="0.700" /><testcase classname="tests.test_egocentric_rigs" name="test_04_task1_lid_handle_visible" time="0.355" /><testcase classname="tests.test_egocentric_rigs" name="test_05_task2_pick_and_target_visible" time="0.374" /><testcase classname="tests.test_egocentric_rigs" name="test_06_camera_target_near_centre" time="0.358" /><testcase classname="tests.test_egocentric_rigs" name="test_07_torso_fraction_below_threshold" time="0.365" /><testcase classname="tests.test_egocentric_rigs" name="test_08_bad_pantilt_fails_validation" time="0.354" /><testcase classname="tests.test_egocentric_rigs" name="test_09_camera_calibration_files_exist" time="0.001" /><testcase classname="tests.test_egocentric_rigs" name="test_10_production_task1_matched_pair" time="1.412" /><testcase classname="tests.test_egocentric_rigs" name="test_11_production_task2_matched_pair" time="1.456" /><testcase classname="tests.test_egocentric_rigs" name="test_12_positive_controls_record_actual_camera_params" time="1.562" /><testcase classname="tests.test_egocentric_rigs" name="test_13_metadata_regression_no_front_camera" time="1.393" /><testcase classname="tests.test_egocentric_rigs" name="test_14_camera_invariant_failure_raises_value_error" time="0.351" /><testcase classname="tests.test_egocentric_rigs" name="test_15_view_quality_production_validation" time="2.861" /><testcase classname="tests.test_final_release_regressions" name="test_a_real_task1_demonstration" time="2.781" /><testcase classname="tests.test_final_release_regressions" name="test_b_real_task2_demonstration" time="3.788" /><testcase classname="tests.test_final_release_regressions" name="test_c_per_instance_task1_visibility" time="1.383" /><testcase classname="tests.test_final_release_regressions" name="test_d_per_instance_task2_visibility" time="1.329" /><testcase classname="tests.test_final_release_regressions" name="test_e_real_gso_generation" time="1.289" /><testcase classname="tests.test_final_release_regressions" name="test_f_split_gso_participation" time="0.001" /><testcase classname="tests.test_final_release_regressions" name="test_g_no_stale_camera_metadata" time="4.007" /><testcase classname="tests.test_final_release_regressions" name="test_h_no_duplicate_visible_asset_geoms" time="0.194" /><testcase classname="tests.test_learning" name="test_deterministic_demo_assignment" time="0.001" /><testcase classname="tests.test_learning" name="test_dataset_no_silent_fallback" time="0.006" /><testcase classname="tests.test_learning" name="test_ranking_loss_prefers_proceed" time="0.007" /><testcase classname="tests.test_learning" name="test_pla_correctness" time="0.019" /><testcase classname="tests.test_learning" name="test_relational_forward_shapes" time="0.034" /><testcase classname="tests.test_learning" name="test_heatmap_metrics" time="0.005" /><testcase classname="tests.test_learning_models" name="test_query_only" time="0.002" /><testcase classname="tests.test_learning_models" name="test_pooled_multimodal" time="0.005" /><testcase classname="tests.test_learning_models" name="test_relational_model" time="0.031" /><testcase classname="tests.test_learning_models" name="test_heatmap_decoder" time="0.036" /><testcase classname="tests.test_lid_occupancy" name="test_lid_occupancy_predicates" time="0.411" /><testcase classname="tests.test_seed_reproducibility" name="test_seed_reproducibility" time="0.712" /><testcase classname="tests.test_target_occupancy" name="test_target_occupancy_predicates" time="0.377" /><testcase classname="tests.test_ycb_gso_rendering" name="test_10_ycb_reference_asset_loads_and_renders" time="0.414" /><testcase classname="tests.test_ycb_gso_rendering" name="test_11_gso_reference_asset_loads_and_renders" time="0.394" /><testcase classname="tests.test_ycb_gso_rendering" name="test_12_mesh_files_non_empty" time="0.001" /><testcase classname="tests.test_ycb_gso_rendering" name="test_13_texture_files_decode_correctly" time="0.061" /><testcase classname="tests.test_ycb_gso_rendering" name="test_14_collision_proxy_settles_stably" time="0.192" /><testcase classname="tests.test_ycb_gso_rendering" name="test_15_collision_proxy_invisible_in_rgb_seg" time="0.371" /><testcase classname="tests.test_ycb_gso_rendering" name="test_16_scene_builder_uses_registry_assets" time="0.205" /><testcase classname="tests.test_ycb_gso_rendering" name="test_17_missing_registered_asset_fails" time="0.011" /><testcase classname="tests.test_ycb_gso_rendering" name="test_18_multigeom_candidate_mask_covers_full_object" time="0.367" /><testcase classname="tests.test_ycb_gso_rendering" name="test_19_exact_asset_id_and_texture_regenerate" time="0.013" /><testcase classname="tests.test_ycb_gso_rendering" name="test_20_task_pair_with_ycb_asset_passes" time="1.433" /><testcase classname="tests.test_ycb_gso_rendering" name="test_21_task_pair_with_gso_asset_passes" time="1.506" /></testsuite></testsuites>
+\ No newline at end of file
++<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="71" time="75.149" timestamp="2026-08-08T23:15:15.153452+05:30" hostname="pop-os"><testcase classname="tests.test_asset_registry" name="test_asset_registry_loading" time="0.010" /><testcase classname="tests.test_asset_registry" name="test_asset_disk_verification" time="0.010" /><testcase classname="tests.test_asset_registry" name="test_asset_filtering" time="0.010" /><testcase classname="tests.test_benchmark" name="test_01_task2_gripper_closes_before_weld" time="4.533" /><testcase classname="tests.test_benchmark" name="test_02_task2_weld_before_closure_injection_fails" time="0.000" /><testcase classname="tests.test_benchmark" name="test_03_task2_closure_settling_frames_exist" time="4.634" /><testcase classname="tests.test_benchmark" name="test_04_10_compositional_split_factor_rules" time="0.003" /><testcase classname="tests.test_benchmark" name="test_11_14_mask_mismatch_fails_reproducibility" time="3.428" /><testcase classname="tests.test_benchmark" name="test_15_18_positive_control_geometric_distinction" time="3.071" /><testcase classname="tests.test_benchmark" name="test_19_21_control_annotation_files" time="0.777" /><testcase classname="tests.test_benchmark" name="test_22_23_multi_object_control_mask_coverage" time="1.559" /><testcase classname="tests.test_benchmark" name="test_24_26_demonstration_report_metrics" time="8.203" /><testcase classname="tests.test_benchmark" name="test_27_28_rotated_task1_pair_generation" time="1.327" /><testcase classname="tests.test_benchmark" name="test_29_31_rotated_task2_pair_and_demo" time="5.916" /><testcase classname="tests.test_benchmark" name="test_32_35_missing_elements_raise_errors" time="0.223" /><testcase classname="tests.test_benchmark" name="test_36_readme_pilot_command_references_shell_script" time="0.001" /><testcase classname="tests.test_benchmark" name="test_37_reproducibility_status_cannot_pass_with_nonzero_mismatch" time="0.001" /><testcase classname="tests.test_benchmark" name="test_38_40_release_verification_state" time="0.016" /><testcase classname="tests.test_benchmark" name="test_smoke_cleanup_does_not_delete_pilot_data" time="0.006" /><testcase classname="tests.test_context_challenge" name="test_context_challenge_rgb_invariant" time="0.008" /><testcase classname="tests.test_counterfactual_pairs" name="test_counterfactual_pair_generation" time="2.928" /><testcase classname="tests.test_egocentric_rigs" name="test_01_task1_demo_and_query_share_rig_id" time="0.000" /><testcase classname="tests.test_egocentric_rigs" name="test_02_task1_demo_query_camera_extrinsics_match" time="0.699" /><testcase classname="tests.test_egocentric_rigs" name="test_03_task2_demo_query_camera_extrinsics_match" time="0.730" /><testcase classname="tests.test_egocentric_rigs" name="test_04_task1_lid_handle_visible" time="0.366" /><testcase classname="tests.test_egocentric_rigs" name="test_05_task2_pick_and_target_visible" time="0.392" /><testcase classname="tests.test_egocentric_rigs" name="test_06_camera_target_near_centre" time="0.395" /><testcase classname="tests.test_egocentric_rigs" name="test_07_torso_fraction_below_threshold" time="0.375" /><testcase classname="tests.test_egocentric_rigs" name="test_08_bad_pantilt_fails_validation" time="0.379" /><testcase classname="tests.test_egocentric_rigs" name="test_09_camera_calibration_files_exist" time="0.000" /><testcase classname="tests.test_egocentric_rigs" name="test_10_production_task1_matched_pair" time="1.490" /><testcase classname="tests.test_egocentric_rigs" name="test_11_production_task2_matched_pair" time="1.498" /><testcase classname="tests.test_egocentric_rigs" name="test_12_positive_controls_record_actual_camera_params" time="1.635" /><testcase classname="tests.test_egocentric_rigs" name="test_13_metadata_regression_no_front_camera" time="1.382" /><testcase classname="tests.test_egocentric_rigs" name="test_14_camera_invariant_failure_raises_value_error" time="0.337" /><testcase classname="tests.test_egocentric_rigs" name="test_15_view_quality_production_validation" time="2.790" /><testcase classname="tests.test_final_release_regressions" name="test_a_real_task1_demonstration" time="2.723" /><testcase classname="tests.test_final_release_regressions" name="test_b_real_task2_demonstration" time="4.207" /><testcase classname="tests.test_final_release_regressions" name="test_c_per_instance_task1_visibility" time="1.750" /><testcase classname="tests.test_final_release_regressions" name="test_d_per_instance_task2_visibility" time="1.761" /><testcase classname="tests.test_final_release_regressions" name="test_e_real_gso_generation" time="1.574" /><testcase classname="tests.test_final_release_regressions" name="test_f_split_gso_participation" time="0.001" /><testcase classname="tests.test_final_release_regressions" name="test_g_no_stale_camera_metadata" time="4.285" /><testcase classname="tests.test_final_release_regressions" name="test_h_no_duplicate_visible_asset_geoms" time="0.239" /><testcase classname="tests.test_learning" name="test_deterministic_demo_assignment" time="0.001" /><testcase classname="tests.test_learning" name="test_dataset_no_silent_fallback" time="0.014" /><testcase classname="tests.test_learning" name="test_ranking_loss_prefers_proceed" time="0.027" /><testcase classname="tests.test_learning" name="test_pla_correctness" time="0.028" /><testcase classname="tests.test_learning" name="test_relational_forward_shapes" time="0.061" /><testcase classname="tests.test_learning" name="test_heatmap_metrics" time="0.006" /><testcase classname="tests.test_learning_correctness" name="test_split_seed_isolation" time="0.004" /><testcase classname="tests.test_learning_correctness" name="test_pair_sampler_determinism" time="0.002" /><testcase classname="tests.test_learning_models" name="test_query_only" time="0.002" /><testcase classname="tests.test_learning_models" name="test_pooled_multimodal" time="0.005" /><testcase classname="tests.test_learning_models" name="test_relational_model" time="0.050" /><testcase classname="tests.test_learning_models" name="test_heatmap_decoder" time="0.032" /><testcase classname="tests.test_lid_occupancy" name="test_lid_occupancy_predicates" time="0.515" /><testcase classname="tests.test_seed_reproducibility" name="test_seed_reproducibility" time="0.820" /><testcase classname="tests.test_target_occupancy" name="test_target_occupancy_predicates" time="0.387" /><testcase classname="tests.test_ycb_gso_rendering" name="test_10_ycb_reference_asset_loads_and_renders" time="0.419" /><testcase classname="tests.test_ycb_gso_rendering" name="test_11_gso_reference_asset_loads_and_renders" time="0.400" /><testcase classname="tests.test_ycb_gso_rendering" name="test_12_mesh_files_non_empty" time="0.002" /><testcase classname="tests.test_ycb_gso_rendering" name="test_13_texture_files_decode_correctly" time="0.060" /><testcase classname="tests.test_ycb_gso_rendering" name="test_14_collision_proxy_settles_stably" time="0.207" /><testcase classname="tests.test_ycb_gso_rendering" name="test_15_collision_proxy_invisible_in_rgb_seg" time="0.399" /><testcase classname="tests.test_ycb_gso_rendering" name="test_16_scene_builder_uses_registry_assets" time="0.233" /><testcase classname="tests.test_ycb_gso_rendering" name="test_17_missing_registered_asset_fails" time="0.014" /><testcase classname="tests.test_ycb_gso_rendering" name="test_18_multigeom_candidate_mask_covers_full_object" time="0.422" /><testcase classname="tests.test_ycb_gso_rendering" name="test_19_exact_asset_id_and_texture_regenerate" time="0.012" /><testcase classname="tests.test_ycb_gso_rendering" name="test_20_task_pair_with_ycb_asset_passes" time="1.550" /><testcase classname="tests.test_ycb_gso_rendering" name="test_21_task_pair_with_gso_asset_passes" time="1.492" /></testsuite></testsuites>
+\ No newline at end of file
+diff --git a/artifacts/learning_stage1/test_summary.json b/artifacts/learning_stage1/test_summary.json
+index 16d85c6..5e91627 100644
+--- a/artifacts/learning_stage1/test_summary.json
++++ b/artifacts/learning_stage1/test_summary.json
+@@ -1,7 +1,7 @@
+ {
+-  "total": 68,
+-  "passed": 68,
++  "total": 71,
++  "passed": 71,
+   "failed": 0,
+   "skipped": 0,
+-  "runtime": 71.687
++  "runtime": 75.149
+ }
+\ No newline at end of file
+diff --git a/run_all_experiments.sh b/run_all_experiments.sh
+index 48ec540..e743bb7 100755
+--- a/run_all_experiments.sh
++++ b/run_all_experiments.sh
+@@ -19,6 +19,7 @@ for seed in "${seeds[@]}"; do
+         python scripts/train_model.py --config configs/learning/${config}.yaml --seed $seed
+         python scripts/evaluate_model.py --dir learning_outputs/${config}_seed${seed}
+         python scripts/evaluate_context_challenge.py --experiment-dir learning_outputs/${config}_seed${seed}
++        python scripts/bootstrap_metrics.py --experiment-dir learning_outputs/${config}_seed${seed}
+     done
+ done
+ 
+diff --git a/scripts/aggregate_metrics.py b/scripts/aggregate_metrics.py
+index c735337..406c54e 100644
+--- a/scripts/aggregate_metrics.py
++++ b/scripts/aggregate_metrics.py
+@@ -6,17 +6,17 @@ import sys
+ 
+ def main():
+     base_dirs = [
+-        "query_only", "language_query", "demo_query", 
++        "query_only", "language_query", "demo_query",
+         "full_no_ranking", "pooled_multimodal", "relational_heatmap"
+     ]
+-    
++
+     seeds = [11, 23, 42, 67, 101]
+-    
++
+     for model_dir in base_dirs:
+         seed_metrics = []
+         out_base = Path(f"artifacts/learning_stage1/{model_dir}")
+         out_base.mkdir(parents=True, exist_ok=True)
+-        
++
+         for seed in seeds:
+             exp_dir = Path(f"learning_outputs/{model_dir}_seed{seed}")
+             metrics_path = exp_dir / "metrics_by_split.json"
+@@ -25,13 +25,13 @@ def main():
+                 continue
+             with open(metrics_path) as f:
+                 seed_metrics.append({"seed": seed, "metrics": json.load(f)})
+-                
++
+         if not seed_metrics:
+             continue
+-            
++
+         with open(out_base / "seed_metrics.json", "w") as f:
+             json.dump(seed_metrics, f, indent=2)
+-            
++
+         # Aggregate
+         splits = seed_metrics[0]["metrics"].keys()
+         agg = {}
+@@ -46,9 +46,9 @@ def main():
+                     }
+         with open(out_base / "aggregate_metrics.json", "w") as f:
+             json.dump(agg, f, indent=2)
+-            
++
+         print(f"Aggregated metrics for {model_dir}")
+-        
++
+         # Aggregate condition sensitivity if it exists
+         cond_paths = [f"learning_outputs/{model_dir}_seed{s}/conditioning_sensitivity.json" for s in seeds]
+         cond_paths = [p for p in cond_paths if Path(p).exists()]
+@@ -57,7 +57,7 @@ def main():
+             for cp in cond_paths:
+                 with open(cp) as f:
+                     cond_metrics.append(json.load(f))
+-                    
++
+             agg_cond = {}
+             conditions = cond_metrics[0].keys()
+             for c in conditions:
+@@ -74,7 +74,7 @@ def main():
+                             }
+             with open(out_base / "conditioning_sensitivity.json", "w") as f:
+                 json.dump(agg_cond, f, indent=2)
+-                
++
+         # Aggregate Context Challenge results
+         ctx_paths = [f"learning_outputs/{model_dir}_seed{s}/context_challenge_results.json" for s in seeds]
+         ctx_paths = [p for p in ctx_paths if Path(p).exists()]
+@@ -83,7 +83,7 @@ def main():
+             for cp in ctx_paths:
+                 with open(cp) as f:
+                     ctx_metrics.append(json.load(f))
+-                    
++
+             agg_ctx = {}
+             ctx_conditions = ctx_metrics[0].keys()
+             for c in ctx_conditions:
+@@ -97,6 +97,36 @@ def main():
+                         }
+             with open(out_base / "context_challenge_results.json", "w") as f:
+                 json.dump(agg_ctx, f, indent=2)
+-                
++
++        # Aggregate Bootstrap results
++        boot_paths = [f"learning_outputs/{model_dir}_seed{s}/bootstrap_results.json" for s in seeds]
++        boot_paths = [p for p in boot_paths if Path(p).exists()]
++        if boot_paths:
++            boot_metrics = []
++            for bp in boot_paths:
++                with open(bp) as f:
++                    boot_metrics.append(json.load(f))
++
++            agg_boot = {}
++            boot_splits = boot_metrics[0].keys()
++            for split in boot_splits:
++                agg_boot[split] = {}
++                for m in boot_metrics[0][split].keys():
++                    # Average the bounds over seeds?
++                    # The prompt says: "Calculate 95% CIs using 2000 draws for primary metrics".
++                    # Typically, we can average the bootstrapped bounds across seeds.
++                    vals_mean = [bm[split][m]["mean"] for bm in boot_metrics if split in bm]
++                    vals_lower = [bm[split][m]["lower"] for bm in boot_metrics if split in bm]
++                    vals_upper = [bm[split][m]["upper"] for bm in boot_metrics if split in bm]
++
++                    if vals_mean:
++                        agg_boot[split][m] = {
++                            "mean": float(np.mean(vals_mean)),
++                            "lower": float(np.mean(vals_lower)),
++                            "upper": float(np.mean(vals_upper))
++                        }
++            with open(out_base / "bootstrap_results.json", "w") as f:
++                json.dump(agg_boot, f, indent=2)
++
+ if __name__ == "__main__":
+     main()
+diff --git a/scripts/evaluate_context_challenge.py b/scripts/evaluate_context_challenge.py
+index fe99323..25c1e0a 100644
+--- a/scripts/evaluate_context_challenge.py
++++ b/scripts/evaluate_context_challenge.py
+@@ -13,20 +13,21 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ 
+ from src.learning.dataset import LearningDataset
+ from src.learning.metrics import compute_metrics
++from src.learning.utils import resolve_checkpoint
+ from scripts.train_model import get_model
+ 
+ def evaluate_context(model, dataset, device, desc="Context Challenge"):
+     model.eval()
+     all_preds, all_targets, all_logits = [], [], []
+     all_scores = []
+-    
++
+     # Store predictions by pair_id to check consistency
+     pair_preds = {}
+     pair_targets = {}
+     pair_states = {}
+-    
++
+     loader = DataLoader(dataset, batch_size=8, shuffle=False)
+-    
++
+     with torch.no_grad():
+         for batch in tqdm(loader, desc=desc):
+             text_feat = batch["text_feat"].to(device)
+@@ -35,8 +36,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
+             demo_global = batch["demo_global"].to(device)
+             targets = batch["label"].to(device)
+             pair_ids = batch["pair_id"]
++            task_ids = batch["task_id"]
+             states = batch.get("state", [""] * len(targets)) # Dataset must return state!
+-            
++
+             with torch.amp.autocast(device_type="cuda" if device=="cuda" else "cpu"):
+                 import inspect
+                 sig = inspect.signature(model.forward)
+@@ -46,9 +48,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
+                 if "query_global" in sig.parameters: kwargs["query_global"] = query_global
+                 if "query_patch" in sig.parameters: kwargs["query_patch"] = query_patch
+                 if "x" in sig.parameters: kwargs["x"] = query_global
+-                
++
+                 out = model(**kwargs)
+-                
++
+                 logits, s = None, None
+                 if isinstance(out, tuple):
+                     if len(out) == 3:
+@@ -57,25 +59,25 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
+                         logits, s = out
+                 else:
+                     logits = out
+-                    
++
+             preds = torch.sigmoid(logits.squeeze(-1)).cpu().numpy()
+             targets_np = targets.cpu().numpy()
+-            
++
+             for i in range(len(preds)):
+                 pid = pair_ids[i]
+                 if pid not in pair_preds:
+                     pair_preds[pid] = []
+                     pair_targets[pid] = []
+                     pair_states[pid] = states[i]
+-                pair_preds[pid].append(preds[i])
++                pair_preds[pid].append((preds[i], task_ids[i]))
+                 pair_targets[pid].append(targets_np[i])
+-                
++
+             all_preds.extend(preds)
+             all_targets.extend(targets_np)
+             all_logits.extend(logits.squeeze(-1).cpu().numpy())
+             if "pair_id" not in locals().get("all_pair_ids", {}):
+                 pass
+-                
++
+     # Re-collect ordered pairs and states
+     ordered_pair_ids = []
+     ordered_states = []
+@@ -83,34 +85,48 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
+         if len(p_list) == 2:
+             ordered_pair_ids.extend([pid, pid])
+             ordered_states.extend([pair_states[pid], pair_states[pid]])
+-            
++
+     # Calculate metrics
+     preds_cls = np.array(all_preds) >= 0.5
+     targets_np = np.array(all_targets)
+     acc = (preds_cls == targets_np).mean()
+-    
++
+     # Calculate reversal (A, B) vs non-reversal (C, D) accuracy
+     rev_preds, rev_targets = [], []
+     non_preds, non_targets = [], []
+-    
++
+     context_pair_consistency = 0
+     reversal_acc_sum = 0
+     rev_pairs = 0
+     flip_count = 0
+-    
++
++    state_correct = {"A": 0, "B": 0, "C": 0, "D": 0}
++    state_total = {"A": 0, "B": 0, "C": 0, "D": 0}
++    task_correct = {"task_1": 0, "task_2": 0}
++    task_total = {"task_1": 0, "task_2": 0}
++
+     for pid, p_list in pair_preds.items():
+         if len(p_list) == 2:
+-            p1, p2 = p_list[0] >= 0.5, p_list[1] >= 0.5
++            p1, p2 = p_list[0][0] >= 0.5, p_list[1][0] >= 0.5
+             t1, t2 = pair_targets[pid][0], pair_targets[pid][1]
++            tid1, tid2 = p_list[0][1], p_list[1][1]
+             state = pair_states[pid]
+-            
++
+             is_correct = (p1 == t1) and (p2 == t2)
+             if is_correct:
+                 context_pair_consistency += 1
+-                
++
+             if p1 != p2:
+                 flip_count += 1
+-                
++
++            state_correct[state] += int(p1 == t1) + int(p2 == t2)
++            state_total[state] += 2
++
++            task_correct[tid1] += int(p1 == t1)
++            task_total[tid1] += 1
++            task_correct[tid2] += int(p2 == t2)
++            task_total[tid2] += 1
++
+             if state in ["A", "B"]:
+                 rev_pairs += 1
+                 if is_correct:
+@@ -120,9 +136,9 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
+             else:
+                 non_preds.extend([p1, p2])
+                 non_targets.extend([t1, t2])
+-                
++
+     total_pairs = len([p for p in pair_preds.values() if len(p) == 2])
+-    
++
+     metrics = {
+         "accuracy": float(acc),
+         "reversal_accuracy": float(reversal_acc_sum / max(1, rev_pairs)),
+@@ -130,13 +146,19 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
+         "context_flip_rate": float(flip_count / max(1, total_pairs)),
+         "reversal_states_acc": float((np.array(rev_preds) == np.array(rev_targets)).mean()) if rev_preds else 0.0,
+         "non_reversal_states_acc": float((np.array(non_preds) == np.array(non_targets)).mean()) if non_preds else 0.0,
++        "state_A_acc": float(state_correct["A"] / max(1, state_total["A"])),
++        "state_B_acc": float(state_correct["B"] / max(1, state_total["B"])),
++        "state_C_acc": float(state_correct["C"] / max(1, state_total["C"])),
++        "state_D_acc": float(state_correct["D"] / max(1, state_total["D"])),
++        "task_1_acc": float(task_correct["task_1"] / max(1, task_total["task_1"])),
++        "task_2_acc": float(task_correct["task_2"] / max(1, task_total["task_2"])),
+         "_raw_preds": all_preds,
+         "_raw_logits": all_logits,
+         "_raw_targets": all_targets,
+         "_raw_pair_ids": ordered_pair_ids,
+         "_raw_states": ordered_states
+     }
+-    
++
+     print(f"[{desc}] Acc: {metrics['accuracy']:.4f} | Reversal Acc: {metrics['reversal_accuracy']:.4f} | Pair Cons: {metrics['context_pair_consistency']:.4f}")
+     return metrics
+ 
+@@ -147,30 +169,25 @@ def main():
+     parser.add_argument("--precompute", action="store_true", help="Precompute context challenge features")
+     parser.add_argument("--index", default="data/manifests/context_challenge_manifest.jsonl")
+     args = parser.parse_args()
+-    
++
+     if args.precompute:
+         os.system(f"python3 scripts/precompute_features.py --index {args.index} --out_dir data/features_context --force")
+-        
++
+     out_dir = Path(args.experiment_dir)
+     with open(out_dir / "resolved_config.yaml") as f:
+         config = yaml.safe_load(f)
+-        
++
+     model = get_model(config).to(args.device)
+-    
+-    ckpt_path = out_dir / "best.ckpt"
+-    if not ckpt_path.exists():
+-        ckpt_path = out_dir / "last.ckpt"
+-        if not ckpt_path.exists():
+-            raise FileNotFoundError(f"No checkpoint found in {out_dir}")
+-            return
++
++    ckpt_path = resolve_checkpoint(out_dir)
+     model.load_state_dict(torch.load(ckpt_path, map_location=args.device, weights_only=True))
+-    
++
+     # Needs a way to pass states in dataset. We will inject it!
+     class ContextDataset(LearningDataset):
+         def __init__(self, *args_tuple, generic_text=False, **kwargs):
+             super().__init__(*args_tuple, **kwargs)
+             self.generic_text = generic_text
+-            
++
+         def __getitem__(self, idx):
+             item = super().__getitem__(idx)
+             item["state"] = self.records[idx].get("state", "")
+@@ -180,7 +197,7 @@ def main():
+                 else:
+                     item["text_feat"] = torch.zeros_like(item["text_feat"])
+             return item
+-            
++
+     dataset = ContextDataset(
+         index_path=args.index,
+         features_dir="data/features_context",
+@@ -189,10 +206,10 @@ def main():
+         seed=42,
+         split_seed=42
+     )
+-    
++
+     # 1. Standard evaluation
+     standard_metrics = evaluate_context(model, dataset, args.device, desc="Context Challenge (Standard)")
+-    
++
+     # 2. Generic Demo Diagnostic
+     # Force instruction to "Perform the demonstrated task."
+     ds_generic = ContextDataset(
+@@ -203,7 +220,7 @@ def main():
+         generic_text=True
+     )
+     generic_metrics = evaluate_context(model, ds_generic, args.device, desc="Context Challenge (Generic Text)")
+-    
++
+     ds_generic_wrong_demo = ContextDataset(
+         index_path=args.index,
+         features_dir="data/features_context",
+@@ -213,7 +230,7 @@ def main():
+     )
+     ds_generic_wrong_demo.ablation_mode = "wrong_demo"
+     wrong_demo_metrics = evaluate_context(model, ds_generic_wrong_demo, args.device, desc="Context Challenge (Generic + Wrong Demo)")
+-    
++
+     # Save raw arrays for bootstrapping
+     raw_results = {
+         "standard": {k: v for k, v in standard_metrics.items() if k.startswith("_raw")},
+@@ -227,13 +244,13 @@ def main():
+     for m in [standard_metrics, generic_metrics, wrong_demo_metrics]:
+         for k in ["_raw_preds", "_raw_logits", "_raw_targets", "_raw_pair_ids", "_raw_states"]:
+             m.pop(k, None)
+-            
++
+     results = {
+         "standard": standard_metrics,
+         "generic_text": generic_metrics,
+         "generic_wrong_demo": wrong_demo_metrics
+     }
+-    
++
+     with open(out_dir / "context_challenge_results.json", "w") as f:
+         json.dump(results, f, indent=2)
+ 
+diff --git a/scripts/evaluate_model.py b/scripts/evaluate_model.py
+index 127b47a..b550a0e 100644
+--- a/scripts/evaluate_model.py
++++ b/scripts/evaluate_model.py
+@@ -13,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ from src.learning.dataset import LearningDataset, PairBatchSampler
+ from src.learning.trainer import validate_epoch
+ from src.learning.losses import LearningLoss
++from src.learning.utils import resolve_checkpoint
+ from scripts.train_model import get_model
+ 
+ def run_evaluation(model, dataset, criterion, device, batch_size=8, desc=""):
+@@ -25,73 +26,99 @@ def run_evaluation(model, dataset, criterion, device, batch_size=8, desc=""):
+ def compare_metrics(baseline, perturbed):
+     b_preds = np.array(baseline.get("_raw_preds", []))
+     p_preds = np.array(perturbed.get("_raw_preds", []))
+-    
++
+     b_scores = np.array(baseline.get("_raw_scores", []))
+     p_scores = np.array(perturbed.get("_raw_scores", []))
+-    
++
+     res = {
+         "accuracy": perturbed["accuracy"],
+         "f1": perturbed.get("f1", 0),
+         "latent_pla": perturbed.get("latent_pla", 0),
+     }
+-    
++
+     b_logits = np.array(baseline.get("_raw_logits", []))
+     p_logits = np.array(perturbed.get("_raw_logits", []))
+-    
++
++    # Assert finite
++    if len(b_logits) > 0:
++        assert np.all(np.isfinite(b_logits)), "Baseline logits contain NaN or Inf"
++    if len(p_logits) > 0:
++        assert np.all(np.isfinite(p_logits)), "Perturbed logits contain NaN or Inf"
++    assert np.all(np.isfinite(b_preds)), "Baseline probs contain NaN or Inf"
++    assert np.all(np.isfinite(p_preds)), "Perturbed probs contain NaN or Inf"
++    if len(b_scores) > 0:
++        assert np.all(np.isfinite(b_scores)), "Baseline scores contain NaN or Inf"
++    if len(p_scores) > 0:
++        assert np.all(np.isfinite(p_scores)), "Perturbed scores contain NaN or Inf"
++
+     b_class = (b_preds > 0.5).astype(int)
+     p_class = (p_preds > 0.5).astype(int)
+     flips = (b_class != p_class).mean()
+-    
++
+     if len(b_logits) > 0 and len(b_logits) == len(p_logits):
+         delta_logit = np.abs(p_logits - b_logits).mean()
+         res["mean_delta_logit"] = float(delta_logit)
+-        
++
+     delta_prob = np.abs(p_preds - b_preds).mean()
+     res["flip_rate"] = float(flips)
+     res["mean_delta_prob"] = float(delta_prob)
+     res["mean_confidence"] = float(np.abs(p_preds - 0.5).mean() * 2)
+-    
++
+     if len(b_scores) > 0 and len(b_scores) == len(p_scores):
+         delta_compat = np.abs(p_scores - b_scores).mean()
+         res["mean_compatibility"] = float(p_scores.mean())
+         res["mean_delta_compatibility"] = float(delta_compat)
+-        
++
++    b_lat = baseline.get("_raw_latents", [])
++    p_lat = perturbed.get("_raw_latents", [])
++    if len(b_lat) > 0 and len(b_lat) == len(p_lat):
++        b_lat = np.array(b_lat)
++        p_lat = np.array(p_lat)
++        assert np.all(np.isfinite(b_lat)), "Baseline latents contain NaN or Inf"
++        assert np.all(np.isfinite(p_lat)), "Perturbed latents contain NaN or Inf"
++
++        # Calculate cosine similarity
++        norm_b = np.linalg.norm(b_lat, axis=1)
++        norm_p = np.linalg.norm(p_lat, axis=1)
++        # Avoid division by zero
++        norm_b[norm_b == 0] = 1e-8
++        norm_p[norm_p == 0] = 1e-8
++
++        cos_sim = np.sum(b_lat * p_lat, axis=1) / (norm_b * norm_p)
++        res["mean_latent_cosine_sim"] = float(cos_sim.mean())
++        res["mean_latent_cosine_change"] = float(1.0 - cos_sim.mean())
++
+     return res
+ 
+ def main():
+     parser = argparse.ArgumentParser()
+     parser.add_argument("--dir", required=True, help="Path to learning_outputs/<experiment_name>")
+     args = parser.parse_args()
+-    
++
+     out_dir = Path(args.dir)
+     with open(out_dir / "resolved_config.yaml", "r") as f:
+         config = yaml.safe_load(f)
+-        
++
+     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+     model = get_model(config).to(device)
+-    
+-    # Use best.ckpt first, fallback to last.ckpt
+-    ckpt_path = out_dir / "best.ckpt"
+-    if not ckpt_path.exists():
+-        ckpt_path = out_dir / "last.ckpt"
+-        if not ckpt_path.exists():
+-            raise FileNotFoundError(f"No checkpoint found in {out_dir}")
+-            return
+-            
++
++    # Use resolve_checkpoint
++    ckpt_path = resolve_checkpoint(out_dir)
++
+     print(f"Loading checkpoint: {ckpt_path}")
+     model.load_state_dict(torch.load(ckpt_path, map_location=device, weights_only=True))
+     model.eval()
+-    
++
+     criterion = LearningLoss(
+         margin=config.get("margin", 0.2),
+         lambda_cls=config.get("lambda_cls", 1.0),
+         lambda_rank=config.get("lambda_rank", 0.0),
+         lambda_heat=config.get("lambda_heat", 0.0)
+     )
+-    
++
+     splits = ["id_train", "id_val", "unseen_object", "unseen_background", "compositional"]
+     all_metrics = {}
+-    
++
+     for split in splits:
+         dataset = LearningDataset(
+             index_path=config.get("index_path", "learning_data/index.jsonl"),
+@@ -108,20 +135,20 @@ def main():
+             m_clean = {k: v for k, v in m.items() if not k.startswith("_raw")}
+             if split != "id_train":
+                 all_metrics[split] = m_clean
+-                
++
+             if split == "id_val":
+                 baseline_id_val = m
+-            
++
+     with open(out_dir / "metrics_by_split.json", "w") as f:
+         json.dump(all_metrics, f, indent=2)
+-        
++
+     print(f"Saved evaluation metrics to {out_dir / 'metrics_by_split.json'}")
+-    
++
+     # Ablation logic
+     if "relational" in str(out_dir) or "pooled_multimodal" in str(out_dir) or "demo_query" in str(out_dir) or "language_query" in str(out_dir):
+         print("Running Conditioning Diagnostics...")
+         ablation_results = {}
+-        
++
+         def run_ablation(ablation_mode, name):
+             res_all = {}
+             for split in splits:
+@@ -136,7 +163,7 @@ def main():
+                 )
+                 if len(ds) == 0: continue
+                 m = run_evaluation(model, ds, criterion, device, batch_size=8, desc=f"{name} {split}")
+-                
++
+                 # We need baseline for this split
+                 baseline_split = all_metrics.get(split) if split != "id_val" else baseline_id_val
+                 if baseline_split:
+@@ -144,7 +171,7 @@ def main():
+                     # Since we stripped raw arrays for save, let's just get them!
+                     # Actually, we need to run baseline for all splits with raw arrays.
+                     pass
+-            
++
+             # Since compare_metrics needs raw arrays, let's just evaluate id_val for ablation comparison.
+             # But the prompt said "RUN CONDITIONING DIAGNOSTICS ON ALL EVAL SPLITS... on id_val, unseen_object, unseen_background, compositional".
+             # So we must collect the full metrics. We can store raw metrics in `baselines_raw = {}`.
+@@ -165,9 +192,28 @@ def main():
+                 baselines_raw[split] = m_raw
+                 # Save raw arrays for bootstrapping
+                 m_raw_save = {k: v for k, v in m_raw.items() if k.startswith("_raw") and isinstance(v, list)}
++
++                # Assert finiteness for baselines
++                for arr_key in ["_raw_logits", "_raw_preds", "_raw_scores", "_raw_latents"]:
++                    if arr_key in m_raw_save and len(m_raw_save[arr_key]) > 0:
++                        assert np.all(np.isfinite(m_raw_save[arr_key])), f"Baseline {arr_key} in {split} contains NaN or Inf"
++
+                 with open(out_dir / f"metrics_raw_{split}.json", "w") as f:
++                    # Convert float32 to float for JSON
++                    # Actually json.dump handles list of floats, but numpy float32 might need conversion if directly dumping numpy array
++                    # The trainer returns lists, so json.dump should be fine unless it has numpy floats.
++                    # We can use a custom encoder or convert to float list.
++                    def to_float(obj):
++                        if isinstance(obj, np.ndarray): return obj.tolist()
++                        if isinstance(obj, np.generic): return float(obj)
++                        return obj
++
++                    # Convert lists of numpy arrays to lists of lists for JSON
++                    for k in m_raw_save:
++                        m_raw_save[k] = [to_float(x) for x in m_raw_save[k]]
++
+                     json.dump(m_raw_save, f)
+-                
++
+         def run_ablation_splits(ablation_mode, name):
+             ablation_results[name] = {}
+             for split in splits:
+@@ -189,9 +235,9 @@ def main():
+         run_ablation_splits("zero_text", "Zero Text")
+         run_ablation_splits("wrong_demo", "Wrong Demo")
+         run_ablation_splits("zero_demo", "Zero Demo")
+-        
++
+         with open(out_dir / "conditioning_sensitivity.json", "w") as f:
+             json.dump(ablation_results, f, indent=2)
+-            
++
+ if __name__ == "__main__":
+     main()
+diff --git a/scripts/extract_heatmaps.py b/scripts/extract_heatmaps.py
+index 1b2ead2..0bdfce7 100644
+--- a/scripts/extract_heatmaps.py
++++ b/scripts/extract_heatmaps.py
+@@ -9,6 +9,7 @@ import torchvision.transforms as T
+ import subprocess
+ 
+ from src.learning.dataset import LearningDataset
++from src.learning.utils import resolve_checkpoint
+ from scripts.train_model import get_model
+ 
+ import argparse
+@@ -24,29 +25,25 @@ def generate_heatmaps():
+     parser.add_argument("--experiment-dir", default="learning_outputs/relational_heatmap_seed42")
+     parser.add_argument("--seed", type=int, default=42)
+     args = parser.parse_args()
+-    
++
+     out_dir = Path(args.experiment_dir)
+     with open(out_dir / "resolved_config.yaml") as f:
+         config = yaml.safe_load(f)
+ 
+     model = get_model(config)
+-    
++
+     if config.get("heatmap", False):
+         from src.learning.models.heatmap_decoder import CausalHeatmapDecoder
+         model.heatmap_decoder = CausalHeatmapDecoder(latent_dim=config.get("latent_dim", 256))
+-        
+-    ckpt_path = out_dir / "best.ckpt"
+-    if not ckpt_path.exists():
+-        ckpt_path = out_dir / "last.ckpt"
+-        if not ckpt_path.exists():
+-            raise FileNotFoundError(f"No checkpoints found in {out_dir}")
++
++    ckpt_path = resolve_checkpoint(out_dir)
+ 
+     model.load_state_dict(torch.load(ckpt_path, map_location="cpu", weights_only=True))
+     model.eval()
+ 
+     out_heat = Path("artifacts/learning_stage1/heatmaps")
+     out_heat.mkdir(parents=True, exist_ok=True)
+-    
++
+     metadata = {
+         "tested_code_commit": get_git_commit(),
+         "model_seed": args.seed,
+@@ -62,9 +59,9 @@ def generate_heatmaps():
+         T.Resize(224, interpolation=T.InterpolationMode.NEAREST),
+         T.CenterCrop(224)
+     ])
+-    
++
+     splits_to_evaluate = ["id_val", "compositional", "context_challenge"]
+-    
++
+     for split in splits_to_evaluate:
+         try:
+             index_p = "data/manifests/context_challenge_manifest.jsonl" if split == "context_challenge" else config.get("index_path", "learning_data/index.jsonl")
+@@ -80,7 +77,7 @@ def generate_heatmaps():
+         except Exception as e:
+             print(f"Skipping split {split}: {e}")
+             continue
+-            
++
+         saved_task1 = 0
+         saved_task2 = 0
+         for i in range(len(ds)):
+@@ -88,13 +85,13 @@ def generate_heatmaps():
+             task_id = record["task_id"]
+             if task_id == "task_1" and saved_task1 >= 4: continue
+             if task_id == "task_2" and saved_task2 >= 4: continue
+-            
++
+             item = ds[i]
+-            
++
+             t = item["text_feat"].unsqueeze(0)
+             d = item["demo_global"].unsqueeze(0)
+             q = item["query_patch"].unsqueeze(0)
+-            
++
+             with torch.no_grad():
+                 with torch.amp.autocast(device_type="cpu"):
+                     import inspect
+@@ -104,7 +101,7 @@ def generate_heatmaps():
+                     if "demo_global" in sig.parameters: kwargs["demo_global"] = d
+                     if "query_patch" in sig.parameters: kwargs["query_patch"] = q
+                     if "x" in sig.parameters: kwargs["x"] = item["query_global"].unsqueeze(0)
+-                    
++
+                     out = model(**kwargs)
+                     if isinstance(out, tuple) and len(out) >= 3:
+                         logits, s, z_R = out[:3]
+@@ -112,36 +109,36 @@ def generate_heatmaps():
+                         heat_preds = torch.sigmoid(heat_logits)
+                     else:
+                         continue # No heatmap
+-            
++
+             h_img = heat_preds[0].numpy()
+             h_img = np.clip(h_img, 0, 1)
+-            
++
+             heatmap = (h_img * 255).astype(np.uint8)
+             heatmap = cv2.resize(heatmap, (224, 224), interpolation=cv2.INTER_CUBIC)
+             heatmap_colored = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+-            
++
+             rgb_path = record["query_rgb_path"]
+-            
++
+             if os.path.exists(rgb_path):
+                 img_pil = Image.open(rgb_path).convert("RGB")
+                 img_cropped = rgb_transform(img_pil)
+                 orig = cv2.cvtColor(np.array(img_cropped), cv2.COLOR_RGB2BGR)
+-                
++
+                 overlay = cv2.addWeighted(orig, 0.5, heatmap_colored, 0.5, 0)
+-                
++
+                 label = record["label"]
+                 prefix = str(out_heat / f"{split}_sample_{i}_{task_id}_{label}")
+                 cv2.imwrite(f"{prefix}_heatmap.jpg", heatmap_colored)
+                 cv2.imwrite(f"{prefix}_overlay.jpg", overlay)
+                 cv2.imwrite(f"{prefix}_query.jpg", orig)
+-                
++
+                 mask_path = record.get("causal_mask_path")
+                 if mask_path and os.path.exists(mask_path):
+                     m_pil = Image.open(mask_path).convert("L")
+                     m_cropped = mask_transform(m_pil)
+                     mask = np.array(m_cropped)
+                     cv2.imwrite(f"{prefix}_gt_mask.jpg", mask)
+-                    
++
+                 metadata["samples"].append({
+                     "sample_id": record["sample_id"],
+                     "task": task_id,
+@@ -151,7 +148,7 @@ def generate_heatmaps():
+                 })
+                 if task_id == "task_1": saved_task1 += 1
+                 if task_id == "task_2": saved_task2 += 1
+-                
++
+     with open(out_heat / "extraction_metadata.json", "w") as f:
+         json.dump(metadata, f, indent=2)
+ 
+diff --git a/scripts/precompute_features.py b/scripts/precompute_features.py
+index 31bca23..1efe330 100644
+--- a/scripts/precompute_features.py
++++ b/scripts/precompute_features.py
+@@ -36,34 +36,39 @@ PARAPHRASES = {
+         "Put object1 inside the marked target area.",
+         "Move object1 into the destination region.",
+         "Place the object into the indicated area."
++    ],
++    "generic": [
++        "Perform the demonstrated task."
+     ]
+ }
+ 
++CACHE_SCHEMA_VERSION = "1.1"
++
+ def extract_frames(video_path, num_frames=4):
+     cap = cv2.VideoCapture(video_path)
+     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+     frames = []
+-    
++
+     if total_frames == 0:
+         logging.warning(f"No frames in {video_path}")
+         return frames
+ 
+     # Deterministic temporal sampling
+     indices = [int(i * (total_frames - 1) / max(1, num_frames - 1)) for i in range(num_frames)]
+-    
++
+     for idx in indices:
+         cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+         ret, frame = cap.read()
+         if ret:
+             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+             frames.append(Image.fromarray(frame_rgb))
+-            
++
+     cap.release()
+-    
++
+     # Fill if missing frames
+     while len(frames) < num_frames and len(frames) > 0:
+         frames.append(frames[-1])
+-        
++
+     return frames
+ 
+ def main():
+@@ -76,14 +81,14 @@ def main():
+ 
+     out_dir = Path(args.out_dir)
+     out_dir.mkdir(parents=True, exist_ok=True)
+-    
++
+     device = "cuda" if torch.cuda.is_available() else "cpu"
+-    
++
+     # Text
+     logging.info("Precomputing text features...")
+     text_enc = TextEncoder(device=device)
+     text_features = {}
+-    
++
+     for task_id, phrases in PARAPHRASES.items():
+         # Get embeddings with autocast
+         with torch.amp.autocast(device_type="cuda" if device=="cuda" else "cpu", dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16):
+@@ -92,34 +97,36 @@ def main():
+             text_features[p] = emb
+ 
+     torch.save(text_features, out_dir / "text_features.pt")
+-    
++
+     # Free memory
+     del text_enc
+     if device == "cuda":
+         torch.cuda.empty_cache()
+-        
++
+     # Vision
+     logging.info("Precomputing vision features...")
+     vision_enc = VisionEncoder(device=device)
+-    
++
+     with open(args.index, "r") as f:
+         records = [json.loads(line) for line in f if line.strip()]
+-        
++
+     demos_processed = set()
+-    
++
+     # Demo features
+     logging.info("Processing demonstrations...")
+     for rec in tqdm(records):
+         demo_path = rec.get("demonstration_video_path")
+-        if not demo_path or not os.path.exists(demo_path) or demo_path in demos_processed:
++        if not demo_path or not os.path.exists(demo_path):
++            raise RuntimeError(f"Missing required demo video {demo_path} for sample_id={rec.get('sample_id')} pair_id={rec.get('pair_id')}")
++        if demo_path in demos_processed:
+             continue
+-            
++
+         demo_id = rec["demonstration_id"]
+         out_path = out_dir / f"demo_{demo_id}_features.pt"
+         meta_path = out_dir / f"demo_{demo_id}_features.meta.json"
+-        
++
+         file_hash = compute_sha256(demo_path)
+-        
++
+         if not args.force and out_path.exists() and meta_path.exists():
+             with open(meta_path, "r") as f:
+                 meta = json.load(f)
+@@ -129,29 +136,31 @@ def main():
+ 
+         demo_frames = extract_frames(demo_path, num_frames=args.num_demo_frames)
+         if not demo_frames:
+-            continue
+-            
++            raise RuntimeError(f"Failed to extract frames from {demo_path} for sample_id={rec.get('sample_id')}")
++
+         with torch.amp.autocast(device_type="cuda" if device=="cuda" else "cpu", dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16):
+             global_feat, patch_feat = vision_enc(demo_frames)
+             # Shapes: global_feat (K, D), patch_feat (K, N, D)
+-            
++
+         demo_id = rec["demonstration_id"]
+         feat_dict = {
+             "global": global_feat.to(torch.float32).cpu(),
+             "patch": patch_feat.to(torch.float32).cpu()
+         }
+         torch.save(feat_dict, out_path)
+-        
++
+         meta = {
++            "cache_schema_version": CACHE_SCHEMA_VERSION,
+             "demo_id": demo_id,
+             "source_path": demo_path,
+             "source_sha256": file_hash,
+             "encoder_id": "dinov2_vitb14",
+-            "num_frames": args.num_demo_frames
++            "num_frames": args.num_demo_frames,
++            "sampled_frame_indices": [int(i * (args.num_demo_frames - 1) / max(1, args.num_demo_frames - 1)) for i in range(args.num_demo_frames)]
+         }
+         with open(meta_path, "w") as f:
+             json.dump(meta, f, indent=2)
+-            
++
+         demos_processed.add(demo_path)
+ 
+     # Query features
+@@ -160,13 +169,13 @@ def main():
+         sample_id = rec["sample_id"]
+         rgb_path = rec.get("query_rgb_path")
+         if not rgb_path or not os.path.exists(rgb_path):
+-            continue
+-            
++            raise RuntimeError(f"Missing required query image {rgb_path} for sample_id={sample_id}")
++
+         out_path = out_dir / f"query_{sample_id}_features.pt"
+         meta_path = out_dir / f"query_{sample_id}_features.meta.json"
+-        
++
+         file_hash = compute_sha256(rgb_path)
+-        
++
+         if not args.force and out_path.exists() and meta_path.exists():
+             with open(meta_path, "r") as f:
+                 meta = json.load(f)
+@@ -176,14 +185,15 @@ def main():
+         img = Image.open(rgb_path).convert("RGB")
+         with torch.amp.autocast(device_type="cuda" if device=="cuda" else "cpu", dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16):
+             global_feat, patch_feat = vision_enc([img])
+-            
++
+         feat_dict = {
+             "global": global_feat.squeeze(0).to(torch.float32).cpu(),
+             "patch": patch_feat.squeeze(0).to(torch.float32).cpu()
+         }
+         torch.save(feat_dict, out_path)
+-        
++
+         meta = {
++            "cache_schema_version": CACHE_SCHEMA_VERSION,
+             "sample_id": sample_id,
+             "source_path": rgb_path,
+             "source_sha256": file_hash,
+diff --git a/scripts/validate_gate.py b/scripts/validate_gate.py
+index 03ddf66..dc9181a 100644
+--- a/scripts/validate_gate.py
++++ b/scripts/validate_gate.py
+@@ -17,6 +17,29 @@ for i, pid in enumerate(qo_pairs):
+ for pid, logits in qo_pair_dict.items():
+     if len(logits) == 2:
+         assert np.abs(logits[0] - logits[1]) < 1e-4, f"Query-only logit mismatch! {logits[0]} != {logits[1]}"
++
++import os
++import torch
++# Check feature identicality for same-RGB pairs
++manifest_path = "data/manifests/context_challenge_manifest_gate.jsonl"
++if os.path.exists(manifest_path):
++    scenes = {}
++    with open(manifest_path, "r") as f:
++        for line in f:
++            rec = json.loads(line)
++            pid = rec["pair_id"]
++            if pid not in scenes: scenes[pid] = []
++            scenes[pid].append(rec)
++
++    for pid, pairs in scenes.items():
++        if len(pairs) == 2:
++            t1, t2 = pairs[0], pairs[1]
++            assert t1["query_rgb_sha256"] == t2["query_rgb_sha256"], "RGB SHA must be identical"
++            feat1 = torch.load(f"data/features_context/query_{t1['sample_id']}_features.pt", weights_only=True)
++            feat2 = torch.load(f"data/features_context/query_{t2['sample_id']}_features.pt", weights_only=True)
++            assert torch.allclose(feat1["global"], feat2["global"]), "query_global must be identical"
++            assert torch.allclose(feat1["patch"], feat2["patch"]), "query_patch must be identical"
++
+ print("Query-only gate checks passed!")
+ 
+ with open("learning_outputs/relational_heatmap_gate_seed42/context_challenge_results_raw.json", "r") as f:
+diff --git a/src/environment/observation_rig.py b/src/environment/observation_rig.py
+index bb98b0a..ed72701 100644
+--- a/src/environment/observation_rig.py
++++ b/src/environment/observation_rig.py
+@@ -59,6 +59,19 @@ TASK_2_RIG = ObservationRig(
+     resolution=(640, 480),
+ )
+ 
++CONTEXT_CHALLENGE_RIG = ObservationRig(
++    rig_id="context_challenge_ego",
++    task_id="context",
++    robot_base_pose="home",
++    head_pan=0.25,
++    head_tilt=0.60,
++    camera_name="robot0:ego_camera",
++    camera_mount_transform={"pos": [0.0, 0.0, 0.0], "euler": "3.1415 0 0"},
++    look_at_target=[0.25, 0.1, 0.5],
++    fovy=70.0,
++    resolution=(640, 480),
++)
++
+ 
+ def get_task_observation_rig(task_id: str) -> ObservationRig:
+     """Retrieve default task-aware observation rig for task1 or task2."""
+@@ -128,7 +141,7 @@ def apply_observation_rig(
+     rig: ObservationRig,
+ ) -> Dict[str, Any]:
+     """Apply an ObservationRig to a scene's model and data state.
+-    
++
+     Sets exact head_pan and head_tilt, calls mj_forward, and returns measured camera metadata.
+     """
+     from src.environment.robot_integration import initialize_robot_qpos
+diff --git a/src/generation/context_challenge_generator.py b/src/generation/context_challenge_generator.py
+index f856bf4..f687f62 100644
+--- a/src/generation/context_challenge_generator.py
++++ b/src/generation/context_challenge_generator.py
+@@ -1,10 +1,12 @@
+ import os
+ import json
+ import math
++import random
+ import numpy as np
+ from pathlib import Path
+ import PIL.Image as Image
+ import mujoco
++import hashlib
+ 
+ from src.environment.scene_builder import SceneBuilder
+ from src.environment.renderer import OffscreenRenderer
+@@ -33,7 +35,7 @@ class ContextChallengeGenerator:
+         self.width, self.height = resolution
+         self.scene_builder = SceneBuilder()
+         self.camera_name = "robot0:ego_camera"
+-        
++
+     def _get_body_geom_names(self, model: mujoco.MjModel, body_name: str) -> list:
+         body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name)
+         if body_id == -1:
+@@ -63,59 +65,63 @@ class ContextChallengeGenerator:
+             blocker_type = rng.choice(VALID_BLOCKERS)
+             occupant_type = rng.choice(VALID_OCCUPANTS)
+             bg = rng.choice(VALID_BGS)
+-            
++
+             box_pose = [0.0, -0.2, 0.0]
+             target_pos = [0.0, 0.3, 0.0]
+-    
++
+             ref_model, ref_data = self.scene_builder.create_environment(
+                 settle_steps=0, include_robot=True, robot_base_pose="home",
+                 box_pose=box_pose, target_region_pos=target_pos
+             )
+-    
++
+             objects = [
+-                {"name": "coffee_can", "type": "coffee_can", 
++                {"name": "coffee_can", "type": "coffee_can",
+                  "pos": sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.1, height_above=0.07).tolist()}
+             ]
+-    
++
+             if state in ["A", "C"]: # Lid blocked
+                 lid_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.02).tolist()
+                 objects.append({"name": "blocker", "type": blocker_type, "pos": lid_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+             else: # Lid clear
+                 beside_pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.3, offset_y=-0.15, height_above_table=0.04).tolist()
+                 objects.append({"name": "blocker", "type": blocker_type, "pos": beside_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+-    
++
+             if state in ["B", "C"]: # Target blocked
+                 occ_pos = sample_position_in_target(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.07).tolist()
+                 objects.append({"name": "occupant", "type": occupant_type, "pos": occ_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+             else: # Target clear
+                 out_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.3, offset_y=0.0, height_above=0.07).tolist()
+                 objects.append({"name": "occupant", "type": occupant_type, "pos": out_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+-    
++
+             # Render Scene
+             rig = CONTEXT_CHALLENGE_RIG
+             model, data = self.scene_builder.create_environment(
+                 objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose,
+                 box_pose=box_pose, target_region_pos=target_pos
+             )
+-            
++
+             # Physics validation
+             is_lid_occ, _, _ = check_lid_occupancy(model, data, blocker_names=["blocker"])
+             is_targ_occ, _, _ = check_target_occupancy(model, data, candidate_objects=["occupant"])
+-            
++
+             valid = True
+             if state == "A" and (not is_lid_occ or is_targ_occ): valid = False
+             if state == "B" and (is_lid_occ or not is_targ_occ): valid = False
+             if state == "C" and (not is_lid_occ or not is_targ_occ): valid = False
+             if state == "D" and (is_lid_occ or is_targ_occ): valid = False
+-            
++
+             if valid:
+                 break
+-            
++
+         bg_spec = sample_background_spec(bg, rng, n_lights=model.nlight)
+         apply_background_spec(model, bg_spec)
+         cam_meta = apply_observation_rig(model, data, rig)
+         mujoco.mj_forward(model, data)
+ 
++        # Save actual occupancy for provenance
++        actual_lid_occ = bool(is_lid_occ)
++        actual_targ_occ = bool(is_targ_occ)
++
+         renderer = OffscreenRenderer(model, width=self.width, height=self.height, camera_name=self.camera_name)
+         rgb = renderer.render_rgb(data)
+ 
+@@ -132,7 +138,7 @@ class ContextChallengeGenerator:
+             renderer.close()
+             return self.generate_scene(scene_id, state, seed=seed+1)
+         causal_mask_1 = np.maximum(cand_mask_1, targ_mask_1) if state in ["A", "C"] else np.zeros_like(cand_mask_1)
+-        
++
+         # Validate task 1 mask
+         if state in ["A", "C"] and causal_mask_1.sum() == 0:
+             renderer.close()
+@@ -150,7 +156,7 @@ class ContextChallengeGenerator:
+             renderer.close()
+             return self.generate_scene(scene_id, state, seed=seed+1)
+         causal_mask_2 = np.maximum(cand_mask_2, targ_mask_2) if state in ["B", "C"] else np.zeros_like(cand_mask_2)
+-        
++
+         # Validate task 2 mask
+         if state in ["B", "C"] and causal_mask_2.sum() == 0:
+             renderer.close()
+@@ -161,11 +167,14 @@ class ContextChallengeGenerator:
+         rgb_path = scene_dir / "rgb.png"
+         mask1_path = scene_dir / "task1_causal_mask.png"
+         mask2_path = scene_dir / "task2_causal_mask.png"
+-        
++
+         Image.fromarray(rgb).save(rgb_path)
+         Image.fromarray(causal_mask_1).save(mask1_path)
+         Image.fromarray(causal_mask_2).save(mask2_path)
+-        
++        # Calculate SHA256 for RGB
++        with open(rgb_path, "rb") as f:
++            rgb_sha256 = hashlib.sha256(f.read()).hexdigest()
++
+         # Read pilot demos from index
+         t1_demos = []
+         t2_demos = []
+@@ -174,14 +183,27 @@ class ContextChallengeGenerator:
+             with open(index_path) as f:
+                 for line in f:
+                     rec = json.loads(line)
+-                    if rec["task_id"] == "task_1": t1_demos.append((rec["demonstration_id"], rec["demonstration_video_path"]))
+-                    if rec["task_id"] == "task_2": t2_demos.append((rec["demonstration_id"], rec["demonstration_video_path"]))
+-        
+-        t1_demo = rng.choice(t1_demos) if t1_demos else ("demo_t1_open_box", "data/pilot_demos/demo_task1_001/rgb.mp4")
+-        t2_demo = rng.choice(t2_demos) if t2_demos else ("demo_t2_place_object", "data/pilot_demos/demo_task2_001/rgb.mp4")
++                    # Use only real valid demos that exist on disk
++                    demo_path = rec["demonstration_video_path"]
++                    if os.path.exists(demo_path):
++                        if rec["task_id"] == "task_1" and rec["demonstration_id"] not in [d[0] for d in t1_demos]:
++                            t1_demos.append((rec["demonstration_id"], demo_path))
++                        if rec["task_id"] == "task_2" and rec["demonstration_id"] not in [d[0] for d in t2_demos]:
++                            t2_demos.append((rec["demonstration_id"], demo_path))
++
++        # We need EXACTLY 3 valid demos for each task according to prompt requirements
++        # Sort to ensure determinism
++        t1_demos = sorted(t1_demos, key=lambda x: x[0])[:3]
++        t2_demos = sorted(t2_demos, key=lambda x: x[0])[:3]
++
++        if len(t1_demos) < 3 or len(t2_demos) < 3:
++            raise RuntimeError(f"Missing required real pilot demos. Found {len(t1_demos)} Task 1 and {len(t2_demos)} Task 2 demos.")
++
++        t1_demo = t1_demos[rng.integers(0, len(t1_demos))]
++        t2_demo = t2_demos[rng.integers(0, len(t2_demos))]
+ 
+         records = []
+-        
++
+         # Task 1 Record
+         records.append({
+             "pair_id": f"context_{scene_id}",
+@@ -191,10 +213,14 @@ class ContextChallengeGenerator:
+             "label": "STOP" if state in ["A", "C"] else "PROCEED",
+             "split": "context_challenge",
+             "query_rgb_path": str(rgb_path),
++            "query_rgb_sha256": rgb_sha256,
+             "causal_mask_path": str(mask1_path),
+             "demonstration_id": t1_demo[0],
+             "demonstration_video_path": t1_demo[1],
+-            "state": state
++            "state": state,
++            "measured_lid_occupancy": actual_lid_occ,
++            "measured_target_occupancy": actual_targ_occ,
++            "camera_rig_id": rig.rig_id
+         })
+ 
+         # Task 2 Record
+@@ -206,10 +232,14 @@ class ContextChallengeGenerator:
+             "label": "STOP" if state in ["B", "C"] else "PROCEED",
+             "split": "context_challenge",
+             "query_rgb_path": str(rgb_path),
++            "query_rgb_sha256": rgb_sha256,
+             "causal_mask_path": str(mask2_path),
+             "demonstration_id": t2_demo[0],
+             "demonstration_video_path": t2_demo[1],
+-            "state": state
++            "state": state,
++            "measured_lid_occupancy": actual_lid_occ,
++            "measured_target_occupancy": actual_targ_occ,
++            "camera_rig_id": rig.rig_id
+         })
+ 
+         return records
+@@ -218,9 +248,9 @@ if __name__ == "__main__":
+     generator = ContextChallengeGenerator()
+     manifest_path = Path("data/manifests/context_challenge_manifest.jsonl")
+     manifest_path.parent.mkdir(parents=True, exist_ok=True)
+-    
++
+     all_records = []
+-    
++
+     idx = 0
+     for state in ["A", "B", "C", "D"]:
+         for i in range(10): # 10 physical scenes per state
+@@ -230,7 +260,7 @@ if __name__ == "__main__":
+             all_records.extend(records)
+             idx += 1
+             print(f"Generated {scene_id}")
+-            
++
+     with open(manifest_path, "w") as f:
+         for r in all_records:
+             f.write(json.dumps(r) + "\n")
+diff --git a/src/learning/dataset.py b/src/learning/dataset.py
+index 18b38ac..d7e94dd 100644
+--- a/src/learning/dataset.py
++++ b/src/learning/dataset.py
+@@ -13,102 +13,109 @@ class LearningDataset(Dataset):
+         self.return_masks = return_masks
+         self.seed = seed
+         self.ablation_mode = ablation_mode
+-        
++
+         with open(index_path, "r") as f:
+             all_records = [json.loads(line) for line in f if line.strip()]
+-            
++
+         # Handle splitting for id
+         if split in ["id_train", "id_val"]:
+             # Get all unique pairs in "id"
+             id_records = [r for r in all_records if r["split"] == "id"]
+             pair_ids = sorted(list(set(r["pair_id"] for r in id_records)))
+-            
++
+             # Deterministic split independent of model seed
+             rng = random.Random(split_seed)
+             rng.shuffle(pair_ids)
+             split_idx = int(len(pair_ids) * train_ratio)
+-            
++
+             train_pairs = set(pair_ids[:split_idx])
+             val_pairs = set(pair_ids[split_idx:])
+-            
++
+             if split == "id_train":
+                 self.records = [r for r in id_records if r["pair_id"] in train_pairs]
+             else:
+                 self.records = [r for r in id_records if r["pair_id"] in val_pairs]
++        elif split == "context_challenge":
++            self.records = [r for r in all_records if r.get("split") == "context_challenge"]
+         elif split:
+             self.records = [r for r in all_records if r["split"] == split]
+         else:
+             self.records = all_records
+-            
++
+         text_features_path = self.features_dir / "text_features.pt"
+         if not text_features_path.exists():
+             raise RuntimeError(f"Missing text features at {text_features_path}")
+         self.text_features = torch.load(text_features_path, weights_only=True)
+-        
++
+         self.demo_pool = {"task_1": [], "task_2": []}
+         for r in all_records:
+             if r["task_id"] in self.demo_pool and r["demonstration_id"] not in self.demo_pool[r["task_id"]]:
+                 self.demo_pool[r["task_id"]].append(r["demonstration_id"])
+-        
++
+         self.mask_transform = T.Compose([
+             T.Resize(224, interpolation=T.InterpolationMode.NEAREST),
+             T.CenterCrop(224),
+             T.ToTensor()
+         ])
+-        
++
+     def __len__(self):
+         return len(self.records)
+ 
+     def __getitem__(self, idx):
+         rec = self.records[idx]
+-        
++
+         label = 1 if rec["label"].upper() == "STOP" else 0
+         sample_id = rec["sample_id"]
+         pair_id = rec["pair_id"]
+         task_id = rec["task_id"]
+         instruction = rec["instruction"]
+-        
++
+         if instruction not in self.text_features:
+             raise RuntimeError(f"Missing text feature for instruction: '{instruction}' (sample_id={sample_id})")
+         text_feat = self.text_features[instruction]
+-        
++
+         if self.ablation_mode == "zero_text":
+             text_feat = torch.zeros_like(text_feat)
+         elif self.ablation_mode == "wrong_instruction":
+             wrong_inst = "Place object1 in the target region." if task_id == "task_1" else "Open the box."
++            if wrong_inst not in self.text_features:
++                raise RuntimeError(f"Missing wrong instruction text feature: '{wrong_inst}'")
+             text_feat = self.text_features[wrong_inst]
+         elif self.ablation_mode == "heldout_paraphrase":
+             para = "Uncover the box by opening its lid." if task_id == "task_1" else "Place the object into the indicated area."
+-            if para in self.text_features:
+-                text_feat = self.text_features[para]
+-        
++            if para not in self.text_features:
++                raise RuntimeError(f"Missing held-out paraphrase text feature: '{para}'")
++            text_feat = self.text_features[para]
++
+         query_feat_path = self.features_dir / f"query_{sample_id}_features.pt"
+         if not query_feat_path.exists():
+             raise RuntimeError(f"Missing query features at {query_feat_path} (sample_id={sample_id}, pair_id={pair_id})")
+-            
++
+         q_dict = torch.load(query_feat_path, weights_only=True)
+         q_global = q_dict["global"]
+         q_patch = q_dict["patch"]
+-            
++
+         demo_id = rec["demonstration_id"]
+         if self.ablation_mode == "wrong_demo":
+             other_task = "task_2" if task_id == "task_1" else "task_1"
+             if self.demo_pool[other_task]:
+                 # Deterministically pick first demo of opposite task
+                 demo_id = self.demo_pool[other_task][0]
++            else:
++                raise RuntimeError(f"No demo found for opposite task '{other_task}'")
+ 
+         demo_feat_path = self.features_dir / f"demo_{demo_id}_features.pt"
+         if not demo_feat_path.exists():
+             raise RuntimeError(f"Missing demo features at {demo_feat_path} (sample_id={sample_id}, pair_id={pair_id})")
+-            
++
+         d_dict = torch.load(demo_feat_path, weights_only=True)
+         d_global = d_dict["global"]
+         d_patch = d_dict["patch"]
+-        
++
+         if self.ablation_mode == "zero_demo":
+             d_global = torch.zeros_like(d_global)
+             d_patch = torch.zeros_like(d_patch)
+-            
++
+         mask = torch.zeros(224, 224)
+         if self.return_masks:
+             if label == 1 and rec.get("causal_mask_path"):
+@@ -120,7 +127,7 @@ class LearningDataset(Dataset):
+                     mask = (mask_tensor > 0.5).float()
+                 else:
+                     raise RuntimeError(f"Missing mask at {mask_path} for STOP sample (sample_id={sample_id})")
+-        
++
+         return {
+             "sample_id": sample_id,
+             "pair_id": pair_id,
+@@ -140,21 +147,24 @@ class PairBatchSampler(Sampler):
+         self.dataset = dataset
+         self.batch_size = batch_size - (batch_size % 2)
+         self.seed = seed
+-        
++
+         self.pair_to_indices = {}
+         for idx, rec in enumerate(dataset.records):
+             pid = rec["pair_id"]
+             if pid not in self.pair_to_indices:
+                 self.pair_to_indices[pid] = []
+             self.pair_to_indices[pid].append(idx)
+-            
++
+         self.pairs = [v for v in self.pair_to_indices.values() if len(v) == 2]
+ 
+     def __iter__(self):
+-        rng = random.Random(self.seed)
++        g = torch.Generator(device='cpu')
++        g.manual_seed(self.seed)
++
+         pairs_copy = list(self.pairs)
+-        rng.shuffle(pairs_copy)
+-        
++        indices = torch.randperm(len(pairs_copy), generator=g).tolist()
++        pairs_copy = [pairs_copy[i] for i in indices]
++
+         batch = []
+         for pair in pairs_copy:
+             batch.extend(pair)
+diff --git a/src/learning/trainer.py b/src/learning/trainer.py
+index 7b6b2ba..da5b186 100644
+--- a/src/learning/trainer.py
++++ b/src/learning/trainer.py
+@@ -11,7 +11,7 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
+     total_loss = 0
+     all_preds, all_targets, all_scores, all_pair_ids, all_task_ids = [], [], [], [], []
+     all_heat_preds, all_heat_targets = [], []
+-    
++
+     for i, batch in enumerate(dataloader):
+         text_feat = batch["text_feat"].to(device)
+         query_global = batch["query_global"].to(device)
+@@ -22,7 +22,7 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
+         masks = batch["mask"].to(device)
+         pair_ids = batch["pair_id"]
+         task_ids = batch["task_id"]
+-        
++
+         with torch.cuda.amp.autocast(enabled=scaler is not None):
+             if hasattr(model, "forward"):
+                 # Based on model type
+@@ -34,11 +34,11 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
+                 if "query_global" in sig.parameters: kwargs["query_global"] = query_global
+                 if "query_patch" in sig.parameters: kwargs["query_patch"] = query_patch
+                 if "x" in sig.parameters: kwargs["x"] = query_global # for query-only
+-                
++
+                 out = model(**kwargs)
+             else:
+                 out = model(query_global)
+-                
++
+             logits, s, Z_R = None, None, None
+             if isinstance(out, tuple):
+                 if len(out) == 3:
+@@ -47,15 +47,15 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
+                     logits, s = out
+             else:
+                 logits = out
+-                
++
+             # If heatmap model is attached
+             heat_logits = None
+             if hasattr(model, "heatmap_decoder") and Z_R is not None:
+                 heat_logits = model.heatmap_decoder(Z_R)
+-                
++
+             loss, loss_dict = criterion(logits, targets, s=s, pair_ids=pair_ids, heat_logits=heat_logits, heat_targets=masks if heat_logits is not None else None)
+             loss = loss / accumulation_steps
+-            
++
+         if scaler:
+             scaler.scale(loss).backward()
+             if (i + 1) % accumulation_steps == 0:
+@@ -70,9 +70,9 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
+                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                 optimizer.step()
+                 optimizer.zero_grad()
+-                
++
+         total_loss += loss_dict["loss"] * accumulation_steps
+-        
++
+         if logits is not None:
+             all_preds.extend(torch.sigmoid(logits.squeeze(-1)).detach().cpu().numpy())
+             all_targets.extend(targets.cpu().numpy())
+@@ -83,10 +83,10 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
+             if heat_logits is not None:
+                 all_heat_preds.extend(torch.sigmoid(heat_logits).detach().cpu().numpy())
+                 all_heat_targets.extend(masks.cpu().numpy())
+-            
++
+     metrics = compute_metrics(
+-        all_preds, all_targets, 
+-        all_scores if all_scores else None, 
++        all_preds, all_targets,
++        all_scores if all_scores else None,
+         all_pair_ids if all_pair_ids else None,
+         all_heat_preds if all_heat_preds else None,
+         all_heat_targets if all_heat_targets else None,
+@@ -99,8 +99,8 @@ def validate_epoch(model, dataloader, criterion, device):
+     model.eval()
+     total_loss = 0
+     all_preds, all_targets, all_scores, all_pair_ids, all_task_ids, all_logits = [], [], [], [], [], []
+-    all_heat_preds, all_heat_targets = [], []
+-    
++    all_heat_preds, all_heat_targets, all_latents = [], [], []
++
+     with torch.no_grad():
+         for batch in dataloader:
+             text_feat = batch["text_feat"].to(device)
+@@ -111,7 +111,7 @@ def validate_epoch(model, dataloader, criterion, device):
+             masks = batch["mask"].to(device)
+             pair_ids = batch["pair_id"]
+             task_ids = batch["task_id"]
+-            
++
+             with torch.cuda.amp.autocast():
+                 import inspect
+                 sig = inspect.signature(model.forward)
+@@ -121,9 +121,9 @@ def validate_epoch(model, dataloader, criterion, device):
+                 if "query_global" in sig.parameters: kwargs["query_global"] = query_global
+                 if "query_patch" in sig.parameters: kwargs["query_patch"] = query_patch
+                 if "x" in sig.parameters: kwargs["x"] = query_global
+-                
++
+                 out = model(**kwargs)
+-                
++
+                 logits, s, Z_R = None, None, None
+                 if isinstance(out, tuple):
+                     if len(out) == 3:
+@@ -132,15 +132,15 @@ def validate_epoch(model, dataloader, criterion, device):
+                         logits, s = out
+                 else:
+                     logits = out
+-                    
++
+                 heat_logits = None
+                 if hasattr(model, "heatmap_decoder") and Z_R is not None:
+                     heat_logits = model.heatmap_decoder(Z_R)
+-                    
++
+                 loss, loss_dict = criterion(logits, targets, s=s, pair_ids=pair_ids, heat_logits=heat_logits, heat_targets=masks if heat_logits is not None else None)
+-                
++
+             total_loss += loss_dict["loss"]
+-            
++
+             if logits is not None:
+                 all_preds.extend(torch.sigmoid(logits.squeeze(-1)).cpu().numpy())
+                 all_logits.extend(logits.squeeze(-1).cpu().numpy())
+@@ -152,10 +152,13 @@ def validate_epoch(model, dataloader, criterion, device):
+                 if heat_logits is not None:
+                     all_heat_preds.extend(torch.sigmoid(heat_logits).cpu().numpy())
+                     all_heat_targets.extend(masks.cpu().numpy())
+-                
++                if Z_R is not None:
++                    # Flatten spatial dims to get mean feature or just store flat
++                    all_latents.extend(Z_R.mean(dim=(2,3)).cpu().numpy() if Z_R.dim() == 4 else Z_R.cpu().numpy())
++
+     metrics = compute_metrics(
+-        all_preds, all_targets, 
+-        all_scores if all_scores else None, 
++        all_preds, all_targets,
++        all_scores if all_scores else None,
+         all_pair_ids if all_pair_ids else None,
+         all_heat_preds if all_heat_preds else None,
+         all_heat_targets if all_heat_targets else None,
+@@ -167,4 +170,6 @@ def validate_epoch(model, dataloader, criterion, device):
+     metrics["_raw_targets"] = all_targets
+     metrics["_raw_scores"] = all_scores
+     metrics["_raw_pair_ids"] = all_pair_ids
++    if all_latents:
++        metrics["_raw_latents"] = all_latents
+     return metrics
+diff --git a/tests/test_context_challenge.py b/tests/test_context_challenge.py
+index 76e0abb..92f29c3 100644
+--- a/tests/test_context_challenge.py
++++ b/tests/test_context_challenge.py
+@@ -14,12 +14,12 @@ def test_context_challenge_rgb_invariant():
+     manifest_path = Path("data/manifests/context_challenge_manifest.jsonl")
+     if not manifest_path.exists():
+         pytest.skip("Context challenge dataset not generated yet.")
+-        
++
+     records = []
+     with open(manifest_path, "r") as f:
+         for line in f:
+             records.append(json.loads(line))
+-            
++
+     # Pair records by scene
+     scenes = {}
+     for r in records:
+@@ -27,19 +27,20 @@ def test_context_challenge_rgb_invariant():
+         if sid not in scenes:
+             scenes[sid] = []
+         scenes[sid].append(r)
+-        
++
+     for sid, pairs in scenes.items():
+         assert len(pairs) == 2, f"Scene {sid} should have exactly 2 records"
+-        t1, t2 = pairs
+-        
++        t1 = pairs[0] if pairs[0]["task_id"] == "task_1" else pairs[1]
++        t2 = pairs[1] if pairs[1]["task_id"] == "task_2" else pairs[0]
++
+         assert t1["query_rgb_path"] == t2["query_rgb_path"], f"RGB paths must exactly match for {sid}"
+         hash1 = compute_sha256(t1["query_rgb_path"])
+         hash2 = compute_sha256(t2["query_rgb_path"])
+         assert hash1 == hash2, "RGB hash must be exactly identical"
+-        
++
+         assert t1["state"] == t2["state"], "States must match"
+         state = t1["state"]
+-        
++
+         if state == "A":
+             assert t1["label"] == "STOP"
+             assert t2["label"] == "PROCEED"
+@@ -52,3 +53,58 @@ def test_context_challenge_rgb_invariant():
+         elif state == "D":
+             assert t1["label"] == "PROCEED"
+             assert t2["label"] == "PROCEED"
++
++def test_context_challenge_counts_and_demos():
++    manifest_path = Path("data/manifests/context_challenge_manifest.jsonl")
++    if not manifest_path.exists():
++        pytest.skip("Context challenge dataset not generated yet.")
++
++    records = []
++    with open(manifest_path, "r") as f:
++        for line in f:
++            records.append(json.loads(line))
++
++    assert len(records) == 80, f"Expected exactly 80 context records, got {len(records)}"
++
++    t1_demos = set(r["demonstration_id"] for r in records if r["task_id"] == "task_1")
++    t2_demos = set(r["demonstration_id"] for r in records if r["task_id"] == "task_2")
++
++    assert len(t1_demos) == 3, f"Expected exactly 3 Task 1 demos, got {len(t1_demos)}"
++    assert len(t2_demos) == 3, f"Expected exactly 3 Task 2 demos, got {len(t2_demos)}"
++
++    states_count = {"A": 0, "B": 0, "C": 0, "D": 0}
++    for r in records:
++        states_count[r["state"]] += 1
++
++    # Each state should have exactly 10 scenes * 2 tasks = 20 records
++    assert states_count["A"] == 20
++    assert states_count["B"] == 20
++    assert states_count["C"] == 20
++    assert states_count["D"] == 20
++
++def test_causal_mask_and_occupancy():
++    manifest_path = Path("data/manifests/context_challenge_manifest.jsonl")
++    if not manifest_path.exists():
++        pytest.skip("Context challenge dataset not generated yet.")
++
++    with open(manifest_path, "r") as f:
++        records = [json.loads(line) for line in f]
++
++    for r in records:
++        assert "measured_lid_occupancy" in r
++        assert "measured_target_occupancy" in r
++        assert "causal_mask_path" in r
++
++        state = r["state"]
++        if state == "A":
++            assert r["measured_lid_occupancy"] is True
++            assert r["measured_target_occupancy"] is False
++        elif state == "B":
++            assert r["measured_lid_occupancy"] is False
++            assert r["measured_target_occupancy"] is True
++        elif state == "C":
++            assert r["measured_lid_occupancy"] is True
++            assert r["measured_target_occupancy"] is True
++        elif state == "D":
++            assert r["measured_lid_occupancy"] is False
++            assert r["measured_target_occupancy"] is False
