@@ -8,14 +8,19 @@ import mujoco
 
 from src.environment.scene_builder import SceneBuilder
 from src.environment.renderer import OffscreenRenderer
-from src.environment.observation_rig import TASK_1_RIG, apply_observation_rig
-from src.generation.background_randomization import sample_background_spec, apply_background_spec
+from src.validation.occupancy_checks import check_lid_occupancy, check_target_occupancy
+from src.environment.observation_rig import CONTEXT_CHALLENGE_RIG, apply_observation_rig
+from src.generation.background_randomization import sample_background_spec, apply_background_spec, SPLIT_BACKGROUNDS
 from src.environment.scene_utils import (
     sample_position_on_lid,
     sample_position_in_target,
     sample_position_beside_box,
     sample_position_outside_target
 )
+
+VALID_BLOCKERS = ["tea_box", "coffee_can", "mug", "sugar_box"]
+VALID_OCCUPANTS = ["sugar_box", "mug", "bowl", "cup"]
+VALID_BGS = [SPLIT_BACKGROUNDS["id"]]
 
 def _yaw_quat(yaw: float) -> list:
     half = yaw / 2.0
@@ -53,42 +58,60 @@ class ContextChallengeGenerator:
         scene_dir.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(seed)
 
-        box_pose = [0.0, -0.2, 0.0]
-        target_pos = [0.0, 0.3, 0.0]
-
-        # Initial pass to get frame data
-        ref_model, ref_data = self.scene_builder.create_environment(
-            settle_steps=0, include_robot=True, robot_base_pose="home",
-            box_pose=box_pose, target_region_pos=target_pos
-        )
-
-        objects = [
-            {"name": "coffee_can", "type": "coffee_can", 
-             "pos": sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.1, height_above=0.07).tolist()}
-        ]
-
-        if state in ["A", "C"]: # Lid blocked
-            lid_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.02).tolist()
-            objects.append({"name": "blocker", "type": "tea_box", "pos": lid_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
-        else: # Lid clear
-            beside_pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.3, offset_y=-0.15, height_above_table=0.04).tolist()
-            objects.append({"name": "blocker", "type": "tea_box", "pos": beside_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
-
-        if state in ["B", "C"]: # Target blocked
-            occ_pos = sample_position_in_target(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.07).tolist()
-            objects.append({"name": "occupant", "type": "sugar_box", "pos": occ_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
-        else: # Target clear
-            out_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.3, offset_y=0.0, height_above=0.07).tolist()
-            objects.append({"name": "occupant", "type": "sugar_box", "pos": out_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
-
-        # Render Scene
-        rig = TASK_1_RIG
-        model, data = self.scene_builder.create_environment(
-            objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose,
-            box_pose=box_pose, target_region_pos=target_pos
-        )
-        
-        bg_spec = sample_background_spec("bg_neutral_wood", rng, n_lights=model.nlight)
+        while True:
+            # Randomize assets
+            blocker_type = rng.choice(VALID_BLOCKERS)
+            occupant_type = rng.choice(VALID_OCCUPANTS)
+            bg = rng.choice(VALID_BGS)
+            
+            box_pose = [0.0, -0.2, 0.0]
+            target_pos = [0.0, 0.3, 0.0]
+    
+            ref_model, ref_data = self.scene_builder.create_environment(
+                settle_steps=0, include_robot=True, robot_base_pose="home",
+                box_pose=box_pose, target_region_pos=target_pos
+            )
+    
+            objects = [
+                {"name": "coffee_can", "type": "coffee_can", 
+                 "pos": sample_position_outside_target(ref_model, ref_data, rng, offset_x=-0.25, offset_y=0.1, height_above=0.07).tolist()}
+            ]
+    
+            if state in ["A", "C"]: # Lid blocked
+                lid_pos = sample_position_on_lid(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.02).tolist()
+                objects.append({"name": "blocker", "type": blocker_type, "pos": lid_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+            else: # Lid clear
+                beside_pos = sample_position_beside_box(ref_model, ref_data, rng, offset_x=-0.3, offset_y=-0.15, height_above_table=0.04).tolist()
+                objects.append({"name": "blocker", "type": blocker_type, "pos": beside_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+    
+            if state in ["B", "C"]: # Target blocked
+                occ_pos = sample_position_in_target(ref_model, ref_data, rng, x_frac=0.0, y_frac=0.0, height_above=0.07).tolist()
+                objects.append({"name": "occupant", "type": occupant_type, "pos": occ_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+            else: # Target clear
+                out_pos = sample_position_outside_target(ref_model, ref_data, rng, offset_x=0.3, offset_y=0.0, height_above=0.07).tolist()
+                objects.append({"name": "occupant", "type": occupant_type, "pos": out_pos, "quat": _yaw_quat(float(rng.uniform(-math.pi, math.pi)))})
+    
+            # Render Scene
+            rig = CONTEXT_CHALLENGE_RIG
+            model, data = self.scene_builder.create_environment(
+                objects, settle_steps=300, include_robot=True, robot_base_pose=rig.robot_base_pose,
+                box_pose=box_pose, target_region_pos=target_pos
+            )
+            
+            # Physics validation
+            is_lid_occ, _, _ = check_lid_occupancy(model, data, blocker_names=["blocker"])
+            is_targ_occ, _, _ = check_target_occupancy(model, data, candidate_objects=["occupant"])
+            
+            valid = True
+            if state == "A" and (not is_lid_occ or is_targ_occ): valid = False
+            if state == "B" and (is_lid_occ or not is_targ_occ): valid = False
+            if state == "C" and (not is_lid_occ or not is_targ_occ): valid = False
+            if state == "D" and (is_lid_occ or is_targ_occ): valid = False
+            
+            if valid:
+                break
+            
+        bg_spec = sample_background_spec(bg, rng, n_lights=model.nlight)
         apply_background_spec(model, bg_spec)
         cam_meta = apply_observation_rig(model, data, rig)
         mujoco.mj_forward(model, data)
@@ -100,13 +123,38 @@ class ContextChallengeGenerator:
         cand_geoms_1 = self._get_body_geom_names(model, "blocker")
         cand_mask_1 = renderer.render_culprit_mask(data, cand_geoms_1)
         targ_mask_1 = renderer.render_region_mask(data, ["B1_lid_panel"])
+
+        # Visibility validation
+        if targ_mask_1.sum() < 500:
+            renderer.close()
+            return self.generate_scene(scene_id, state, seed=seed+1)
+        if state in ["A", "C"] and cand_mask_1.sum() < 50:
+            renderer.close()
+            return self.generate_scene(scene_id, state, seed=seed+1)
         causal_mask_1 = np.maximum(cand_mask_1, targ_mask_1) if state in ["A", "C"] else np.zeros_like(cand_mask_1)
+        
+        # Validate task 1 mask
+        if state in ["A", "C"] and causal_mask_1.sum() == 0:
+            renderer.close()
+            return self.generate_scene(scene_id, state, seed=seed+1)
 
         # Generate Task 2 Masks
         cand_geoms_2 = self._get_body_geom_names(model, "occupant")
         cand_mask_2 = renderer.render_culprit_mask(data, cand_geoms_2)
         targ_mask_2 = renderer.render_region_mask(data, ["target_region_geom"])
+
+        if targ_mask_2.sum() < 500:
+            renderer.close()
+            return self.generate_scene(scene_id, state, seed=seed+1)
+        if state in ["B", "C"] and cand_mask_2.sum() < 50:
+            renderer.close()
+            return self.generate_scene(scene_id, state, seed=seed+1)
         causal_mask_2 = np.maximum(cand_mask_2, targ_mask_2) if state in ["B", "C"] else np.zeros_like(cand_mask_2)
+        
+        # Validate task 2 mask
+        if state in ["B", "C"] and causal_mask_2.sum() == 0:
+            renderer.close()
+            return self.generate_scene(scene_id, state, seed=seed+1)
 
         renderer.close()
 
@@ -117,6 +165,20 @@ class ContextChallengeGenerator:
         Image.fromarray(rgb).save(rgb_path)
         Image.fromarray(causal_mask_1).save(mask1_path)
         Image.fromarray(causal_mask_2).save(mask2_path)
+        
+        # Read pilot demos from index
+        t1_demos = []
+        t2_demos = []
+        index_path = Path("learning_data/index.jsonl")
+        if index_path.exists():
+            with open(index_path) as f:
+                for line in f:
+                    rec = json.loads(line)
+                    if rec["task_id"] == "task_1": t1_demos.append((rec["demonstration_id"], rec["demonstration_video_path"]))
+                    if rec["task_id"] == "task_2": t2_demos.append((rec["demonstration_id"], rec["demonstration_video_path"]))
+        
+        t1_demo = rng.choice(t1_demos) if t1_demos else ("demo_t1_open_box", "data/pilot_demos/demo_task1_001/rgb.mp4")
+        t2_demo = rng.choice(t2_demos) if t2_demos else ("demo_t2_place_object", "data/pilot_demos/demo_task2_001/rgb.mp4")
 
         records = []
         
@@ -127,11 +189,11 @@ class ContextChallengeGenerator:
             "task_id": "task_1",
             "instruction": "Open the box.",
             "label": "STOP" if state in ["A", "C"] else "PROCEED",
-            "split": "id_val",
+            "split": "context_challenge",
             "query_rgb_path": str(rgb_path),
             "causal_mask_path": str(mask1_path),
-            "demonstration_id": "demo_t1_open_box",
-            "demonstration_video_path": "data/demonstrations/demo_t1_open_box.mp4",
+            "demonstration_id": t1_demo[0],
+            "demonstration_video_path": t1_demo[1],
             "state": state
         })
 
@@ -142,11 +204,11 @@ class ContextChallengeGenerator:
             "task_id": "task_2",
             "instruction": "Place object1 in the target region.",
             "label": "STOP" if state in ["B", "C"] else "PROCEED",
-            "split": "id_val",
+            "split": "context_challenge",
             "query_rgb_path": str(rgb_path),
             "causal_mask_path": str(mask2_path),
-            "demonstration_id": "demo_t2_place_object",
-            "demonstration_video_path": "data/demonstrations/demo_t2_place_object.mp4",
+            "demonstration_id": t2_demo[0],
+            "demonstration_video_path": t2_demo[1],
             "state": state
         })
 

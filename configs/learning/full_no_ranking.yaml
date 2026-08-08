@@ -13,3 +13,4 @@ lambda_heat: 0.0
 heatmap: false
 mixed_precision: true
 output_path: "learning_outputs/full_no_ranking"
+split_seed: 42

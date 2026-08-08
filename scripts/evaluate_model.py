@@ -35,22 +35,22 @@ def compare_metrics(baseline, perturbed):
         "latent_pla": perturbed.get("latent_pla", 0),
     }
     
-        b_logits = np.array(baseline.get("_raw_logits", []))
-        p_logits = np.array(perturbed.get("_raw_logits", []))
+    b_logits = np.array(baseline.get("_raw_logits", []))
+    p_logits = np.array(perturbed.get("_raw_logits", []))
+    
+    b_class = (b_preds > 0.5).astype(int)
+    p_class = (p_preds > 0.5).astype(int)
+    flips = (b_class != p_class).mean()
+    
+    if len(b_logits) > 0 and len(b_logits) == len(p_logits):
+        delta_logit = np.abs(p_logits - b_logits).mean()
+        res["mean_delta_logit"] = float(delta_logit)
         
-        b_class = (b_preds > 0.5).astype(int)
-        p_class = (p_preds > 0.5).astype(int)
-        flips = (b_class != p_class).mean()
-        
-        if len(b_logits) > 0 and len(b_logits) == len(p_logits):
-            delta_logit = np.abs(p_logits - b_logits).mean()
-            res["mean_delta_logit"] = float(delta_logit)
-            
-        delta_prob = np.abs(p_preds - b_preds).mean()
-        res["flip_rate"] = float(flips)
-        res["mean_delta_prob"] = float(delta_prob)
-        res["mean_confidence"] = float(np.abs(p_preds - 0.5).mean() * 2)
-        
+    delta_prob = np.abs(p_preds - b_preds).mean()
+    res["flip_rate"] = float(flips)
+    res["mean_delta_prob"] = float(delta_prob)
+    res["mean_confidence"] = float(np.abs(p_preds - 0.5).mean() * 2)
+    
     if len(b_scores) > 0 and len(b_scores) == len(p_scores):
         delta_compat = np.abs(p_scores - b_scores).mean()
         res["mean_compatibility"] = float(p_scores.mean())
@@ -70,13 +70,15 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = get_model(config).to(device)
     
+    # Use best.ckpt first, fallback to last.ckpt
     ckpt_path = out_dir / "best.ckpt"
     if not ckpt_path.exists():
         ckpt_path = out_dir / "last.ckpt"
         if not ckpt_path.exists():
-            print(f"Skipping {out_dir} - no checkpoints.")
+            raise FileNotFoundError(f"No checkpoint found in {out_dir}")
             return
             
+    print(f"Loading checkpoint: {ckpt_path}")
     model.load_state_dict(torch.load(ckpt_path, map_location=device, weights_only=True))
     model.eval()
     
@@ -106,6 +108,7 @@ def main():
             m_clean = {k: v for k, v in m.items() if not k.startswith("_raw")}
             if split != "id_train":
                 all_metrics[split] = m_clean
+                
             if split == "id_val":
                 baseline_id_val = m
             
@@ -158,7 +161,12 @@ def main():
                 split_seed=config.get("split_seed", 42)
             )
             if len(ds) > 0:
-                baselines_raw[split] = run_evaluation(model, ds, criterion, device, batch_size=8, desc=f"Baseline {split} (raw)")
+                m_raw = run_evaluation(model, ds, criterion, device, batch_size=8, desc=f"Baseline {split} (raw)")
+                baselines_raw[split] = m_raw
+                # Save raw arrays for bootstrapping
+                m_raw_save = {k: v for k, v in m_raw.items() if k.startswith("_raw") and isinstance(v, list)}
+                with open(out_dir / f"metrics_raw_{split}.json", "w") as f:
+                    json.dump(m_raw_save, f)
                 
         def run_ablation_splits(ablation_mode, name):
             ablation_results[name] = {}

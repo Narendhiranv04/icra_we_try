@@ -13,3 +13,4 @@ lambda_heat: 0.0
 heatmap: false
 mixed_precision: true
 output_path: "learning_outputs/demo_query"
+split_seed: 42
