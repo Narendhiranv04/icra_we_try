@@ -66,7 +66,8 @@ def main():
         split="id_train",
         return_masks=config.get("heatmap", False),
         train_ratio=config.get("train_ratio", 0.8),
-        seed=config.get("seed", 42)
+        seed=config.get("seed", 42),
+        split_seed=config.get("split_seed", 42)
     )
     
     val_dataset = LearningDataset(
@@ -75,13 +76,14 @@ def main():
         split="id_val",
         return_masks=config.get("heatmap", False),
         train_ratio=config.get("train_ratio", 0.8),
-        seed=config.get("seed", 42)
+        seed=config.get("seed", 42),
+        split_seed=config.get("split_seed", 42)
     )
     
     batch_size = config.get("batch_size", 8)
     
-    train_sampler = PairBatchSampler(train_dataset, batch_size)
-    val_sampler = PairBatchSampler(val_dataset, batch_size)
+    train_sampler = PairBatchSampler(train_dataset, batch_size, seed=config.get("sampler_seed", 42))
+    val_sampler = PairBatchSampler(val_dataset, batch_size, seed=config.get("sampler_seed", 42))
     
     train_loader = DataLoader(train_dataset, batch_sampler=train_sampler, num_workers=2)
     val_loader = DataLoader(val_dataset, batch_sampler=val_sampler, num_workers=2)

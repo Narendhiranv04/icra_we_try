@@ -68,8 +68,9 @@ def extract_frames(video_path, num_frames=4):
     # Fill if missing frames
     while len(frames) < num_frames and len(frames) > 0:
         frames.append(frames[-1])
+        indices.append(indices[-1])
 
-    return frames
+    return frames, indices
 
 def main():
     parser = argparse.ArgumentParser()
@@ -97,6 +98,16 @@ def main():
             text_features[p] = emb
 
     torch.save(text_features, out_dir / "text_features.pt")
+    
+    text_meta = {
+        "cache_schema_version": CACHE_SCHEMA_VERSION,
+        "encoder_id": "SentenceTransformer", # Placeholder or correct encoder
+        "preprocessing_signature": "mean_pooling",
+        "exact_text_hash": compute_sha256(out_dir / "text_features.pt"), # Or just save the hash of the dict keys
+        "phrases": PARAPHRASES
+    }
+    with open(out_dir / "text_features.meta.json", "w") as f:
+        json.dump(text_meta, f, indent=2)
 
     # Free memory
     del text_enc
@@ -134,7 +145,7 @@ def main():
                 demos_processed.add(demo_path)
                 continue
 
-        demo_frames = extract_frames(demo_path, num_frames=args.num_demo_frames)
+        demo_frames, sampled_indices = extract_frames(demo_path, num_frames=args.num_demo_frames)
         if not demo_frames:
             raise RuntimeError(f"Failed to extract frames from {demo_path} for sample_id={rec.get('sample_id')}")
 
@@ -156,7 +167,7 @@ def main():
             "source_sha256": file_hash,
             "encoder_id": "dinov2_vitb14",
             "num_frames": args.num_demo_frames,
-            "sampled_frame_indices": [int(i * (args.num_demo_frames - 1) / max(1, args.num_demo_frames - 1)) for i in range(args.num_demo_frames)]
+            "sampled_frame_indices": sampled_indices
         }
         with open(meta_path, "w") as f:
             json.dump(meta, f, indent=2)

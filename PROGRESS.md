@@ -84,7 +84,7 @@
   - Relational Multi-modal model achieved 100% logical test accuracy and robustness against ablated conditions (Wrong Demo, Wrong Instruction, Paraphrase).
 
 ## Representation Learning Milestone 2: Context Challenge & Correctness Pass
-- **Status**: PASSED
+- **Status**: IN PROGRESS
 - **Artifacts**: `data/context_challenge/`, `data/manifests/context_challenge_manifest.jsonl`, `learning_outputs/`, `artifacts/learning_stage1/INVALIDATED_RUNS.md`
 - **Details**:
   - Re-anchored model seed from dataset seed, proving `split_seed=42` provides isolated and deterministic train/val bounds invariant to model seed testing.

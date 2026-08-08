@@ -112,18 +112,15 @@ def main():
             for split in boot_splits:
                 agg_boot[split] = {}
                 for m in boot_metrics[0][split].keys():
-                    # Average the bounds over seeds?
-                    # The prompt says: "Calculate 95% CIs using 2000 draws for primary metrics".
-                    # Typically, we can average the bootstrapped bounds across seeds.
-                    vals_mean = [bm[split][m]["mean"] for bm in boot_metrics if split in bm]
-                    vals_lower = [bm[split][m]["lower"] for bm in boot_metrics if split in bm]
-                    vals_upper = [bm[split][m]["upper"] for bm in boot_metrics if split in bm]
+                    # Do not average the bounds across seeds, keep them separate per-seed
+                    seed_vals = [{"seed": seeds[i], "mean": boot_metrics[i][split][m]["mean"],
+                                  "lower": boot_metrics[i][split][m]["lower"],
+                                  "upper": boot_metrics[i][split][m]["upper"]} 
+                                 for i in range(len(boot_metrics)) if split in boot_metrics[i] and m in boot_metrics[i][split]]
 
-                    if vals_mean:
+                    if seed_vals:
                         agg_boot[split][m] = {
-                            "mean": float(np.mean(vals_mean)),
-                            "lower": float(np.mean(vals_lower)),
-                            "upper": float(np.mean(vals_upper))
+                            "per_seed": seed_vals
                         }
             with open(out_base / "bootstrap_results.json", "w") as f:
                 json.dump(agg_boot, f, indent=2)

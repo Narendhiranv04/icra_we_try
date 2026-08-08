@@ -15,6 +15,7 @@ from src.learning.dataset import LearningDataset
 from src.learning.metrics import compute_metrics
 from src.learning.utils import resolve_checkpoint
 from scripts.train_model import get_model
+from sklearn.metrics import f1_score, balanced_accuracy_score
 
 def evaluate_context(model, dataset, device, desc="Context Challenge"):
     model.eval()
@@ -152,6 +153,8 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
 
     metrics = {
         "accuracy": float(acc),
+        "balanced_accuracy": float(balanced_accuracy_score(targets_np, preds_cls)),
+        "f1": float(f1_score(targets_np, preds_cls)),
         "reversal_accuracy": float(reversal_acc_sum / max(1, rev_pairs)),
         "context_pair_consistency": float(context_pair_consistency / max(1, total_pairs)),
         "context_flip_rate": float(flip_count / max(1, total_pairs)),
@@ -169,6 +172,11 @@ def evaluate_context(model, dataset, device, desc="Context Challenge"):
         "_raw_pair_ids": ordered_pair_ids,
         "_raw_states": ordered_states
     }
+
+    if "all_scores" in locals() and len(all_scores) > 0:
+        metrics["_raw_scores"] = all_scores
+    if "all_latents" in locals() and len(all_latents) > 0:
+        metrics["_raw_latents"] = all_latents
 
     print(f"[{desc}] Acc: {metrics['accuracy']:.4f} | Reversal Acc: {metrics['reversal_accuracy']:.4f} | Pair Cons: {metrics['context_pair_consistency']:.4f}")
     return metrics
@@ -206,7 +214,7 @@ def main():
                 if "Perform the demonstrated task." in self.text_features:
                     item["text_feat"] = self.text_features["Perform the demonstrated task."]
                 else:
-                    item["text_feat"] = torch.zeros_like(item["text_feat"])
+                    raise RuntimeError("Missing generic text feature: 'Perform the demonstrated task.'")
             return item
 
     dataset = ContextDataset(

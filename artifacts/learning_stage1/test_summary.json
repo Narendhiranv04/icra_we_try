@@ -1,7 +1,7 @@
 {
-  "total": 71,
-  "passed": 71,
+  "total": 79,
+  "passed": 76,
   "failed": 0,
-  "skipped": 0,
-  "runtime": 75.149
+  "skipped": 3,
+  "runtime": 44.944
 }
