@@ -10,7 +10,7 @@ A total of 30 experiments (6 model types x 5 random seeds) were rigorously evalu
 
 **Evidence:**
 1. **Zero Reversal Accuracy:** On Benchmark B, which evaluates whether models flip their predictions when given an identical RGB frame but a different conditional query (e.g. text or demonstration), the `reversal_accuracy` is 0.0 for all models across all seeds.
-2. **Generic Query Insensitivity:** The `mean_flip_rate` when swapping a specific task demonstration for the same generic text ("Perform the demonstrated task.") on an identical RGB frame is 0.0 (except for a trivial 0.005 on relational_heatmap). The mean absolute delta probability is <0.03 for all models.
+2. **Generic Query Insensitivity:** Generic-demo sensitivity remains small. Mean prediction flip rates are 0.005 for demo_query, 0.015 for full_no_ranking, 0.01 for pooled_multimodal, and 0.0 for relational_heatmap. Mean absolute probability changes remain below 0.03 for all model families.
 
 **Interpretation:** The v1 formulation fails to use the task/demo context sufficiently to perform the required same-RGB decision reversal. This is strong evidence of shortcut exploitation, but Benchmark B alone does not prove that every output is produced exclusively from RGB. Distribution-shift or dominant-class decision collapse must remain a possible explanation for some Benchmark-B behavior.
 

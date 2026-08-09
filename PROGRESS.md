@@ -88,7 +88,7 @@
 - **Artifacts**: `data/context_challenge/`, `data/manifests/context_challenge_manifest.jsonl`, `learning_outputs/`, `artifacts/learning_stage1/INVALIDATED_RUNS.md`, `artifacts/learning_stage1/run_summary.md`
 - **Details**:
   - 30/30 training runs complete (6 model families x 5 seeds: 11, 23, 42, 67, 101).
-  - 79/79 tests passed, 0 failed, 0 skipped.
+  - 80/80 tests passed, 0 failed, 0 skipped.
   - Authored a fully deterministic and decoupled Benchmark B (Context-Conditioned Label-Reversal Challenge) providing 80 zero-shot query evaluations sharing strictly 40 identical query images (40 physical scenes) but varying task-labels explicitly.
   - Configured 5-seed robust testing protocol reporting raw Mean-Absolute-Delta metrics for sensitivity analysis.
   - Experiment completed successfully, demonstrating that relational-v1 did NOT solve context-conditioned label reversal and remains reliant on visual/geometric shortcuts.

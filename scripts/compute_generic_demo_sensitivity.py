@@ -30,17 +30,24 @@ for m in models:
     for s in seeds:
         raw_path = Path(f"learning_outputs/{m}_seed{s}/context_challenge_results_raw.json")
         if not raw_path.exists():
-            continue
+            raise RuntimeError(f"Missing file: {raw_path}")
 
         with open(raw_path) as f:
             raw = json.load(f)
 
         if "generic_text" not in raw:
-            continue
+            raise RuntimeError(f"Missing generic_text in {raw_path}")
 
         g = raw["generic_text"]
         if not g.get("_raw_pair_ids"):
-            continue
+            raise RuntimeError(f"Missing or empty _raw_pair_ids in {raw_path}")
+
+        if "_raw_task_ids" not in g or "_raw_preds" not in g or "_raw_logits" not in g:
+            raise RuntimeError(f"Missing required raw arrays in {raw_path}")
+
+        expected_len = len(g["_raw_pair_ids"])
+        if len(g["_raw_task_ids"]) != expected_len or len(g["_raw_preds"]) != expected_len or len(g["_raw_logits"]) != expected_len:
+            raise RuntimeError(f"Raw array lengths do not match in {raw_path}")
 
         pairs = {}
         for i, pid in enumerate(g["_raw_pair_ids"]):
@@ -95,7 +102,7 @@ for m in models:
                 deltas["latent_cosine_change"].append(1.0 - sim)
 
         if not deltas["abs_delta_prob"]:
-            continue
+            raise RuntimeError(f"No valid delta probabilities computed for {m} seed {s}")
 
         seed_res = {
             "seed": s,
@@ -111,18 +118,20 @@ for m in models:
 
         seed_deltas.append(seed_res)
 
-    if seed_deltas:
-        results[m] = {
-            "per_seed": seed_deltas,
-            "mean_abs_delta_prob": float(np.mean([x["abs_delta_prob"] for x in seed_deltas])),
-            "mean_abs_delta_logit": float(np.mean([x["abs_delta_logit"] for x in seed_deltas])),
-            "mean_flip_rate": float(np.mean([x["flip_rate"] for x in seed_deltas]))
-        }
-        if "abs_delta_compatibility" in seed_deltas[0]:
-            results[m]["mean_abs_delta_compatibility"] = float(np.mean([x["abs_delta_compatibility"] for x in seed_deltas]))
-        if "latent_cosine_sim" in seed_deltas[0]:
-            results[m]["mean_latent_cosine_sim"] = float(np.mean([x["latent_cosine_sim"] for x in seed_deltas]))
-            results[m]["mean_latent_cosine_change"] = float(np.mean([x["latent_cosine_change"] for x in seed_deltas]))
+    if len(seed_deltas) != len(seeds):
+        raise RuntimeError(f"Expected {len(seeds)} seed results for {m}, but got {len(seed_deltas)}")
+
+    results[m] = {
+        "per_seed": seed_deltas,
+        "mean_abs_delta_prob": float(np.mean([x["abs_delta_prob"] for x in seed_deltas])),
+        "mean_abs_delta_logit": float(np.mean([x["abs_delta_logit"] for x in seed_deltas])),
+        "mean_flip_rate": float(np.mean([x["flip_rate"] for x in seed_deltas]))
+    }
+    if "abs_delta_compatibility" in seed_deltas[0]:
+        results[m]["mean_abs_delta_compatibility"] = float(np.mean([x["abs_delta_compatibility"] for x in seed_deltas]))
+    if "latent_cosine_sim" in seed_deltas[0]:
+        results[m]["mean_latent_cosine_sim"] = float(np.mean([x["latent_cosine_sim"] for x in seed_deltas]))
+        results[m]["mean_latent_cosine_change"] = float(np.mean([x["latent_cosine_change"] for x in seed_deltas]))
 
 with open(out_dir / "generic_demo_pair_sensitivity.json", "w") as f:
     json.dump(results, f, indent=2)
