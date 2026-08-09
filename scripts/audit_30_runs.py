@@ -67,5 +67,7 @@ with open(out_path, "w") as f:
 
 if all_passed:
     print("ALL 30 RUNS PASSED")
+    raise SystemExit(0)
 else:
     print("SOME RUNS FAILED AUDIT")
+    raise SystemExit(1)

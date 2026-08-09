@@ -6,13 +6,13 @@ This run represents the final scientific conclusion for Milestone 2, evaluating 
 A total of 30 experiments (6 model types x 5 random seeds) were rigorously evaluated on Benchmark A (standard infeasibility prediction) and Benchmark B (a counterfactual dataset isolating contextual dependence). 
 
 ## Primary Scientific Conclusion
-**Finding:** All multimodal models, including the newly proposed `relational_heatmap` v1, rely entirely on visual and spatial shortcuts (e.g. geometric configurations of objects in the RGB frame) rather than correctly processing the conditioning multimodal queries.
+**Finding:** The `query_only` model performs extremely strongly on Benchmark A, establishing that Benchmark A is visually shortcut-solvable. However, all six model families have a 0.0 reversal accuracy on Benchmark B across the five-seed aggregate.
 
 **Evidence:**
 1. **Zero Reversal Accuracy:** On Benchmark B, which evaluates whether models flip their predictions when given an identical RGB frame but a different conditional query (e.g. text or demonstration), the `reversal_accuracy` is 0.0 for all models across all seeds.
-2. **Generic Query Insensitivity:** The `mean_flip_rate` when swapping a specific task demonstration for the same generic text ("Perform the demonstrated task.") on an identical RGB frame is 0.0 (except for a trivial 0.005 on relational_heatmap). The mean absolute delta probability is <0.03 for all models. This proves that models output identical scores regardless of the actual conditional query provided.
+2. **Generic Query Insensitivity:** The `mean_flip_rate` when swapping a specific task demonstration for the same generic text ("Perform the demonstrated task.") on an identical RGB frame is 0.0 (except for a trivial 0.005 on relational_heatmap). The mean absolute delta probability is <0.03 for all models.
 
-**Interpretation:** The learning formulation in v1 fundamentally failed to enforce context dependence. While the models achieved varying levels of success on Benchmark A, they simply memorized spatial shortcuts in the visual observation that correlated with the target task rather than learning a conditional representation.
+**Interpretation:** The v1 formulation fails to use the task/demo context sufficiently to perform the required same-RGB decision reversal. This is strong evidence of shortcut exploitation, but Benchmark B alone does not prove that every output is produced exclusively from RGB. Distribution-shift or dominant-class decision collapse must remain a possible explanation for some Benchmark-B behavior.
 
 ## Limitations & Missing Provenance
 - The dataset provenance uses exact commit tracking for `TRAINED_CODE_COMMIT`, but lacks the raw `run_final_experiment.sh` execution log, as it was run via standard bash rather than a tracked framework.

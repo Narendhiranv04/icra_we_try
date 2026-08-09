@@ -1,0 +1,246 @@
+{
+  "experiment": "Milestone 2 Representation Learning",
+  "total_runs": 30,
+  "runs": [
+    {
+      "model_name": "query_only",
+      "seed": 11,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "query_only",
+      "seed": 23,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "query_only",
+      "seed": 42,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "query_only",
+      "seed": 67,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "query_only",
+      "seed": 101,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "language_query",
+      "seed": 11,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "language_query",
+      "seed": 23,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "language_query",
+      "seed": 42,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "language_query",
+      "seed": 67,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "language_query",
+      "seed": 101,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "demo_query",
+      "seed": 11,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "demo_query",
+      "seed": 23,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "demo_query",
+      "seed": 42,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "demo_query",
+      "seed": 67,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "demo_query",
+      "seed": 101,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "full_no_ranking",
+      "seed": 11,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "full_no_ranking",
+      "seed": 23,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "full_no_ranking",
+      "seed": 42,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "full_no_ranking",
+      "seed": 67,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "full_no_ranking",
+      "seed": 101,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "pooled_multimodal",
+      "seed": 11,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "pooled_multimodal",
+      "seed": 23,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "pooled_multimodal",
+      "seed": 42,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "pooled_multimodal",
+      "seed": 67,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "pooled_multimodal",
+      "seed": 101,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "relational_heatmap",
+      "seed": 11,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "relational_heatmap",
+      "seed": 23,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "relational_heatmap",
+      "seed": 42,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "relational_heatmap",
+      "seed": 67,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    },
+    {
+      "model_name": "relational_heatmap",
+      "seed": 101,
+      "trained_code_commit": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+      "resolved_split_seed": 42,
+      "resolved_sampler_seed": 42,
+      "required_artifact_status": "complete"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "TRAINED_CODE_COMMIT": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
-  "POSTPROCESS_CODE_COMMIT": "pending",
+  "POSTPROCESS_CODE_COMMIT": "8a54aa84f1db14ebceca0e2e384f562b47608e66",
   "model_seeds": [
     11,
     23,
@@ -12,7 +12,7 @@
   "effective_sampler_seed": 42,
   "bootstrap_draws": 2000,
   "encoders": {
-    "visual": "DINOv2 ViT-S/14",
+    "visual": "DINOv2 ViT-B/14 (model id: dinov2_vitb14)",
     "text": "SentenceTransformer all-MiniLM-L6-v2"
   },
   "environment": {
@@ -24,9 +24,15 @@
   "benchmark_a_hash": "69cc584341fc094cae14474c689a80f0686e082ddddb2a7b9bf2db214faf8609",
   "benchmark_a_counts": 240,
   "benchmark_b_hash": "b547a5875547a2fd18d84f5c19a350e68098e3e5328351faeaa9105665915d15",
-  "benchmark_b_counts": 80,
-  "benchmark_b_scenes": 40,
-  "benchmark_b_state_counts": {
+  "benchmark_b_records": 80,
+  "benchmark_b_physical_scenes": 40,
+  "benchmark_b_scene_counts_by_state": {
+    "A": 10,
+    "B": 10,
+    "C": 10,
+    "D": 10
+  },
+  "benchmark_b_task_record_counts_by_state": {
     "A": 20,
     "B": 20,
     "C": 20,
