@@ -9,3 +9,5 @@ data/
 output/
 learning_data/
 learning_outputs/
+artifacts/learning_stage1/heatmaps/
+artifacts/learning_stage1/reeval_logs/

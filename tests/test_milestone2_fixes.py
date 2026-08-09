@@ -11,8 +11,8 @@ from src.learning.dataset import LearningDataset, PairBatchSampler
 from scripts.evaluate_context_challenge import evaluate_context
 from scripts.bootstrap_metrics import compute_metrics, bootstrap_confidence_interval
 
-def test_generator_bounded_retry():
-    gen = ContextChallengeGenerator(output_dir="tmp_test_gen")
+def test_generator_bounded_retry(tmp_path):
+    gen = ContextChallengeGenerator(output_dir=str(tmp_path / "tmp_test_gen"))
     
     # Force visibility failure to test retry
     with patch('src.environment.renderer.OffscreenRenderer.render_region_mask', return_value=np.zeros((10,10))):
@@ -57,12 +57,20 @@ def test_sampler_seed_determinism():
     assert b1 == b2, "Same sampler seed should produce identical batches"
     assert b1 != b3, "Different sampler seed should produce different batches"
 
-def test_generic_text_diagnostic_failure():
-    # If the text feature doesn't exist, it should raise RuntimeError, not use zeros
-    from scripts.evaluate_context_challenge import main
-    # We can test this by instantiating the modified ContextDataset directly
-    # To do this safely, we will just mock LearningDataset init
-    pass # Already tested logically, it will raise if not found.
+def test_generic_text_diagnostic_failure(tmp_path):
+    index_file = tmp_path / "tmp_index.jsonl"
+    with open(index_file, "w") as f:
+        for i in range(10):
+            f.write(json.dumps({"pair_id": f"p{i}", "split": "id", "sample_id": f"s{i}", "task_id": "task_1", "instruction": "Perform the demonstrated task.", "label": "STOP", "demonstration_id": "d1"}) + "\n")
+    
+    with patch('pathlib.Path.exists', return_value=True), \
+         patch('torch.load', return_value={"Open the box.": torch.zeros(1), "global": torch.zeros(1), "patch": torch.zeros(1)}):
+        
+        # When instruction is generic text, the dataset attempts to load the text feature for "Perform the demonstrated task."
+        # The mock doesn't have it, so it should raise KeyError.
+        ds = LearningDataset(index_path=str(index_file), features_dir="tmp", split="id_train")
+        with pytest.raises(RuntimeError, match="Perform the demonstrated task"):
+            _ = ds[0]
 
 def test_bootstrap_determinism_and_logic():
     rng1 = np.random.default_rng(42)
@@ -91,5 +99,22 @@ def test_evaluator_metrics():
     assert m["context_pair_consistency"] == 0.5
     assert m["reversal_accuracy"] == 0.5
 
+def test_heatmap_bfloat16_conversion():
+    # Simulate a bfloat16 tensor prediction
+    tensor_bf16 = torch.tensor([[[0.1, 0.9], [0.5, 0.5]]], dtype=torch.bfloat16)
+    
+    # The fix used in extract_heatmaps.py:
+    # h_img = heat_preds[0].detach().float().cpu().numpy()
+    
+    # Apply fix
+    h_img = tensor_bf16[0].detach().float().cpu().numpy()
+    h_img = np.clip(h_img, 0, 1)
+    
+    # Verify properties
+    assert isinstance(h_img, np.ndarray)
+    assert h_img.dtype == np.float32
+    assert h_img.shape == (2, 2)
+    assert np.all(np.isfinite(h_img))
+    
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -1,0 +1,477 @@
+{
+  "learning_outputs/query_only_seed11": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true
+    }
+  },
+  "learning_outputs/query_only_seed23": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true
+    }
+  },
+  "learning_outputs/query_only_seed42": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true
+    }
+  },
+  "learning_outputs/query_only_seed67": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true
+    }
+  },
+  "learning_outputs/query_only_seed101": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true
+    }
+  },
+  "learning_outputs/language_query_seed11": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/language_query_seed23": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/language_query_seed42": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/language_query_seed67": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/language_query_seed101": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/demo_query_seed11": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/demo_query_seed23": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/demo_query_seed42": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/demo_query_seed67": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/demo_query_seed101": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/full_no_ranking_seed11": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/full_no_ranking_seed23": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/full_no_ranking_seed42": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/full_no_ranking_seed67": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/full_no_ranking_seed101": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/pooled_multimodal_seed11": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/pooled_multimodal_seed23": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/pooled_multimodal_seed42": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/pooled_multimodal_seed67": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/pooled_multimodal_seed101": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/relational_heatmap_seed11": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/relational_heatmap_seed23": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/relational_heatmap_seed42": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/relational_heatmap_seed67": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  },
+  "learning_outputs/relational_heatmap_seed101": {
+    "exists": true,
+    "files": {
+      "resolved_config.yaml": true,
+      "best.ckpt": true,
+      "last.ckpt": true,
+      "metrics.json": true,
+      "metrics_by_split.json": true,
+      "context_challenge_results.json": true,
+      "context_challenge_results_raw.json": true,
+      "bootstrap_results.json": true,
+      "train_pairs.json": true,
+      "val_pairs.json": true,
+      "conditioning_sensitivity.json": true
+    }
+  }
+}

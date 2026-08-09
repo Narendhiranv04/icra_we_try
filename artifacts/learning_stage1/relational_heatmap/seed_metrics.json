@@ -18,13 +18,62 @@
             6
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 6,
-        "stop_iou": 0.704056854532061,
-        "stop_dice": 0.825738262630071,
-        "proceed_fp_frac": 0.0,
-        "proceed_mean_act": 0.3632449209690094,
-        "loss": 0.6913187901178995
+        "stop_iou": 0.6385162205515559,
+        "stop_dice": 0.7787133194772652,
+        "proceed_fp_frac": 0.004995748299319728,
+        "proceed_mean_act": 0.3766385614871979,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4,
+          "stop_iou": 0.6339694126153421,
+          "stop_dice": 0.7753548210462401,
+          "proceed_fp_frac": 0.0019880022321428575,
+          "proceed_mean_act": 0.38070255517959595
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 2,
+          "stop_iou": 0.6476098364239833,
+          "stop_dice": 0.7854303163393153,
+          "proceed_fp_frac": 0.01101124043367347,
+          "proceed_mean_act": 0.36851048469543457
+        },
+        "loss": 0.7446881532669067
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -42,37 +91,135 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.7153367497188686,
-        "stop_dice": 0.8330087303163697,
-        "proceed_fp_frac": 0.003966039540816327,
-        "proceed_mean_act": 0.36262789368629456,
-        "loss": 0.6936599731445312
+        "stop_iou": 0.7004803999089265,
+        "stop_dice": 0.8216641903417856,
+        "proceed_fp_frac": 0.002435427295918367,
+        "proceed_mean_act": 0.37495267391204834,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.6517533282070728,
+          "stop_dice": 0.7880472510965507,
+          "proceed_fp_frac": 0.002139136904761905,
+          "proceed_mean_act": 0.379121869802475
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.7492074716107805,
+          "stop_dice": 0.8552811295870203,
+          "proceed_fp_frac": 0.00273171768707483,
+          "proceed_mean_act": 0.37078359723091125
+        },
+        "loss": 0.7072015364964803
       },
       "unseen_background": {
-        "accuracy": 0.95,
-        "balanced_accuracy": 0.95,
-        "f1": 0.9473684210526315,
+        "accuracy": 0.8833333333333333,
+        "balanced_accuracy": 0.8833333333333333,
+        "f1": 0.8679245283018868,
         "precision": 1.0,
-        "recall": 0.9,
+        "recall": 0.7666666666666667,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            3,
-            27
+            7,
+            23
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.7666666666666667,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.6215783543064701,
-        "stop_dice": 0.7645848651583361,
-        "proceed_fp_frac": 0.003807929421768708,
-        "proceed_mean_act": 0.3641766309738159,
-        "loss": 0.8133628964424133
+        "stop_iou": 0.5864184769361505,
+        "stop_dice": 0.7366400643734546,
+        "proceed_fp_frac": 0.005223612882653062,
+        "proceed_mean_act": 0.3811095356941223,
+        "task_1": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.8888888888888888,
+          "precision": 1.0,
+          "recall": 0.8,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.5896025711450874,
+          "stop_dice": 0.7406687965369312,
+          "proceed_fp_frac": 0.0021510948129251704,
+          "proceed_mean_act": 0.38393354415893555
+        },
+        "task_2": {
+          "accuracy": 0.8666666666666667,
+          "balanced_accuracy": 0.8666666666666667,
+          "f1": 0.8461538461538461,
+          "precision": 1.0,
+          "recall": 0.7333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              4,
+              11
+            ]
+          ],
+          "classification_pair_consistency": 0.7333333333333333,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.5832343827272134,
+          "stop_dice": 0.7326113322099783,
+          "proceed_fp_frac": 0.008296130952380954,
+          "proceed_mean_act": 0.3782854974269867
+        },
+        "loss": 1.1383179267247518
       },
       "compositional": {
         "accuracy": 1.0,
@@ -90,13 +237,62 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.7266538419218792,
-        "stop_dice": 0.8406403508124728,
-        "proceed_fp_frac": 2.9230442176870748e-05,
-        "proceed_mean_act": 0.3644406199455261,
-        "loss": 0.6915737589200338
+        "stop_iou": 0.6882311196971335,
+        "stop_dice": 0.8143904082600424,
+        "proceed_fp_frac": 1.6608205782312927e-05,
+        "proceed_mean_act": 0.3770033121109009,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.6722124790911195,
+          "stop_dice": 0.8032544114064188,
+          "proceed_fp_frac": 2.6573129251700686e-05,
+          "proceed_mean_act": 0.38016217947006226
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.7042497603031478,
+          "stop_dice": 0.8255264051136664,
+          "proceed_fp_frac": 6.643282312925169e-06,
+          "proceed_mean_act": 0.37384453415870667
+        },
+        "loss": 0.7076326648394267
       }
     }
   },
@@ -119,13 +315,62 @@
             6
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 6,
-        "stop_iou": 0.7939758370324196,
-        "stop_dice": 0.8847128492220174,
-        "proceed_fp_frac": 0.0,
-        "proceed_mean_act": 0.31637588143348694,
-        "loss": 0.6387271682421366
+        "stop_iou": 0.6222987261570038,
+        "stop_dice": 0.7662670164104584,
+        "proceed_fp_frac": 0.0009732408588435374,
+        "proceed_mean_act": 0.35224926471710205,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4,
+          "stop_iou": 0.646258850159318,
+          "stop_dice": 0.7849140428133313,
+          "proceed_fp_frac": 0.0,
+          "proceed_mean_act": 0.35510456562042236
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 2,
+          "stop_iou": 0.5743784781523753,
+          "stop_dice": 0.7289729636047123,
+          "proceed_fp_frac": 0.0029197225765306123,
+          "proceed_mean_act": 0.34653863310813904
+        },
+        "loss": 0.7113935748736063
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -143,37 +388,135 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.7720391215005723,
-        "stop_dice": 0.8701774301115245,
-        "proceed_fp_frac": 0.00018933354591836734,
-        "proceed_mean_act": 0.31435248255729675,
-        "loss": 0.6386498133341472
+        "stop_iou": 0.6813511172494209,
+        "stop_dice": 0.8079666753100833,
+        "proceed_fp_frac": 0.0014415922619047618,
+        "proceed_mean_act": 0.3514450192451477,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.643926540364062,
+          "stop_dice": 0.7829754548464938,
+          "proceed_fp_frac": 0.0018282312925170068,
+          "proceed_mean_act": 0.35441893339157104
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.7187756941347797,
+          "stop_dice": 0.8329578957736726,
+          "proceed_fp_frac": 0.001054953231292517,
+          "proceed_mean_act": 0.3484710156917572
+        },
+        "loss": 0.6897570927937825
       },
       "unseen_background": {
-        "accuracy": 0.9333333333333333,
-        "balanced_accuracy": 0.9333333333333333,
-        "f1": 0.9310344827586207,
-        "precision": 0.9642857142857143,
-        "recall": 0.9,
+        "accuracy": 0.8666666666666667,
+        "balanced_accuracy": 0.8666666666666667,
+        "f1": 0.8518518518518519,
+        "precision": 0.9583333333333334,
+        "recall": 0.7666666666666667,
         "confusion_matrix": [
           [
             29,
             1
           ],
           [
-            3,
-            27
+            7,
+            23
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.7333333333333333,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.710041998918838,
-        "stop_dice": 0.827779541419078,
-        "proceed_fp_frac": 0.0015306122448979593,
-        "proceed_mean_act": 0.3118502199649811,
-        "loss": 0.8527996897697449
+        "stop_iou": 0.6204687421581562,
+        "stop_dice": 0.7646899627546593,
+        "proceed_fp_frac": 0.0024918951955782307,
+        "proceed_mean_act": 0.35418790578842163,
+        "task_1": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.8888888888888888,
+          "precision": 1.0,
+          "recall": 0.8,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.6188955075593608,
+          "stop_dice": 0.7641626025518101,
+          "proceed_fp_frac": 0.0028034651360544214,
+          "proceed_mean_act": 0.35545092821121216
+        },
+        "task_2": {
+          "accuracy": 0.8333333333333334,
+          "balanced_accuracy": 0.8333333333333333,
+          "f1": 0.8148148148148148,
+          "precision": 0.9166666666666666,
+          "recall": 0.7333333333333333,
+          "confusion_matrix": [
+            [
+              14,
+              1
+            ],
+            [
+              4,
+              11
+            ]
+          ],
+          "classification_pair_consistency": 0.6666666666666666,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.6220419767569517,
+          "stop_dice": 0.7652173229575087,
+          "proceed_fp_frac": 0.0021803252551020405,
+          "proceed_mean_act": 0.3529248833656311
+        },
+        "loss": 1.0813172181447348
       },
       "compositional": {
         "accuracy": 1.0,
@@ -191,13 +534,62 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.7852045812700734,
-        "stop_dice": 0.8788011556046933,
-        "proceed_fp_frac": 0.0,
-        "proceed_mean_act": 0.31602466106414795,
-        "loss": 0.6364868481953939
+        "stop_iou": 0.6823267042442711,
+        "stop_dice": 0.810231438922922,
+        "proceed_fp_frac": 3.454506802721089e-05,
+        "proceed_mean_act": 0.35151010751724243,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.6552801557823877,
+          "stop_dice": 0.7911048184455605,
+          "proceed_fp_frac": 0.0,
+          "proceed_mean_act": 0.35397768020629883
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.7093732527061544,
+          "stop_dice": 0.8293580594002834,
+          "proceed_fp_frac": 6.909013605442177e-05,
+          "proceed_mean_act": 0.34904247522354126
+        },
+        "loss": 0.6905161023139954
       }
     }
   },
@@ -220,85 +612,281 @@
             6
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 6,
-        "stop_iou": 0.41172116177558404,
-        "stop_dice": 0.58279154025227,
-        "proceed_fp_frac": 0.002521125637755102,
-        "proceed_mean_act": 0.3793560564517975,
-        "loss": 0.7389738361040751
+        "stop_iou": 0.32734814838311305,
+        "stop_dice": 0.49274332063046794,
+        "proceed_fp_frac": 0.015887409651360544,
+        "proceed_mean_act": 0.3862001597881317,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4,
+          "stop_iou": 0.3148289572173175,
+          "stop_dice": 0.47858946995005464,
+          "proceed_fp_frac": 0.017154615752551023,
+          "proceed_mean_act": 0.3896481394767761
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 2,
+          "stop_iou": 0.35238653071470405,
+          "stop_dice": 0.5210510219912946,
+          "proceed_fp_frac": 0.013352997448979591,
+          "proceed_mean_act": 0.3793041706085205
+        },
+        "loss": 0.8024712006251017
       },
       "unseen_object": {
-        "accuracy": 0.9833333333333333,
-        "balanced_accuracy": 0.9833333333333334,
-        "f1": 0.9830508474576272,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
         "precision": 1.0,
-        "recall": 0.9666666666666667,
+        "recall": 1.0,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            1,
-            29
+            0,
+            30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.54452678336798,
-        "stop_dice": 0.6966356467158497,
-        "proceed_fp_frac": 0.0069927189625850344,
-        "proceed_mean_act": 0.38291892409324646,
-        "loss": 0.7783219218254089
+        "stop_iou": 0.4298690967072708,
+        "stop_dice": 0.5876681286177772,
+        "proceed_fp_frac": 0.011856930272108844,
+        "proceed_mean_act": 0.3864263892173767,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.3105128930879618,
+          "stop_dice": 0.4733084835693682,
+          "proceed_fp_frac": 0.018836362670068028,
+          "proceed_mean_act": 0.3919179141521454
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.5492253003265797,
+          "stop_dice": 0.7020277736661862,
+          "proceed_fp_frac": 0.00487749787414966,
+          "proceed_mean_act": 0.38093477487564087
+        },
+        "loss": 0.7718844930330913
       },
       "unseen_background": {
-        "accuracy": 0.8166666666666667,
-        "balanced_accuracy": 0.8166666666666667,
-        "f1": 0.7755102040816326,
+        "accuracy": 0.8666666666666667,
+        "balanced_accuracy": 0.8666666666666667,
+        "f1": 0.8461538461538461,
         "precision": 1.0,
-        "recall": 0.6333333333333333,
+        "recall": 0.7333333333333333,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            11,
-            19
+            8,
+            22
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.7333333333333333,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.17113018898765864,
-        "stop_dice": 0.2909604888906674,
-        "proceed_fp_frac": 0.048024952168367344,
-        "proceed_mean_act": 0.3995545506477356,
-        "loss": 1.2353956659634908
+        "stop_iou": 0.23046592623785778,
+        "stop_dice": 0.3734099351038853,
+        "proceed_fp_frac": 0.034381643282312926,
+        "proceed_mean_act": 0.4009675085544586,
+        "task_1": {
+          "accuracy": 0.9666666666666667,
+          "balanced_accuracy": 0.9666666666666667,
+          "f1": 0.9655172413793104,
+          "precision": 1.0,
+          "recall": 0.9333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              1,
+              14
+            ]
+          ],
+          "classification_pair_consistency": 0.9333333333333333,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.21911488118990574,
+          "stop_dice": 0.3589394913839258,
+          "proceed_fp_frac": 0.04633290816326531,
+          "proceed_mean_act": 0.40141063928604126
+        },
+        "task_2": {
+          "accuracy": 0.7666666666666667,
+          "balanced_accuracy": 0.7666666666666666,
+          "f1": 0.6956521739130435,
+          "precision": 1.0,
+          "recall": 0.5333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              7,
+              8
+            ]
+          ],
+          "classification_pair_consistency": 0.5333333333333333,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.24181697128580984,
+          "stop_dice": 0.38788037882384463,
+          "proceed_fp_frac": 0.02243037840136054,
+          "proceed_mean_act": 0.4005242586135864
+        },
+        "loss": 1.0544707616170248
       },
       "compositional": {
-        "accuracy": 0.9666666666666667,
-        "balanced_accuracy": 0.9666666666666667,
-        "f1": 0.9655172413793104,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
         "precision": 1.0,
-        "recall": 0.9333333333333333,
+        "recall": 1.0,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            2,
-            28
+            0,
+            30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.5042871885468064,
-        "stop_dice": 0.6665027165493381,
-        "proceed_fp_frac": 0.00037933142006802724,
-        "proceed_mean_act": 0.3839138150215149,
-        "loss": 0.7926695227622986
+        "stop_iou": 0.4083407636165751,
+        "stop_dice": 0.5745447517572283,
+        "proceed_fp_frac": 0.007258450255102041,
+        "proceed_mean_act": 0.3864574730396271,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.34376333171618706,
+          "stop_dice": 0.5098991217857066,
+          "proceed_fp_frac": 0.01447172619047619,
+          "proceed_mean_act": 0.390250027179718
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.4729181955169631,
+          "stop_dice": 0.6391903817287503,
+          "proceed_fp_frac": 4.5174319727891154e-05,
+          "proceed_mean_act": 0.3826650083065033
+        },
+        "loss": 0.783171554406484
       }
     }
   },
@@ -321,13 +909,62 @@
             6
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 6,
-        "stop_iou": 0.7606750033413535,
-        "stop_dice": 0.8626724155994957,
-        "proceed_fp_frac": 0.0,
-        "proceed_mean_act": 0.28390371799468994,
-        "loss": 0.6075084010759989
+        "stop_iou": 0.43157580018021874,
+        "stop_dice": 0.6022893344551323,
+        "proceed_fp_frac": 0.001743861607142857,
+        "proceed_mean_act": 0.36849817633628845,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4,
+          "stop_iou": 0.41384404324338553,
+          "stop_dice": 0.5853594905528477,
+          "proceed_fp_frac": 0.0004982461734693878,
+          "proceed_mean_act": 0.3704429864883423
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 2,
+          "stop_iou": 0.4670393140538851,
+          "stop_dice": 0.6361490222597017,
+          "proceed_fp_frac": 0.004235092474489796,
+          "proceed_mean_act": 0.3646085858345032
+        },
+        "loss": 0.7443969448407491
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -345,61 +982,208 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.7946688914952437,
-        "stop_dice": 0.884872289113919,
-        "proceed_fp_frac": 1.8601190476190474e-05,
-        "proceed_mean_act": 0.281307578086853,
-        "loss": 0.6089892029762268
+        "stop_iou": 0.5140728604154813,
+        "stop_dice": 0.6761015265828403,
+        "proceed_fp_frac": 0.0035528273809523813,
+        "proceed_mean_act": 0.3698347210884094,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.4655651446500545,
+          "stop_dice": 0.6348415033129433,
+          "proceed_fp_frac": 0.003679049744897959,
+          "proceed_mean_act": 0.372428297996521
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.5625805761809084,
+          "stop_dice": 0.7173615498527368,
+          "proceed_fp_frac": 0.0034266050170068028,
+          "proceed_mean_act": 0.3672410845756531
+        },
+        "loss": 0.7244362791379293
       },
       "unseen_background": {
-        "accuracy": 0.9333333333333333,
-        "balanced_accuracy": 0.9333333333333333,
-        "f1": 0.9310344827586207,
-        "precision": 0.9642857142857143,
-        "recall": 0.9,
+        "accuracy": 0.9,
+        "balanced_accuracy": 0.9,
+        "f1": 0.8928571428571429,
+        "precision": 0.9615384615384616,
+        "recall": 0.8333333333333334,
         "confusion_matrix": [
           [
             29,
             1
           ],
           [
-            3,
-            27
+            5,
+            25
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.8,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.7581224708075103,
-        "stop_dice": 0.860904444604839,
-        "proceed_fp_frac": 0.0,
-        "proceed_mean_act": 0.28330859541893005,
-        "loss": 0.7983561317125957
+        "stop_iou": 0.4175165931760347,
+        "stop_dice": 0.5818384873363146,
+        "proceed_fp_frac": 0.0039015997023809524,
+        "proceed_mean_act": 0.37931957840919495,
+        "task_1": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.8888888888888888,
+          "precision": 1.0,
+          "recall": 0.8,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.45169726574137964,
+          "stop_dice": 0.6125709305527526,
+          "proceed_fp_frac": 0.00010629251700680272,
+          "proceed_mean_act": 0.3814848065376282
+        },
+        "task_2": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.896551724137931,
+          "precision": 0.9285714285714286,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              14,
+              1
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.38333592061068983,
+          "stop_dice": 0.5511060441198766,
+          "proceed_fp_frac": 0.007696906887755103,
+          "proceed_mean_act": 0.37715429067611694
+        },
+        "loss": 1.0230906128883361
       },
       "compositional": {
-        "accuracy": 1.0,
-        "balanced_accuracy": 1.0,
-        "f1": 1.0,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
         "precision": 1.0,
-        "recall": 1.0,
+        "recall": 0.9333333333333333,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            0,
-            30
+            2,
+            28
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.9333333333333333,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.780684809050154,
-        "stop_dice": 0.8755613072499993,
-        "proceed_fp_frac": 0.0,
-        "proceed_mean_act": 0.28401607275009155,
-        "loss": 0.6088036060333252
+        "stop_iou": 0.5038892645016978,
+        "stop_dice": 0.6652742587274195,
+        "proceed_fp_frac": 5.978954081632653e-06,
+        "proceed_mean_act": 0.3699193000793457,
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.45509538095445634,
+          "stop_dice": 0.6210836489515352,
+          "proceed_fp_frac": 1.1957908163265306e-05,
+          "proceed_mean_act": 0.37186822295188904
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.5526831480489393,
+          "stop_dice": 0.7094648685033043,
+          "proceed_fp_frac": 0.0,
+          "proceed_mean_act": 0.36797040700912476
+        },
+        "loss": 0.7508527318636576
       }
     }
   },
@@ -407,100 +1191,296 @@
     "seed": 101,
     "metrics": {
       "id_val": {
-        "accuracy": 0.9166666666666666,
-        "balanced_accuracy": 0.9166666666666667,
-        "f1": 0.9230769230769231,
-        "precision": 0.8571428571428571,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
         "recall": 1.0,
         "confusion_matrix": [
           [
-            5,
-            1
+            6,
+            0
           ],
           [
             0,
             6
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 6,
-        "stop_iou": 0.4797717187281047,
-        "stop_dice": 0.6467814295168833,
-        "proceed_fp_frac": 0.007251142644557823,
-        "proceed_mean_act": 0.41101810336112976,
-        "loss": 0.9441534280776978
+        "stop_iou": 0.6864749500801027,
+        "stop_dice": 0.8134668913011037,
+        "proceed_fp_frac": 3.321641156462585e-05,
+        "proceed_mean_act": 0.3489260971546173,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4,
+          "stop_iou": 0.6721757567580895,
+          "stop_dice": 0.8036139061818923,
+          "proceed_fp_frac": 4.982461734693878e-05,
+          "proceed_mean_act": 0.35527175664901733
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 2,
+          "stop_iou": 0.7150733367241295,
+          "stop_dice": 0.8331728615395262,
+          "proceed_fp_frac": 0.0,
+          "proceed_mean_act": 0.33623480796813965
+        },
+        "loss": 0.7252731720606486
       },
       "unseen_object": {
-        "accuracy": 0.95,
-        "balanced_accuracy": 0.95,
-        "f1": 0.9523809523809523,
-        "precision": 0.9090909090909091,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
         "recall": 1.0,
         "confusion_matrix": [
           [
-            27,
-            3
+            30,
+            0
           ],
           [
             0,
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.5314716964360335,
-        "stop_dice": 0.6912981345115903,
-        "proceed_fp_frac": 0.014429209183673469,
-        "proceed_mean_act": 0.4116535484790802,
-        "loss": 0.8565909584363302
+        "stop_iou": 0.774269685167514,
+        "stop_dice": 0.8718133313968405,
+        "proceed_fp_frac": 0.004875504889455782,
+        "proceed_mean_act": 0.35062965750694275,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.7465279493149758,
+          "stop_dice": 0.8546059334327564,
+          "proceed_fp_frac": 0.004199883078231293,
+          "proceed_mean_act": 0.3550674319267273
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.8020114210200523,
+          "stop_dice": 0.8890207293609245,
+          "proceed_fp_frac": 0.005551126700680272,
+          "proceed_mean_act": 0.3461918830871582
+        },
+        "loss": 0.6777960618336996
       },
       "unseen_background": {
-        "accuracy": 0.85,
-        "balanced_accuracy": 0.8500000000000001,
-        "f1": 0.8615384615384616,
-        "precision": 0.8,
-        "recall": 0.9333333333333333,
+        "accuracy": 0.9,
+        "balanced_accuracy": 0.9,
+        "f1": 0.8928571428571429,
+        "precision": 0.9615384615384616,
+        "recall": 0.8333333333333334,
         "confusion_matrix": [
           [
-            23,
-            7
+            29,
+            1
           ],
           [
-            2,
-            28
+            5,
+            25
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.8,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.4019764762258361,
-        "stop_dice": 0.5704504931053093,
-        "proceed_fp_frac": 0.03604312818877552,
-        "proceed_mean_act": 0.42433393001556396,
-        "loss": 1.088491721947988
+        "stop_iou": 0.6873197582236199,
+        "stop_dice": 0.8135141387326047,
+        "proceed_fp_frac": 0.0016090029761904763,
+        "proceed_mean_act": 0.35536396503448486,
+        "task_1": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.8888888888888888,
+          "precision": 1.0,
+          "recall": 0.8,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.6726074765028864,
+          "stop_dice": 0.8033679485614783,
+          "proceed_fp_frac": 0.0013525722789115647,
+          "proceed_mean_act": 0.3647570013999939
+        },
+        "task_2": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.896551724137931,
+          "precision": 0.9285714285714286,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              14,
+              1
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.7020320399443535,
+          "stop_dice": 0.8236603289037308,
+          "proceed_fp_frac": 0.0018654336734693876,
+          "proceed_mean_act": 0.34597092866897583
+        },
+        "loss": 0.8615360776583354
       },
       "compositional": {
-        "accuracy": 0.9666666666666667,
-        "balanced_accuracy": 0.9666666666666667,
-        "f1": 0.967741935483871,
-        "precision": 0.9375,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
         "recall": 1.0,
         "confusion_matrix": [
           [
-            28,
-            2
+            30,
+            0
           ],
           [
             0,
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "stop_iou": 0.5087951549408108,
-        "stop_dice": 0.6720568824404352,
-        "proceed_fp_frac": 0.011138791454081634,
-        "proceed_mean_act": 0.41240718960762024,
-        "loss": 0.835688050587972
+        "stop_iou": 0.7316676966345723,
+        "stop_dice": 0.8435439693443001,
+        "proceed_fp_frac": 0.0,
+        "proceed_mean_act": 0.350969523191452,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.6898398969698114,
+          "stop_dice": 0.815502817244329,
+          "proceed_fp_frac": 0.0,
+          "proceed_mean_act": 0.3545258641242981
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15,
+          "stop_iou": 0.7734954962993333,
+          "stop_dice": 0.8715851214442717,
+          "proceed_fp_frac": 0.0,
+          "proceed_mean_act": 0.34741321206092834
+        },
+        "loss": 0.6779746770858764
       }
     }
   }

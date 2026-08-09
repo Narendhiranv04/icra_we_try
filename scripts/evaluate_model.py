@@ -145,7 +145,7 @@ def main():
     print(f"Saved evaluation metrics to {out_dir / 'metrics_by_split.json'}")
 
     # Ablation logic
-    if "relational" in str(out_dir) or "pooled_multimodal" in str(out_dir) or "demo_query" in str(out_dir) or "language_query" in str(out_dir):
+    if config.get("use_text", False) or config.get("use_demo", False):
         print("Running Conditioning Diagnostics...")
         ablation_results = {}
 

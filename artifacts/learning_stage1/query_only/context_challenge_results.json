@@ -1,0 +1,176 @@
+{
+  "standard": {
+    "accuracy": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "balanced_accuracy": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "f1": {
+      "mean": 0.019047619047619046,
+      "std": 0.03809523809523809
+    },
+    "reversal_accuracy": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "context_pair_consistency": {
+      "mean": 0.255,
+      "std": 0.010000000000000009
+    },
+    "context_flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "reversal_states_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "non_reversal_states_acc": {
+      "mean": 0.51,
+      "std": 0.020000000000000018
+    },
+    "state_A_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "state_B_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "state_C_acc": {
+      "mean": 0.02,
+      "std": 0.04
+    },
+    "state_D_acc": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "task_1_acc": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "task_2_acc": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    }
+  },
+  "generic_text": {
+    "accuracy": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "balanced_accuracy": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "f1": {
+      "mean": 0.019047619047619046,
+      "std": 0.03809523809523809
+    },
+    "reversal_accuracy": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "context_pair_consistency": {
+      "mean": 0.255,
+      "std": 0.010000000000000009
+    },
+    "context_flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "reversal_states_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "non_reversal_states_acc": {
+      "mean": 0.51,
+      "std": 0.020000000000000018
+    },
+    "state_A_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "state_B_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "state_C_acc": {
+      "mean": 0.02,
+      "std": 0.04
+    },
+    "state_D_acc": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "task_1_acc": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "task_2_acc": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    }
+  },
+  "generic_wrong_demo": {
+    "accuracy": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "balanced_accuracy": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "f1": {
+      "mean": 0.019047619047619046,
+      "std": 0.03809523809523809
+    },
+    "reversal_accuracy": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "context_pair_consistency": {
+      "mean": 0.255,
+      "std": 0.010000000000000009
+    },
+    "context_flip_rate": {
+      "mean": 0.0,
+      "std": 0.0
+    },
+    "reversal_states_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "non_reversal_states_acc": {
+      "mean": 0.51,
+      "std": 0.020000000000000018
+    },
+    "state_A_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "state_B_acc": {
+      "mean": 0.5,
+      "std": 0.0
+    },
+    "state_C_acc": {
+      "mean": 0.02,
+      "std": 0.04
+    },
+    "state_D_acc": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "task_1_acc": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    },
+    "task_2_acc": {
+      "mean": 0.505,
+      "std": 0.010000000000000009
+    }
+  }
+}

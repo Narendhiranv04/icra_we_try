@@ -18,9 +18,50 @@
             6
           ]
         ],
-        "pla": 0.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.16666666666666666,
         "total_pairs": 6,
-        "loss": 0.0004210279294056818
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.25,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.0,
+          "total_pairs": 2
+        },
+        "loss": 0.008745230035856366
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -38,29 +79,111 @@
             30
           ]
         ],
-        "pla": 0.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.13333333333333333,
         "total_pairs": 30,
-        "loss": 0.01685220084618777
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.13333333333333333,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.13333333333333333,
+          "total_pairs": 15
+        },
+        "loss": 0.021431573433801532
       },
       "unseen_background": {
-        "accuracy": 1.0,
-        "balanced_accuracy": 1.0,
-        "f1": 1.0,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
         "precision": 1.0,
-        "recall": 1.0,
+        "recall": 0.9333333333333333,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            0,
-            30
+            2,
+            28
           ]
         ],
-        "pla": 0.0,
+        "classification_pair_consistency": 0.9333333333333333,
+        "latent_pla": 0.13333333333333333,
         "total_pairs": 30,
-        "loss": 0.005882864075829275
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "latent_pla": 0.06666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.2,
+          "total_pairs": 15
+        },
+        "loss": 0.06756131630390882
       },
       "compositional": {
         "accuracy": 1.0,
@@ -78,9 +201,50 @@
             30
           ]
         ],
-        "pla": 0.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.13333333333333333,
         "total_pairs": 30,
-        "loss": 0.003999235079390928
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.06666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.2,
+          "total_pairs": 15
+        },
+        "loss": 0.014925308831152506
       }
     }
   },
@@ -103,9 +267,50 @@
             6
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 6,
-        "loss": 0.00029911735327914357
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 2
+        },
+        "loss": 0.003839674638584256
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -123,29 +328,111 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "loss": 0.02514172850351315
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.011067281069699675
       },
       "unseen_background": {
-        "accuracy": 0.9833333333333333,
-        "balanced_accuracy": 0.9833333333333334,
-        "f1": 0.9836065573770492,
-        "precision": 0.967741935483871,
-        "recall": 1.0,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
         "confusion_matrix": [
           [
-            29,
-            1
+            30,
+            0
           ],
           [
-            0,
-            30
+            2,
+            28
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.9333333333333333,
+        "latent_pla": 0.9666666666666667,
         "total_pairs": 30,
-        "loss": 0.052447833586484194
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.9333333333333333,
+          "total_pairs": 15
+        },
+        "loss": 0.07721897339797579
       },
       "compositional": {
         "accuracy": 1.0,
@@ -163,9 +450,50 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "loss": 0.0024372293810301926
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.0070007442409405485
       }
     }
   },
@@ -188,9 +516,50 @@
             6
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 6,
-        "loss": 0.004305376671254635
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 2
+        },
+        "loss": 0.004170693806372583
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -208,29 +577,111 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "loss": 0.01337841121130623
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.010230079584289342
       },
       "unseen_background": {
-        "accuracy": 0.95,
-        "balanced_accuracy": 0.95,
-        "f1": 0.9473684210526315,
+        "accuracy": 0.9333333333333333,
+        "balanced_accuracy": 0.9333333333333333,
+        "f1": 0.9285714285714286,
         "precision": 1.0,
-        "recall": 0.9,
+        "recall": 0.8666666666666667,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            3,
-            27
+            4,
+            26
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 0.8666666666666667,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "loss": 0.1145227311499184
+        "task_1": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.8888888888888888,
+          "precision": 1.0,
+          "recall": 0.8,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 0.9666666666666667,
+          "balanced_accuracy": 0.9666666666666667,
+          "f1": 0.9655172413793104,
+          "precision": 1.0,
+          "recall": 0.9333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              1,
+              14
+            ]
+          ],
+          "classification_pair_consistency": 0.9333333333333333,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.1549783462251071
       },
       "compositional": {
         "accuracy": 1.0,
@@ -248,9 +699,50 @@
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 1.0,
         "total_pairs": 30,
-        "loss": 0.004471332969842479
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.00996817255509086
       }
     }
   },
@@ -273,49 +765,172 @@
             6
           ]
         ],
-        "pla": 0.8333333333333334,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.8333333333333334,
         "total_pairs": 6,
-        "loss": 0.0013266111491248012
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.5,
+          "total_pairs": 2
+        },
+        "loss": 0.007251987233757973
       },
       "unseen_object": {
-        "accuracy": 0.9833333333333333,
-        "balanced_accuracy": 0.9833333333333334,
-        "f1": 0.9836065573770492,
-        "precision": 0.967741935483871,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
         "recall": 1.0,
         "confusion_matrix": [
           [
-            29,
-            1
+            30,
+            0
           ],
           [
             0,
             30
           ]
         ],
-        "pla": 0.8333333333333334,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.8333333333333334,
         "total_pairs": 30,
-        "loss": 0.027406470850110054
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.6666666666666666,
+          "total_pairs": 15
+        },
+        "loss": 0.01603879063623026
       },
       "unseen_background": {
-        "accuracy": 0.9666666666666667,
-        "balanced_accuracy": 0.9666666666666667,
-        "f1": 0.9666666666666667,
-        "precision": 0.9666666666666667,
-        "recall": 0.9666666666666667,
+        "accuracy": 0.95,
+        "balanced_accuracy": 0.95,
+        "f1": 0.9473684210526315,
+        "precision": 1.0,
+        "recall": 0.9,
         "confusion_matrix": [
           [
-            29,
-            1
+            30,
+            0
           ],
           [
-            1,
-            29
+            3,
+            27
           ]
         ],
-        "pla": 0.8333333333333334,
+        "classification_pair_consistency": 0.9,
+        "latent_pla": 0.6333333333333333,
         "total_pairs": 30,
-        "loss": 0.062136708103935234
+        "task_1": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.8888888888888888,
+          "precision": 1.0,
+          "recall": 0.8,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "latent_pla": 0.8,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.4666666666666667,
+          "total_pairs": 15
+        },
+        "loss": 0.10643165314104408
       },
       "compositional": {
         "accuracy": 1.0,
@@ -333,9 +948,50 @@
             30
           ]
         ],
-        "pla": 0.6666666666666666,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.6,
         "total_pairs": 30,
-        "loss": 0.0065134899923577905
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.5333333333333333,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.6666666666666666,
+          "total_pairs": 15
+        },
+        "loss": 0.009884011000394821
       }
     }
   },
@@ -358,49 +1014,172 @@
             6
           ]
         ],
-        "pla": 0.8333333333333334,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.8333333333333334,
         "total_pairs": 6,
-        "loss": 0.09757661819458008
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.5,
+          "total_pairs": 2
+        },
+        "loss": 0.003811711212620139
       },
       "unseen_object": {
-        "accuracy": 0.9666666666666667,
-        "balanced_accuracy": 0.9666666666666667,
-        "f1": 0.967741935483871,
-        "precision": 0.9375,
+        "accuracy": 1.0,
+        "balanced_accuracy": 1.0,
+        "f1": 1.0,
+        "precision": 1.0,
         "recall": 1.0,
         "confusion_matrix": [
           [
-            28,
-            2
+            30,
+            0
           ],
           [
             0,
             30
           ]
         ],
-        "pla": 1.0,
+        "classification_pair_consistency": 1.0,
+        "latent_pla": 0.8333333333333334,
         "total_pairs": 30,
-        "loss": 0.19415477477014065
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.6666666666666666,
+          "total_pairs": 15
+        },
+        "loss": 0.015464138996321708
       },
       "unseen_background": {
-        "accuracy": 0.9166666666666666,
-        "balanced_accuracy": 0.9166666666666667,
-        "f1": 0.9152542372881356,
-        "precision": 0.9310344827586207,
-        "recall": 0.9,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
         "confusion_matrix": [
           [
-            28,
-            2
+            30,
+            0
           ],
           [
-            3,
-            27
+            2,
+            28
           ]
         ],
-        "pla": 0.9,
+        "classification_pair_consistency": 0.9333333333333333,
+        "latent_pla": 0.8,
         "total_pairs": 30,
-        "loss": 0.2492336267605424
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "latent_pla": 0.8666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.7333333333333333,
+          "total_pairs": 15
+        },
+        "loss": 0.045863155493861996
       },
       "compositional": {
         "accuracy": 0.9833333333333333,
@@ -418,9 +1197,50 @@
             29
           ]
         ],
-        "pla": 0.9333333333333333,
+        "classification_pair_consistency": 0.9666666666666667,
+        "latent_pla": 0.8333333333333334,
         "total_pairs": 30,
-        "loss": 0.1658635064959526
+        "task_1": {
+          "accuracy": 0.9666666666666667,
+          "balanced_accuracy": 0.9666666666666667,
+          "f1": 0.9655172413793104,
+          "precision": 1.0,
+          "recall": 0.9333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              1,
+              14
+            ]
+          ],
+          "classification_pair_consistency": 0.9333333333333333,
+          "latent_pla": 0.8666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "latent_pla": 0.8,
+          "total_pairs": 15
+        },
+        "loss": 0.017277568749705097
       }
     }
   }

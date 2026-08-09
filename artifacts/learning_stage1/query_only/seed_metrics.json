@@ -18,7 +18,47 @@
             6
           ]
         ],
-        "loss": 0.009742852067574859
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 6,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 2
+        },
+        "loss": 0.015455510467290878
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -36,43 +76,163 @@
             30
           ]
         ],
-        "loss": 0.035930750775150955
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.03408280271105468
       },
       "unseen_background": {
-        "accuracy": 0.9666666666666667,
-        "balanced_accuracy": 0.9666666666666667,
-        "f1": 0.9666666666666667,
-        "precision": 0.9666666666666667,
-        "recall": 0.9666666666666667,
-        "confusion_matrix": [
-          [
-            29,
-            1
-          ],
-          [
-            1,
-            29
-          ]
-        ],
-        "loss": 0.06811020558234304
-      },
-      "compositional": {
-        "accuracy": 1.0,
-        "balanced_accuracy": 1.0,
-        "f1": 1.0,
+        "accuracy": 0.95,
+        "balanced_accuracy": 0.95,
+        "f1": 0.9473684210526315,
         "precision": 1.0,
-        "recall": 1.0,
+        "recall": 0.9,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            0,
-            30
+            3,
+            27
           ]
         ],
-        "loss": 0.01667512790299952
+        "classification_pair_consistency": 0.9,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9,
+          "balanced_accuracy": 0.9,
+          "f1": 0.8888888888888888,
+          "precision": 1.0,
+          "recall": 0.8,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "classification_pair_consistency": 0.8,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.10836431669304147
+      },
+      "compositional": {
+        "accuracy": 0.9833333333333333,
+        "balanced_accuracy": 0.9833333333333334,
+        "f1": 0.9830508474576272,
+        "precision": 1.0,
+        "recall": 0.9666666666666667,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            1,
+            29
+          ]
+        ],
+        "classification_pair_consistency": 0.9666666666666667,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9666666666666667,
+          "balanced_accuracy": 0.9666666666666667,
+          "f1": 0.9655172413793104,
+          "precision": 1.0,
+          "recall": 0.9333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              1,
+              14
+            ]
+          ],
+          "classification_pair_consistency": 0.9333333333333333,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.02801297971745953
       }
     }
   },
@@ -95,7 +255,47 @@
             6
           ]
         ],
-        "loss": 0.008874660357832909
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 6,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 2
+        },
+        "loss": 0.01411351002752781
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -113,25 +313,105 @@
             30
           ]
         ],
-        "loss": 0.03517159866169095
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.031221476616337895
       },
       "unseen_background": {
-        "accuracy": 0.9833333333333333,
-        "balanced_accuracy": 0.9833333333333334,
-        "f1": 0.9836065573770492,
-        "precision": 0.967741935483871,
-        "recall": 1.0,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
         "confusion_matrix": [
           [
-            29,
-            1
+            30,
+            0
           ],
           [
-            0,
-            30
+            2,
+            28
           ]
         ],
-        "loss": 0.05081867065746337
+        "classification_pair_consistency": 0.9333333333333333,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.06787144229747355
       },
       "compositional": {
         "accuracy": 1.0,
@@ -149,7 +429,47 @@
             30
           ]
         ],
-        "loss": 0.012320824898779392
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.020337245077826083
       }
     }
   },
@@ -172,7 +492,47 @@
             6
           ]
         ],
-        "loss": 0.013509139651432633
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 6,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 2
+        },
+        "loss": 0.026924137957394123
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -190,25 +550,105 @@
             30
           ]
         ],
-        "loss": 0.03520686714909971
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.040147606283426285
       },
       "unseen_background": {
-        "accuracy": 0.9833333333333333,
-        "balanced_accuracy": 0.9833333333333334,
-        "f1": 0.9830508474576272,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
         "precision": 1.0,
-        "recall": 0.9666666666666667,
+        "recall": 0.9333333333333333,
         "confusion_matrix": [
           [
             30,
             0
           ],
           [
-            1,
-            29
+            2,
+            28
           ]
         ],
-        "loss": 0.05459524650359526
+        "classification_pair_consistency": 0.9333333333333333,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.05655803473200649
       },
       "compositional": {
         "accuracy": 1.0,
@@ -226,7 +666,47 @@
             30
           ]
         ],
-        "loss": 0.011024414794519544
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.023892907483968884
       }
     }
   },
@@ -249,7 +729,47 @@
             6
           ]
         ],
-        "loss": 0.006457605864852667
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 6,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 2
+        },
+        "loss": 0.019016169011592865
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -267,9 +787,107 @@
             30
           ]
         ],
-        "loss": 0.03966257721185684
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.03654468595050275
       },
       "unseen_background": {
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
+        "confusion_matrix": [
+          [
+            30,
+            0
+          ],
+          [
+            2,
+            28
+          ]
+        ],
+        "classification_pair_consistency": 0.9333333333333333,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.07417944935150445
+      },
+      "compositional": {
         "accuracy": 0.9833333333333333,
         "balanced_accuracy": 0.9833333333333334,
         "f1": 0.9830508474576272,
@@ -285,25 +903,47 @@
             29
           ]
         ],
-        "loss": 0.048390770331025124
-      },
-      "compositional": {
-        "accuracy": 1.0,
-        "balanced_accuracy": 1.0,
-        "f1": 1.0,
-        "precision": 1.0,
-        "recall": 1.0,
-        "confusion_matrix": [
-          [
-            30,
-            0
+        "classification_pair_consistency": 0.9666666666666667,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9666666666666667,
+          "balanced_accuracy": 0.9666666666666667,
+          "f1": 0.9655172413793104,
+          "precision": 1.0,
+          "recall": 0.9333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              1,
+              14
+            ]
           ],
-          [
-            0,
-            30
-          ]
-        ],
-        "loss": 0.013347304775379598
+          "classification_pair_consistency": 0.9333333333333333,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.0299317886820063
       }
     }
   },
@@ -326,7 +966,47 @@
             6
           ]
         ],
-        "loss": 0.022767595015466213
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 6,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              4,
+              0
+            ],
+            [
+              0,
+              4
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 4
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              2
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 2
+        },
+        "loss": 0.021858131512999535
       },
       "unseen_object": {
         "accuracy": 1.0,
@@ -344,25 +1024,105 @@
             30
           ]
         ],
-        "loss": 0.07895846292376518
+        "classification_pair_consistency": 1.0,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.036868763621896505
       },
       "unseen_background": {
-        "accuracy": 0.9333333333333333,
-        "balanced_accuracy": 0.9333333333333333,
-        "f1": 0.9310344827586207,
-        "precision": 0.9642857142857143,
-        "recall": 0.9,
+        "accuracy": 0.9666666666666667,
+        "balanced_accuracy": 0.9666666666666667,
+        "f1": 0.9655172413793104,
+        "precision": 1.0,
+        "recall": 0.9333333333333333,
         "confusion_matrix": [
           [
-            29,
-            1
+            30,
+            0
           ],
           [
-            3,
-            27
+            2,
+            28
           ]
         ],
-        "loss": 0.1863566222600639
+        "classification_pair_consistency": 0.9333333333333333,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9333333333333333,
+          "balanced_accuracy": 0.9333333333333333,
+          "f1": 0.9285714285714286,
+          "precision": 1.0,
+          "recall": 0.8666666666666667,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "classification_pair_consistency": 0.8666666666666667,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.07109375135041773
       },
       "compositional": {
         "accuracy": 0.9833333333333333,
@@ -380,7 +1140,47 @@
             29
           ]
         ],
-        "loss": 0.06821266585029662
+        "classification_pair_consistency": 0.9666666666666667,
+        "total_pairs": 30,
+        "task_1": {
+          "accuracy": 0.9666666666666667,
+          "balanced_accuracy": 0.9666666666666667,
+          "f1": 0.9655172413793104,
+          "precision": 1.0,
+          "recall": 0.9333333333333333,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              1,
+              14
+            ]
+          ],
+          "classification_pair_consistency": 0.9333333333333333,
+          "total_pairs": 15
+        },
+        "task_2": {
+          "accuracy": 1.0,
+          "balanced_accuracy": 1.0,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "confusion_matrix": [
+            [
+              15,
+              0
+            ],
+            [
+              0,
+              15
+            ]
+          ],
+          "classification_pair_consistency": 1.0,
+          "total_pairs": 15
+        },
+        "loss": 0.022243882878683507
       }
     }
   }

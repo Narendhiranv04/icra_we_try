@@ -1,58 +1,62 @@
 import json
-import subprocess
 import hashlib
+import os
+import torch
+import sys
 from pathlib import Path
-from collections import Counter
 
-def get_git_commit():
-    try:
-        return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
-    except Exception:
-        return "unknown"
+def hash_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
-def main():
-    manifest_path = Path("data/manifests/pilot_manifest.jsonl")
-    out_path = Path("artifacts/learning_stage1/dataset_provenance.json")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    with open(manifest_path, 'rb') as f:
-        sha256 = hashlib.sha256(f.read()).hexdigest()
-        
-    records = []
-    with open(manifest_path, 'r') as f:
-        for line in f:
-            if line.strip():
-                records.append(json.loads(line))
-                
-    controls = [r for r in records if r.get("sample_type") == "positive_control"]
-    pairs = [r for r in records if r.get("sample_type") != "positive_control"]
-    
-    splits = Counter()
-    tasks = Counter()
-    demos = set()
-    
-    for p in pairs:
-        spec = p.get("stop", {}).get("spec", {})
-        splits[spec.get("split", "unknown")] += 1
-        tasks[spec.get("task_family", "unknown")] += 1
-    
-    provenance = {
-        "tested_benchmark_commit": get_git_commit(),
-        "pilot_config": "configs/pilot.yaml",
-        "pilot_manifest_path": str(manifest_path),
-        "pilot_manifest_sha256": sha256,
-        "matched_pair_count": len(pairs),
-        "query_count": len(pairs) * 2,
-        "control_count": len(controls),
-        "split_counts": dict(splits),
-        "task_counts": dict(tasks),
-        "query_root_directory": "data/pilot_queries"
+out = {
+    "TRAINED_CODE_COMMIT": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+    "POSTPROCESS_CODE_COMMIT": "pending",
+    "model_seeds": [11, 23, 42, 67, 101],
+    "effective_split_seed": 42,
+    "effective_sampler_seed": 42,
+    "bootstrap_draws": 2000,
+    "encoders": {
+        "visual": "DINOv2 ViT-S/14",
+        "text": "SentenceTransformer all-MiniLM-L6-v2"
+    },
+    "environment": {
+        "python": sys.version,
+        "pytorch": torch.__version__,
+        "cuda_available": torch.cuda.is_available(),
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
     }
-    
-    with open(out_path, 'w') as f:
-        json.dump(provenance, f, indent=2)
-        
-    print(f"Dataset provenance saved to {out_path}")
+}
 
-if __name__ == "__main__":
-    main()
+bench_a = Path("learning_data/index.jsonl")
+if bench_a.exists():
+    out["benchmark_a_hash"] = hash_file(bench_a)
+    with open(bench_a) as f:
+        out["benchmark_a_counts"] = sum(1 for line in f if line.strip())
+else:
+    out["benchmark_a_hash"] = "Not found"
+
+bench_b = Path("data/manifests/context_challenge_manifest.jsonl")
+if bench_b.exists():
+    out["benchmark_b_hash"] = hash_file(bench_b)
+    with open(bench_b) as f:
+        records = [json.loads(line) for line in f if line.strip()]
+        out["benchmark_b_counts"] = len(records)
+        scenes = set(r["pair_id"] for r in records)
+        out["benchmark_b_scenes"] = len(scenes)
+        
+        state_counts = {"A": 0, "B": 0, "C": 0, "D": 0}
+        for r in records:
+            state_counts[r.get("state", "UNKNOWN")] += 1
+        out["benchmark_b_state_counts"] = state_counts
+else:
+    out["benchmark_b_hash"] = "Not found"
+
+Path("artifacts/learning_stage1").mkdir(parents=True, exist_ok=True)
+with open("artifacts/learning_stage1/dataset_provenance.json", "w") as f:
+    json.dump(out, f, indent=2)
+    
+print("Saved provenance")

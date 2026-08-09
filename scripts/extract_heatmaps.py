@@ -113,7 +113,7 @@ def generate_heatmaps():
                     else:
                         continue # No heatmap
 
-            h_img = heat_preds[0].numpy()
+            h_img = heat_preds[0].detach().float().cpu().numpy()
             h_img = np.clip(h_img, 0, 1)
 
             heatmap = (h_img * 255).astype(np.uint8)

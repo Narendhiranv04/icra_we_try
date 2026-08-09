@@ -1,0 +1,824 @@
+{
+  "context_standard": {
+    "accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.4989875,
+          "lower": 0.3875,
+          "upper": 0.6
+        },
+        {
+          "seed": 23,
+          "mean": 0.4989875,
+          "lower": 0.3875,
+          "upper": 0.6
+        },
+        {
+          "seed": 42,
+          "mean": 0.5245375,
+          "lower": 0.4125,
+          "upper": 0.625
+        },
+        {
+          "seed": 67,
+          "mean": 0.4989875,
+          "lower": 0.3875,
+          "upper": 0.6
+        },
+        {
+          "seed": 101,
+          "mean": 0.4989875,
+          "lower": 0.3875,
+          "upper": 0.6
+        }
+      ]
+    },
+    "f1": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.0913357410409868,
+          "lower": 0.0,
+          "upper": 0.27906976744186046
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "balanced_accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 23,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 42,
+          "mean": 0.5250136041118696,
+          "lower": 0.5,
+          "upper": 0.5810810810810811
+        },
+        {
+          "seed": 67,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 101,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        }
+      ]
+    },
+    "context_pair_consistency": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.249375,
+          "lower": 0.125,
+          "upper": 0.375
+        },
+        {
+          "seed": 23,
+          "mean": 0.249375,
+          "lower": 0.125,
+          "upper": 0.375
+        },
+        {
+          "seed": 42,
+          "mean": 0.274925,
+          "lower": 0.15,
+          "upper": 0.4
+        },
+        {
+          "seed": 67,
+          "mean": 0.249375,
+          "lower": 0.125,
+          "upper": 0.375
+        },
+        {
+          "seed": 101,
+          "mean": 0.249375,
+          "lower": 0.125,
+          "upper": 0.375
+        }
+      ]
+    },
+    "context_flip_rate": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "reversal_accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "reversal_states_acc": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 23,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 42,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 67,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 101,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        }
+      ]
+    },
+    "non_reversal_states_acc": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.49744621042802317,
+          "lower": 0.26666666666666666,
+          "upper": 0.7142857142857143
+        },
+        {
+          "seed": 23,
+          "mean": 0.49744621042802317,
+          "lower": 0.26666666666666666,
+          "upper": 0.7142857142857143
+        },
+        {
+          "seed": 42,
+          "mean": 0.5485774125395394,
+          "lower": 0.3181818181818182,
+          "upper": 0.7619047619047619
+        },
+        {
+          "seed": 67,
+          "mean": 0.49744621042802317,
+          "lower": 0.26666666666666666,
+          "upper": 0.7142857142857143
+        },
+        {
+          "seed": 101,
+          "mean": 0.49744621042802317,
+          "lower": 0.26666666666666666,
+          "upper": 0.7142857142857143
+        }
+      ]
+    }
+  },
+  "context_generic_text": {
+    "accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.49904375000000006,
+          "lower": 0.3875,
+          "upper": 0.6125
+        },
+        {
+          "seed": 23,
+          "mean": 0.49904375000000006,
+          "lower": 0.3875,
+          "upper": 0.6125
+        },
+        {
+          "seed": 42,
+          "mean": 0.52441875,
+          "lower": 0.4125,
+          "upper": 0.6375
+        },
+        {
+          "seed": 67,
+          "mean": 0.49904375000000006,
+          "lower": 0.3875,
+          "upper": 0.6125
+        },
+        {
+          "seed": 101,
+          "mean": 0.49904375000000006,
+          "lower": 0.3875,
+          "upper": 0.6125
+        }
+      ]
+    },
+    "f1": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.09101994151938614,
+          "lower": 0.0,
+          "upper": 0.2857142857142857
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "balanced_accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 23,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 42,
+          "mean": 0.5249722367925729,
+          "lower": 0.5,
+          "upper": 0.5833333333333334
+        },
+        {
+          "seed": 67,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 101,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        }
+      ]
+    },
+    "context_pair_consistency": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.2497375,
+          "lower": 0.125,
+          "upper": 0.4
+        },
+        {
+          "seed": 23,
+          "mean": 0.2497375,
+          "lower": 0.125,
+          "upper": 0.4
+        },
+        {
+          "seed": 42,
+          "mean": 0.27511250000000004,
+          "lower": 0.15,
+          "upper": 0.425
+        },
+        {
+          "seed": 67,
+          "mean": 0.2497375,
+          "lower": 0.125,
+          "upper": 0.4
+        },
+        {
+          "seed": 101,
+          "mean": 0.2497375,
+          "lower": 0.125,
+          "upper": 0.4
+        }
+      ]
+    },
+    "context_flip_rate": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "reversal_accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "reversal_states_acc": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 23,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 42,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 67,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 101,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        }
+      ]
+    },
+    "non_reversal_states_acc": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.49853290413471196,
+          "lower": 0.27765151515151537,
+          "upper": 0.7144285714285706
+        },
+        {
+          "seed": 23,
+          "mean": 0.49853290413471196,
+          "lower": 0.27765151515151537,
+          "upper": 0.7144285714285706
+        },
+        {
+          "seed": 42,
+          "mean": 0.5492677700065863,
+          "lower": 0.3181818181818182,
+          "upper": 0.7619047619047619
+        },
+        {
+          "seed": 67,
+          "mean": 0.49853290413471196,
+          "lower": 0.27765151515151537,
+          "upper": 0.7144285714285706
+        },
+        {
+          "seed": 101,
+          "mean": 0.49853290413471196,
+          "lower": 0.27765151515151537,
+          "upper": 0.7144285714285706
+        }
+      ]
+    }
+  },
+  "context_generic_wrong_demo": {
+    "accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.50018125,
+          "lower": 0.3875,
+          "upper": 0.6125
+        },
+        {
+          "seed": 23,
+          "mean": 0.50018125,
+          "lower": 0.3875,
+          "upper": 0.6125
+        },
+        {
+          "seed": 42,
+          "mean": 0.52549375,
+          "lower": 0.4125,
+          "upper": 0.6375
+        },
+        {
+          "seed": 67,
+          "mean": 0.50018125,
+          "lower": 0.3875,
+          "upper": 0.6125
+        },
+        {
+          "seed": 101,
+          "mean": 0.50018125,
+          "lower": 0.3875,
+          "upper": 0.6125
+        }
+      ]
+    },
+    "f1": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.09121700354008827,
+          "lower": 0.0,
+          "upper": 0.28082706766917226
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "balanced_accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 23,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 42,
+          "mean": 0.525030334519801,
+          "lower": 0.5,
+          "upper": 0.5816751700680269
+        },
+        {
+          "seed": 67,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 101,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        }
+      ]
+    },
+    "context_pair_consistency": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.24996249999999998,
+          "lower": 0.125,
+          "upper": 0.375
+        },
+        {
+          "seed": 23,
+          "mean": 0.24996249999999998,
+          "lower": 0.125,
+          "upper": 0.375
+        },
+        {
+          "seed": 42,
+          "mean": 0.275275,
+          "lower": 0.15,
+          "upper": 0.425
+        },
+        {
+          "seed": 67,
+          "mean": 0.24996249999999998,
+          "lower": 0.125,
+          "upper": 0.375
+        },
+        {
+          "seed": 101,
+          "mean": 0.24996249999999998,
+          "lower": 0.125,
+          "upper": 0.375
+        }
+      ]
+    },
+    "context_flip_rate": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "reversal_accuracy": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 23,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 42,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 67,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        },
+        {
+          "seed": 101,
+          "mean": 0.0,
+          "lower": 0.0,
+          "upper": 0.0
+        }
+      ]
+    },
+    "reversal_states_acc": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 23,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 42,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 67,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        },
+        {
+          "seed": 101,
+          "mean": 0.5,
+          "lower": 0.5,
+          "upper": 0.5
+        }
+      ]
+    },
+    "non_reversal_states_acc": {
+      "per_seed": [
+        {
+          "seed": 11,
+          "mean": 0.5006955528647508,
+          "lower": 0.27263986013986025,
+          "upper": 0.7222222222222222
+        },
+        {
+          "seed": 23,
+          "mean": 0.5006955528647508,
+          "lower": 0.27263986013986025,
+          "upper": 0.7222222222222222
+        },
+        {
+          "seed": 42,
+          "mean": 0.5512095643017949,
+          "lower": 0.3157894736842105,
+          "upper": 0.7777777777777778
+        },
+        {
+          "seed": 67,
+          "mean": 0.5006955528647508,
+          "lower": 0.27263986013986025,
+          "upper": 0.7222222222222222
+        },
+        {
+          "seed": 101,
+          "mean": 0.5006955528647508,
+          "lower": 0.27263986013986025,
+          "upper": 0.7222222222222222
+        }
+      ]
+    }
+  }
+}

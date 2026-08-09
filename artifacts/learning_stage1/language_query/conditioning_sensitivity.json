@@ -1,172 +1,962 @@
 {
   "Wrong Instruction": {
-    "accuracy": {
-      "mean": 0.9833333333333332,
-      "std": 0.03333333333333335
+    "id_train": {
+      "accuracy": {
+        "mean": 0.9958333333333332,
+        "std": 0.008333333333333349
+      },
+      "f1": {
+        "mean": 0.9957446808510639,
+        "std": 0.008510638297872354
+      },
+      "latent_pla": {
+        "mean": 0.8333333333333334,
+        "std": 0.27259045389660214
+      },
+      "mean_delta_logit": {
+        "mean": 2.4390625,
+        "std": 0.38210114071837215
+      },
+      "flip_rate": {
+        "mean": 0.004166666666666667,
+        "std": 0.008333333333333333
+      },
+      "mean_delta_prob": {
+        "mean": 0.0367706298828125,
+        "std": 0.020717593301731223
+      },
+      "mean_confidence": {
+        "mean": 0.92685546875,
+        "std": 0.03837207218892753
+      },
+      "mean_compatibility": {
+        "mean": 0.013686954602599144,
+        "std": 0.04343590583547237
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.029741615429520606,
+        "std": 0.00827375648335223
+      }
     },
-    "f1": {
-      "mean": 0.9818181818181818,
-      "std": 0.036363636363636376
+    "id_val": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.8333333333333334,
+        "std": 0.33333333333333337
+      },
+      "mean_delta_logit": {
+        "mean": 2.1896484375,
+        "std": 0.31351544005414433
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0368682861328125,
+        "std": 0.010043466173611359
+      },
+      "mean_confidence": {
+        "mean": 0.92646484375,
+        "std": 0.020671316218591026
+      },
+      "mean_compatibility": {
+        "mean": 0.00422142930328846,
+        "std": 0.050906570219048534
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.028434531390666963,
+        "std": 0.007100704240377774
+      }
     },
-    "pla": {
-      "mean": 0.6666666666666667,
-      "std": 0.408248290463863
+    "unseen_object": {
+      "accuracy": {
+        "mean": 0.9333333333333332,
+        "std": 0.014907119849998594
+      },
+      "f1": {
+        "mean": 0.9287906286091404,
+        "std": 0.017154949861687044
+      },
+      "latent_pla": {
+        "mean": 0.9,
+        "std": 0.20000000000000004
+      },
+      "mean_delta_logit": {
+        "mean": 2.30546875,
+        "std": 0.3877169094267991
+      },
+      "flip_rate": {
+        "mean": 0.06666666666666667,
+        "std": 0.014907119849998594
+      },
+      "mean_delta_prob": {
+        "mean": 0.084759521484375,
+        "std": 0.01777841686881566
+      },
+      "mean_confidence": {
+        "mean": 0.87666015625,
+        "std": 0.0226840145071404
+      },
+      "mean_compatibility": {
+        "mean": 0.009114430285990238,
+        "std": 0.04424319530534946
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.03008643351495266,
+        "std": 0.006734529214923119
+      }
     },
-    "flip_rate": {
-      "mean": 0.016666666666666666,
-      "std": 0.03333333333333333
+    "unseen_background": {
+      "accuracy": {
+        "mean": 0.8966666666666667,
+        "std": 0.046427960923947034
+      },
+      "f1": {
+        "mean": 0.8817630433121991,
+        "std": 0.05788410118254456
+      },
+      "latent_pla": {
+        "mean": 0.7666666666666667,
+        "std": 0.3552776691859794
+      },
+      "mean_delta_logit": {
+        "mean": 2.332421875,
+        "std": 0.389939633123473
+      },
+      "flip_rate": {
+        "mean": 0.09666666666666665,
+        "std": 0.028674417556808753
+      },
+      "mean_delta_prob": {
+        "mean": 0.10931396484375,
+        "std": 0.017071523383379483
+      },
+      "mean_confidence": {
+        "mean": 0.84111328125,
+        "std": 0.021123116855090968
+      },
+      "mean_compatibility": {
+        "mean": 0.011780955083668231,
+        "std": 0.04721476050944629
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.025916144996881486,
+        "std": 0.010035597408348569
+      }
     },
-    "mean_delta_logit": {
-      "mean": NaN,
-      "std": NaN
-    },
-    "mean_confidence": {
-      "mean": 0.903125,
-      "std": 0.040203786536895963
-    },
-    "mean_compatibility": {
-      "mean": 0.021159677952528,
-      "std": 0.07232291203387313
-    },
-    "mean_delta_compatibility": {
-      "mean": 0.03618246279656887,
-      "std": 0.004227342316413546
+    "compositional": {
+      "accuracy": {
+        "mean": 0.9399999999999998,
+        "std": 0.038873012632301994
+      },
+      "f1": {
+        "mean": 0.9343377121758959,
+        "std": 0.044333511439665345
+      },
+      "latent_pla": {
+        "mean": 0.8466666666666667,
+        "std": 0.29028721409436326
+      },
+      "mean_delta_logit": {
+        "mean": 2.2939453125,
+        "std": 0.34166515318992785
+      },
+      "flip_rate": {
+        "mean": 0.06333333333333332,
+        "std": 0.03231786571610886
+      },
+      "mean_delta_prob": {
+        "mean": 0.07467041015625,
+        "std": 0.020824596043111432
+      },
+      "mean_confidence": {
+        "mean": 0.8748046875,
+        "std": 0.024270279732040264
+      },
+      "mean_compatibility": {
+        "mean": 0.011526793986558915,
+        "std": 0.045559893594060916
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.029494257271289827,
+        "std": 0.00702525842827161
+      }
     }
   },
   "Held-out Paraphrase": {
-    "accuracy": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_train": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.8916666666666666,
+        "std": 0.17795130420052185
+      },
+      "mean_delta_logit": {
+        "mean": 0.84833984375,
+        "std": 0.13091496895106758
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.003121185302734375,
+        "std": 0.0011701484219625053
+      },
+      "mean_confidence": {
+        "mean": 0.990625,
+        "std": 0.004159285046688839
+      },
+      "mean_compatibility": {
+        "mean": -0.004522601177450269,
+        "std": 0.04255715182191699
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.004464211454614997,
+        "std": 0.0020351718831259774
+      }
     },
-    "f1": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_val": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.8666666666666666,
+        "std": 0.26666666666666666
+      },
+      "mean_delta_logit": {
+        "mean": 0.5484375,
+        "std": 0.10001528146330481
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0039196014404296875,
+        "std": 0.001052513619598695
+      },
+      "mean_confidence": {
+        "mean": 0.983984375,
+        "std": 0.004216217411117755
+      },
+      "mean_compatibility": {
+        "mean": -0.009505172166973353,
+        "std": 0.04378395845379915
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.004794535110704601,
+        "std": 0.0022382525524173025
+      }
     },
-    "pla": {
-      "mean": 0.6333333333333333,
-      "std": 0.45215533220835125
+    "unseen_object": {
+      "accuracy": {
+        "mean": 0.9933333333333334,
+        "std": 0.008164965809277286
+      },
+      "f1": {
+        "mean": 0.9932203389830508,
+        "std": 0.008303355060281938
+      },
+      "latent_pla": {
+        "mean": 0.8933333333333333,
+        "std": 0.15114378731672848
+      },
+      "mean_delta_logit": {
+        "mean": 0.6791015625,
+        "std": 0.14259598293558357
+      },
+      "flip_rate": {
+        "mean": 0.006666666666666666,
+        "std": 0.008164965809277261
+      },
+      "mean_delta_prob": {
+        "mean": 0.01453094482421875,
+        "std": 0.0029303931340159024
+      },
+      "mean_confidence": {
+        "mean": 0.93818359375,
+        "std": 0.013223680374852153
+      },
+      "mean_compatibility": {
+        "mean": -0.00884041937533766,
+        "std": 0.04119985141154499
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.004590497398748994,
+        "std": 0.0019474059692311239
+      }
     },
-    "flip_rate": {
-      "mean": 0.0,
-      "std": 0.0
+    "unseen_background": {
+      "accuracy": {
+        "mean": 0.95,
+        "std": 0.010540925533894595
+      },
+      "f1": {
+        "mean": 0.9472387866217267,
+        "std": 0.011684370587756029
+      },
+      "latent_pla": {
+        "mean": 0.8333333333333334,
+        "std": 0.23758039574940618
+      },
+      "mean_delta_logit": {
+        "mean": 0.68427734375,
+        "std": 0.123556808564429
+      },
+      "flip_rate": {
+        "mean": 0.016666666666666666,
+        "std": 0.010540925533894598
+      },
+      "mean_delta_prob": {
+        "mean": 0.01963958740234375,
+        "std": 0.003647496633086896
+      },
+      "mean_confidence": {
+        "mean": 0.91640625,
+        "std": 0.01836716506937167
+      },
+      "mean_compatibility": {
+        "mean": -0.003219679510220885,
+        "std": 0.0460025094209733
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.004264892963692546,
+        "std": 0.002103638502106199
+      }
     },
-    "mean_delta_logit": {
-      "mean": NaN,
-      "std": NaN
-    },
-    "mean_confidence": {
-      "mean": 0.96328125,
-      "std": 0.0629564024222877
-    },
-    "mean_compatibility": {
-      "mean": 0.007890872657299042,
-      "std": 0.062310629276848356
-    },
-    "mean_delta_compatibility": {
-      "mean": 0.025538883917033673,
-      "std": 0.013207605863849645
+    "compositional": {
+      "accuracy": {
+        "mean": 0.9933333333333334,
+        "std": 0.008164965809277286
+      },
+      "f1": {
+        "mean": 0.9932203389830508,
+        "std": 0.008303355060281938
+      },
+      "latent_pla": {
+        "mean": 0.8533333333333333,
+        "std": 0.24458581770458857
+      },
+      "mean_delta_logit": {
+        "mean": 0.7447265625,
+        "std": 0.12846804958589625
+      },
+      "flip_rate": {
+        "mean": 0.003333333333333333,
+        "std": 0.006666666666666666
+      },
+      "mean_delta_prob": {
+        "mean": 0.00966949462890625,
+        "std": 0.0025952363125477398
+      },
+      "mean_confidence": {
+        "mean": 0.95927734375,
+        "std": 0.006095502552471576
+      },
+      "mean_compatibility": {
+        "mean": -0.006111531896749511,
+        "std": 0.04304614031284762
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.004516425379551947,
+        "std": 0.0019879675843985822
+      }
     }
   },
   "Zero Text": {
-    "accuracy": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_train": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.6666666666666666,
+        "std": 0.3763863263545405
+      },
+      "mean_delta_logit": {
+        "mean": 3.105859375,
+        "std": 0.5289824077370745
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0308746337890625,
+        "std": 0.009636915794804272
+      },
+      "mean_confidence": {
+        "mean": 0.93525390625,
+        "std": 0.018478977940687678
+      },
+      "mean_compatibility": {
+        "mean": 0.0013331212103366852,
+        "std": 0.04694868858734715
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.03285786136984825,
+        "std": 0.018014872946612883
+      }
     },
-    "f1": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_val": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.6,
+        "std": 0.48989794855663565
+      },
+      "mean_delta_logit": {
+        "mean": 2.3533203125,
+        "std": 0.42311395763148507
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0280975341796875,
+        "std": 0.006545537472845159
+      },
+      "mean_confidence": {
+        "mean": 0.93310546875,
+        "std": 0.009843439975276681
+      },
+      "mean_compatibility": {
+        "mean": -0.0034492146223783493,
+        "std": 0.043966924025987085
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.031854850426316264,
+        "std": 0.016948804314360518
+      }
     },
-    "pla": {
-      "mean": 0.6,
-      "std": 0.48989794855663565
+    "unseen_object": {
+      "accuracy": {
+        "mean": 0.9733333333333333,
+        "std": 0.013333333333333324
+      },
+      "f1": {
+        "mean": 0.9724076409609648,
+        "std": 0.014242708124542357
+      },
+      "latent_pla": {
+        "mean": 0.7133333333333333,
+        "std": 0.33836206774532057
+      },
+      "mean_delta_logit": {
+        "mean": 2.28984375,
+        "std": 0.3972727307009553
+      },
+      "flip_rate": {
+        "mean": 0.026666666666666665,
+        "std": 0.013333333333333334
+      },
+      "mean_delta_prob": {
+        "mean": 0.05869140625,
+        "std": 0.01422537418788454
+      },
+      "mean_confidence": {
+        "mean": 0.85576171875,
+        "std": 0.011094197009039934
+      },
+      "mean_compatibility": {
+        "mean": -0.004221431165933609,
+        "std": 0.0455313174501237
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.03405269766226411,
+        "std": 0.016607660552531683
+      }
     },
-    "flip_rate": {
-      "mean": 0.0,
-      "std": 0.0
+    "unseen_background": {
+      "accuracy": {
+        "mean": 0.9200000000000002,
+        "std": 0.02211083193570267
+      },
+      "f1": {
+        "mean": 0.912409239221553,
+        "std": 0.026398003311605935
+      },
+      "latent_pla": {
+        "mean": 0.6333333333333333,
+        "std": 0.4237399621885521
+      },
+      "mean_delta_logit": {
+        "mean": 2.51953125,
+        "std": 0.40352337692215084
+      },
+      "flip_rate": {
+        "mean": 0.04,
+        "std": 0.01699673171197595
+      },
+      "mean_delta_prob": {
+        "mean": 0.06956787109375,
+        "std": 0.0142517102913376
+      },
+      "mean_confidence": {
+        "mean": 0.83330078125,
+        "std": 0.020110075350809463
+      },
+      "mean_compatibility": {
+        "mean": 0.0017766088247299194,
+        "std": 0.05576696066298202
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.04054035376757383,
+        "std": 0.01647388846910574
+      }
     },
-    "mean_delta_logit": {
-      "mean": Infinity,
-      "std": NaN
-    },
-    "mean_confidence": {
-      "mean": 0.92763671875,
-      "std": 0.05373969400651684
-    },
-    "mean_compatibility": {
-      "mean": 0.013236342370510102,
-      "std": 0.0626101344087452
-    },
-    "mean_delta_compatibility": {
-      "mean": 0.027874958142638205,
-      "std": 0.009979694064899612
+    "compositional": {
+      "accuracy": {
+        "mean": 0.9799999999999999,
+        "std": 0.01632993161855453
+      },
+      "f1": {
+        "mean": 0.9793041926851025,
+        "std": 0.017264542948657216
+      },
+      "latent_pla": {
+        "mean": 0.66,
+        "std": 0.40518857064060654
+      },
+      "mean_delta_logit": {
+        "mean": 2.760546875,
+        "std": 0.4664013426249369
+      },
+      "flip_rate": {
+        "mean": 0.01,
+        "std": 0.02
+      },
+      "mean_delta_prob": {
+        "mean": 0.050799560546875,
+        "std": 0.013994359123190648
+      },
+      "mean_confidence": {
+        "mean": 0.88173828125,
+        "std": 0.0225888004606265
+      },
+      "mean_compatibility": {
+        "mean": -0.0002507522702217102,
+        "std": 0.04534781930161207
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.032620918564498426,
+        "std": 0.017431981369306643
+      }
     }
   },
   "Wrong Demo": {
-    "accuracy": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_train": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.875,
+        "std": 0.15365907428821476
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.996875,
+        "std": 0.002239715808824163
+      },
+      "mean_compatibility": {
+        "mean": -0.00598118593916297,
+        "std": 0.04081631914277448
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "f1": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_val": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.8333333333333333,
+        "std": 0.2581988897471611
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.98837890625,
+        "std": 0.0036851488797096108
+      },
+      "mean_compatibility": {
+        "mean": -0.00981262195855379,
+        "std": 0.040685304594371585
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "pla": {
-      "mean": 0.6666666666666667,
-      "std": 0.408248290463863
+    "unseen_object": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.8866666666666667,
+        "std": 0.1514375558880073
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.9599609375,
+        "std": 0.010021073072160392
+      },
+      "mean_compatibility": {
+        "mean": -0.010059147025458515,
+        "std": 0.03892060925610292
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "flip_rate": {
-      "mean": 0.0,
-      "std": 0.0
+    "unseen_background": {
+      "accuracy": {
+        "mean": 0.96,
+        "std": 0.008164965809277286
+      },
+      "f1": {
+        "mean": 0.9582577132486388,
+        "std": 0.008891069846762942
+      },
+      "latent_pla": {
+        "mean": 0.8266666666666665,
+        "std": 0.2360790827950103
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.94501953125,
+        "std": 0.017215220897984617
+      },
+      "mean_compatibility": {
+        "mean": -0.004122792041562207,
+        "std": 0.04426897991882896
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "mean_delta_logit": {
-      "mean": NaN,
-      "std": NaN
-    },
-    "mean_confidence": {
-      "mean": 0.96650390625,
-      "std": 0.06309878569823509
-    },
-    "mean_compatibility": {
-      "mean": 0.005705694854259491,
-      "std": 0.060633394029754775
-    },
-    "mean_delta_compatibility": {
-      "mean": 0.0341224143281579,
-      "std": 0.01820933098658694
+    "compositional": {
+      "accuracy": {
+        "mean": 0.99,
+        "std": 0.008164965809277286
+      },
+      "f1": {
+        "mean": 0.9898305084745763,
+        "std": 0.008303355060281938
+      },
+      "latent_pla": {
+        "mean": 0.8533333333333333,
+        "std": 0.22958900476963415
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.9779296875,
+        "std": 0.002853835780508293
+      },
+      "mean_compatibility": {
+        "mean": -0.007341791782528162,
+        "std": 0.040872447398402616
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     }
   },
   "Zero Demo": {
-    "accuracy": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_train": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.875,
+        "std": 0.15365907428821476
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.996875,
+        "std": 0.002239715808824163
+      },
+      "mean_compatibility": {
+        "mean": -0.00598118593916297,
+        "std": 0.04081631914277448
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "f1": {
-      "mean": 1.0,
-      "std": 0.0
+    "id_val": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.8333333333333333,
+        "std": 0.2581988897471611
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.98837890625,
+        "std": 0.0036851488797096108
+      },
+      "mean_compatibility": {
+        "mean": -0.00981262195855379,
+        "std": 0.040685304594371585
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "pla": {
-      "mean": 0.6666666666666667,
-      "std": 0.408248290463863
+    "unseen_object": {
+      "accuracy": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "latent_pla": {
+        "mean": 0.8866666666666667,
+        "std": 0.1514375558880073
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.9599609375,
+        "std": 0.010021073072160392
+      },
+      "mean_compatibility": {
+        "mean": -0.010059147025458515,
+        "std": 0.03892060925610292
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "flip_rate": {
-      "mean": 0.0,
-      "std": 0.0
+    "unseen_background": {
+      "accuracy": {
+        "mean": 0.96,
+        "std": 0.008164965809277286
+      },
+      "f1": {
+        "mean": 0.9582577132486388,
+        "std": 0.008891069846762942
+      },
+      "latent_pla": {
+        "mean": 0.8266666666666665,
+        "std": 0.2360790827950103
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.94501953125,
+        "std": 0.017215220897984617
+      },
+      "mean_compatibility": {
+        "mean": -0.004122792041562207,
+        "std": 0.04426897991882896
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     },
-    "mean_delta_logit": {
-      "mean": NaN,
-      "std": NaN
-    },
-    "mean_confidence": {
-      "mean": 0.96650390625,
-      "std": 0.06309878569823509
-    },
-    "mean_compatibility": {
-      "mean": 0.00570569634437561,
-      "std": 0.06063339064562993
-    },
-    "mean_delta_compatibility": {
-      "mean": 0.024130602180957795,
-      "std": 0.017375744232604632
+    "compositional": {
+      "accuracy": {
+        "mean": 0.99,
+        "std": 0.008164965809277286
+      },
+      "f1": {
+        "mean": 0.9898305084745763,
+        "std": 0.008303355060281938
+      },
+      "latent_pla": {
+        "mean": 0.8533333333333333,
+        "std": 0.22958900476963415
+      },
+      "mean_delta_logit": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "flip_rate": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_delta_prob": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "mean_confidence": {
+        "mean": 0.9779296875,
+        "std": 0.002853835780508293
+      },
+      "mean_compatibility": {
+        "mean": -0.007341791782528162,
+        "std": 0.040872447398402616
+      },
+      "mean_delta_compatibility": {
+        "mean": 0.0,
+        "std": 0.0
+      }
     }
   }
 }

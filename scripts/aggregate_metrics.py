@@ -55,7 +55,13 @@ def main():
 
         # Aggregate condition sensitivity if it exists
         cond_paths = [Path(f"learning_outputs/{model_dir}_seed{s}/conditioning_sensitivity.json") for s in seeds]
-        if all(p.exists() for p in cond_paths):
+        if not all(p.exists() for p in cond_paths):
+            missing = [p for p in cond_paths if not p.exists()]
+            if model_dir in ["language_query", "demo_query", "full_no_ranking", "pooled_multimodal", "relational_heatmap"]:
+                raise RuntimeError(f"Error: conditioning_sensitivity.json missing for {model_dir}: {missing}")
+            else:
+                print(f"Skipping conditioning sensitivity for {model_dir}, missing: {missing}")
+        else:
             cond_metrics = []
             for cp, s in zip(cond_paths, seeds):
                 with open(cp) as f:
@@ -85,7 +91,10 @@ def main():
 
         # Aggregate Context Challenge results
         ctx_paths = [Path(f"learning_outputs/{model_dir}_seed{s}/context_challenge_results.json") for s in seeds]
-        if all(p.exists() for p in ctx_paths):
+        if not all(p.exists() for p in ctx_paths):
+            missing = [p for p in ctx_paths if not p.exists()]
+            raise RuntimeError(f"Error: context_challenge_results.json missing for {model_dir}: {missing}")
+        else:
             ctx_metrics = []
             for cp, s in zip(ctx_paths, seeds):
                 with open(cp) as f:
@@ -112,7 +121,10 @@ def main():
 
         # Aggregate Bootstrap results
         boot_paths = [Path(f"learning_outputs/{model_dir}_seed{s}/bootstrap_results.json") for s in seeds]
-        if all(p.exists() for p in boot_paths):
+        if not all(p.exists() for p in boot_paths):
+            missing = [p for p in boot_paths if not p.exists()]
+            raise RuntimeError(f"Error: bootstrap_results.json missing for {model_dir}: {missing}")
+        else:
             boot_metrics = []
             for bp, s in zip(boot_paths, seeds):
                 with open(bp) as f:

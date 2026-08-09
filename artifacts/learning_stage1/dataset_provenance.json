@@ -1,20 +1,35 @@
 {
-  "tested_benchmark_commit": "7eb0ec18c69969dd2c205ac9169366abea42628a",
-  "pilot_config": "configs/pilot.yaml",
-  "pilot_manifest_path": "data/manifests/pilot_manifest.jsonl",
-  "pilot_manifest_sha256": "33bac08757004f5a1b509e0783e828c9191a14342b0484d94558df932b7061b9",
-  "matched_pair_count": 120,
-  "query_count": 240,
-  "control_count": 32,
-  "split_counts": {
-    "id": 30,
-    "unseen_object": 30,
-    "unseen_background": 30,
-    "compositional": 30
+  "TRAINED_CODE_COMMIT": "cfc436e315f72fca536794f81efc8d2ce60be8b2",
+  "POSTPROCESS_CODE_COMMIT": "pending",
+  "model_seeds": [
+    11,
+    23,
+    42,
+    67,
+    101
+  ],
+  "effective_split_seed": 42,
+  "effective_sampler_seed": 42,
+  "bootstrap_draws": 2000,
+  "encoders": {
+    "visual": "DINOv2 ViT-S/14",
+    "text": "SentenceTransformer all-MiniLM-L6-v2"
   },
-  "task_counts": {
-    "task_1": 60,
-    "task_2": 60
+  "environment": {
+    "python": "3.10.20 (main, Jun 11 2026, 15:17:37) [GCC 14.3.0]",
+    "pytorch": "2.13.0+cu130",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 5090"
   },
-  "query_root_directory": "data/pilot_queries"
+  "benchmark_a_hash": "69cc584341fc094cae14474c689a80f0686e082ddddb2a7b9bf2db214faf8609",
+  "benchmark_a_counts": 240,
+  "benchmark_b_hash": "b547a5875547a2fd18d84f5c19a350e68098e3e5328351faeaa9105665915d15",
+  "benchmark_b_counts": 80,
+  "benchmark_b_scenes": 40,
+  "benchmark_b_state_counts": {
+    "A": 20,
+    "B": 20,
+    "C": 20,
+    "D": 20
+  }
 }

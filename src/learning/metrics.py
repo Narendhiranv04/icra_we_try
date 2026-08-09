@@ -86,7 +86,7 @@ def compute_metrics(preds, targets, scores=None, pair_ids=None, heat_preds=None,
             else: # PROCEED
                 fp_frac = hp.sum() / max(1, hp.size)
                 proceed_fp.append(fp_frac)
-                proceed_act.append(np.array(heat_preds[i]).mean())
+                proceed_act.append(hp.mean())
                 
         metrics["stop_iou"] = float(np.mean(stop_iou)) if stop_iou else 0.0
         metrics["stop_dice"] = float(np.mean(stop_dice)) if stop_dice else 0.0
