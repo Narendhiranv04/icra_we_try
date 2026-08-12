@@ -1,0 +1,26 @@
+model: query_only
+latent_dim: 256
+index_path: "data/manifests/context_forcing_v1_tiny_manifest.jsonl"
+feature_cache_path: "data/features_context_forcing_v1_tiny"
+output_path: "learning_outputs/context_forcing_v1_tiny/query_only"
+
+train_split: "context_forcing_v1_train"
+val_split: "context_forcing_v1_val"
+
+epochs: 500
+batch_size: 4
+learning_rate: 1e-3
+weight_decay: 1e-4
+patience: 50
+train_ratio: 0.8
+mixed_precision: true
+
+lambda_cls: 1.0
+lambda_rank: 0.0
+lambda_heat: 0.0
+margin: 0.2
+heatmap: false
+
+model_seed: 42
+split_seed: 42
+sampler_seed: 42

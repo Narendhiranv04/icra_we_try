@@ -6,7 +6,16 @@ from .metrics import compute_metrics
 import logging
 import os
 
-def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, accumulation_steps=1):
+def _record_gradient_norms(model):
+    norms = {}
+    for name, param in model.named_parameters():
+        if param.grad is not None and param.requires_grad:
+            # We care about text, demo, mlp, attention
+            if any(k in name for k in ["text", "demo", "mlp", "attention", "cross_attention", "vision_proj", "text_proj", "classifier"]):
+                norms[name] = float(param.grad.norm().item())
+    return norms
+
+def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, accumulation_steps=1, log_gradients=False):
     model.train()
     total_loss = 0
     all_preds, all_targets, all_scores, all_pair_ids, all_task_ids = [], [], [], [], []
@@ -60,6 +69,10 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
             scaler.scale(loss).backward()
             if (i + 1) % accumulation_steps == 0:
                 scaler.unscale_(optimizer)
+                
+                if log_gradients and i == 0:
+                    model._first_batch_grad_norms = _record_gradient_norms(model)
+                    
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 scaler.step(optimizer)
                 scaler.update()
@@ -67,6 +80,9 @@ def train_epoch(model, dataloader, optimizer, criterion, device, scaler=None, ac
         else:
             loss.backward()
             if (i + 1) % accumulation_steps == 0:
+                if log_gradients and i == 0:
+                    model._first_batch_grad_norms = _record_gradient_norms(model)
+                    
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
                 optimizer.zero_grad()

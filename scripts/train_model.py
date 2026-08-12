@@ -41,6 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--log_gradients", action="store_true")
     args = parser.parse_args()
     
     with open(args.config, "r") as f:
@@ -67,7 +68,7 @@ def main():
     train_dataset = LearningDataset(
         index_path=config.get("index_path", "learning_data/index.jsonl"),
         features_dir=config.get("feature_cache_path", "learning_data/features"),
-        split="id_train",
+        split=config.get("train_split", "id_train"),
         return_masks=config.get("heatmap", False),
         train_ratio=config.get("train_ratio", 0.8),
         seed=model_seed,
@@ -77,7 +78,7 @@ def main():
     val_dataset = LearningDataset(
         index_path=config.get("index_path", "learning_data/index.jsonl"),
         features_dir=config.get("feature_cache_path", "learning_data/features"),
-        split="id_val",
+        split=config.get("val_split", "id_val"),
         return_masks=config.get("heatmap", False),
         train_ratio=config.get("train_ratio", 0.8),
         seed=model_seed,
@@ -124,7 +125,7 @@ def main():
     history = {"train": [], "val": []}
     
     for epoch in range(epochs):
-        train_metrics = train_epoch(model, train_loader, optimizer, criterion, device, scaler, config.get("accumulation_steps", 1))
+        train_metrics = train_epoch(model, train_loader, optimizer, criterion, device, scaler, config.get("accumulation_steps", 1), log_gradients=args.log_gradients)
         val_metrics = validate_epoch(model, val_loader, criterion, device)
         
         # Clean up raw arrays before saving to history to avoid JSON errors
@@ -134,6 +135,11 @@ def main():
         history["train"].append(train_clean)
         history["val"].append(val_clean)
         
+        if args.log_gradients and hasattr(model, '_first_batch_grad_norms'):
+            with open(out_dir / f"gradient_norms_epoch{epoch+1}.json", "w") as f:
+                json.dump(model._first_batch_grad_norms, f, indent=2)
+            delattr(model, '_first_batch_grad_norms')
+
         print(f"Epoch {epoch+1}/{epochs} | Train Loss: {train_metrics['loss']:.4f} | Val Loss: {val_metrics['loss']:.4f} | Val Acc: {val_metrics['accuracy']:.4f} | Val PLA: {val_metrics.get('pla', 0):.4f}")
         
         if val_metrics["loss"] < best_val_loss:

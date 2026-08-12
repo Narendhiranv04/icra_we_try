@@ -17,24 +17,37 @@ class LearningDataset(Dataset):
         with open(index_path, "r") as f:
             all_records = [json.loads(line) for line in f if line.strip()]
 
-        # Handle splitting for id
-        if split in ["id_train", "id_val"]:
-            # Get all unique pairs in "id"
-            id_records = [r for r in all_records if r["split"] == "id"]
-            pair_ids = sorted(list(set(r["pair_id"] for r in id_records)))
-
-            # Deterministic split independent of model seed
-            rng = random.Random(split_seed)
-            rng.shuffle(pair_ids)
-            split_idx = int(len(pair_ids) * train_ratio)
-
-            train_pairs = set(pair_ids[:split_idx])
-            val_pairs = set(pair_ids[split_idx:])
-
-            if split == "id_train":
-                self.records = [r for r in id_records if r["pair_id"] in train_pairs]
+        # Handle splitting for id and context forcing
+        if split.endswith("_train") or split.endswith("_val"):
+            base_split = split.replace("_train", "").replace("_val", "")
+            id_records = [r for r in all_records if r.get("split") == base_split or r.get("dataset_role") == base_split or r.get("split") == "id"] # Fallback for 'id' dataset which lacks dataset_role sometimes
+            
+            # Since Benchmark A was just "id", we want to maintain compat.
+            # But we generated context_forcing_v1 with split "context_forcing_v1_train/val" natively!
+            # Wait, our generator already outputs "split": "context_forcing_v1_train".
+            # If the JSON record *already* has "split": "context_forcing_v1_train", we don't need to dynamically split it.
+            # Let's check if the split directly matches something in the dataset natively.
+            
+            # If there are records that natively match this exact split, use them directly!
+            exact_matches = [r for r in all_records if r.get("split") == split]
+            if len(exact_matches) > 0:
+                self.records = exact_matches
             else:
-                self.records = [r for r in id_records if r["pair_id"] in val_pairs]
+                # Dynamic split fallback for legacy "id_train"
+                pair_ids = sorted(list(set(r["pair_id"] for r in id_records)))
+    
+                # Deterministic split independent of model seed
+                rng = random.Random(split_seed)
+                rng.shuffle(pair_ids)
+                split_idx = int(len(pair_ids) * train_ratio)
+    
+                train_pairs = set(pair_ids[:split_idx])
+                val_pairs = set(pair_ids[split_idx:])
+    
+                if split.endswith("_train"):
+                    self.records = [r for r in id_records if r["pair_id"] in train_pairs]
+                else:
+                    self.records = [r for r in id_records if r["pair_id"] in val_pairs]
         elif split == "context_challenge":
             self.records = [r for r in all_records if r.get("split") == "context_challenge"]
         elif split:

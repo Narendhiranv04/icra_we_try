@@ -1,0 +1,32 @@
+{
+  "query_only": {
+    "11": {
+      "val_acc": 0.703125,
+      "best_epoch": 48
+    },
+    "42": {
+      "val_acc": 0.703125,
+      "best_epoch": 38
+    }
+  },
+  "pooled_multimodal": {
+    "11": {
+      "val_acc": 0.96875,
+      "best_epoch": 30
+    },
+    "42": {
+      "val_acc": 0.984375,
+      "best_epoch": 19
+    }
+  },
+  "relational_heatmap": {
+    "11": {
+      "val_acc": 1.0,
+      "best_epoch": 50
+    },
+    "42": {
+      "val_acc": 1.0,
+      "best_epoch": 50
+    }
+  }
+}

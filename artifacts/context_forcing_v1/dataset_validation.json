@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "total_records": 320,
+  "total_pairs": 160,
+  "train_pairs": 128,
+  "val_pairs": 32,
+  "state_distribution": {
+    "A": 40,
+    "B": 40,
+    "C": 40,
+    "D": 40
+  },
+  "errors": []
+}

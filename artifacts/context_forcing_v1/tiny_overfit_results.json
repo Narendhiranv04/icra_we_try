@@ -1,0 +1,23 @@
+{
+  "query_only": {
+    "best_epoch": 2,
+    "final_train_loss": 0.14530782060076794,
+    "final_train_acc": 1.0,
+    "final_val_loss": 3.76724910736084,
+    "final_val_acc": 0.5
+  },
+  "pooled_multimodal": {
+    "best_epoch": 1,
+    "final_train_loss": 5.569117648325517e-07,
+    "final_train_acc": 1.0,
+    "final_val_loss": 26.4453125,
+    "final_val_acc": 0.5
+  },
+  "relational_heatmap": {
+    "best_epoch": 3,
+    "final_train_loss": 0.5400254527727762,
+    "final_train_acc": 1.0,
+    "final_val_loss": 7.246303558349609,
+    "final_val_acc": 0.25
+  }
+}
