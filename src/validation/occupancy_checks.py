@@ -6,7 +6,7 @@ linear/angular speeds, and stability metrics for Task 1 (Lid Occupancy) and Task
 Requires physical stability and consecutive step settling for relation truth.
 """
 
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 import numpy as np
 import mujoco
 
@@ -352,3 +352,101 @@ def check_target_occupancy(
 
     is_occupied = len(active_culprits) > 0
     return is_occupied, active_culprits, measurements
+
+
+from dataclasses import dataclass, field
+
+
+@dataclass(frozen=True)
+class RelationalFeasibilityResult:
+    """Authoritative physical outcome from relational precondition evaluator."""
+    feasible: bool
+    task_id: str
+    active_culprits: Tuple[str, ...]
+    measurements: Dict[str, Dict[str, Any]]
+    settling_succeeded: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "feasible": self.feasible,
+            "task_id": self.task_id,
+            "active_culprits": list(self.active_culprits),
+            "measurements": self.measurements,
+            "settling_succeeded": self.settling_succeeded,
+        }
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "RelationalFeasibilityResult":
+        return cls(
+            feasible=bool(d["feasible"]),
+            task_id=str(d["task_id"]),
+            active_culprits=tuple(d.get("active_culprits", ())),
+            measurements=dict(d.get("measurements", {})),
+            settling_succeeded=bool(d.get("settling_succeeded", True)),
+        )
+
+
+def evaluate_relational_feasibility(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    task_id: str,
+    candidate_objects: Optional[List[str]] = None,
+    settle_steps: int = 300,
+    **kwargs,
+) -> RelationalFeasibilityResult:
+    """Unified physical oracle dispatcher for relational precondition feasibility F_R(s, a).
+
+    Args:
+        model: MuJoCo MjModel
+        data: MuJoCo MjData
+        task_id: Canonical task identifier ('task_1' or 'task_2')
+        candidate_objects: Explicit list of movable scene object names to check for obstruction
+        settle_steps: Maximum settling steps in occupancy predicates
+
+    Returns:
+        Structured RelationalFeasibilityResult containing feasibility bool, active culprits,
+        per-object measurements, and settling status.
+    """
+    if task_id == "task_1":
+        is_occupied, active_culprits, measurements = check_lid_occupancy(
+            model, data, blocker_names=candidate_objects, settle_steps=settle_steps, **kwargs
+        )
+        feasible = not is_occupied
+        settling_ok = all(m.get("settling_succeeded", True) for m in measurements.values()) if measurements else True
+        return RelationalFeasibilityResult(
+            feasible=feasible,
+            task_id="task_1",
+            active_culprits=tuple(active_culprits),
+            measurements=measurements,
+            settling_succeeded=settling_ok,
+        )
+    elif task_id == "task_2":
+        is_occupied, active_culprits, measurements = check_target_occupancy(
+            model, data, candidate_objects=candidate_objects, settle_steps=settle_steps, **kwargs
+        )
+        feasible = not is_occupied
+        settling_ok = all(m.get("settling_succeeded", True) for m in measurements.values()) if measurements else True
+        return RelationalFeasibilityResult(
+            feasible=feasible,
+            task_id="task_2",
+            active_culprits=tuple(active_culprits),
+            measurements=measurements,
+            settling_succeeded=settling_ok,
+        )
+    else:
+        raise ValueError(f"Unknown task_id: '{task_id}'. Expected 'task_1' or 'task_2'.")
+
+
+def check_action_feasibility(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    task_id: str,
+    candidate_objects: Optional[List[str]] = None,
+    settle_steps: int = 300,
+    **kwargs,
+) -> bool:
+    """Boolean-only convenience wrapper for evaluate_relational_feasibility."""
+    res = evaluate_relational_feasibility(
+        model, data, task_id, candidate_objects=candidate_objects, settle_steps=settle_steps, **kwargs
+    )
+    return res.feasible

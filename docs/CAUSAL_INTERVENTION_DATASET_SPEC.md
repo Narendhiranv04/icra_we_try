@@ -81,7 +81,6 @@ The dataset is stored as JSON Lines (`.jsonl`), where **each line is a single (s
   "instruction": "Open the box.",
   "task_id": "task_1",
   "pre_rgb_path": "data/intervention_v1/scenes/scene_t1_001/pre_rgb.png",
-  "pre_segmentation_path": "data/intervention_v1/scenes/scene_t1_001/pre_segmentation.png",
   "candidate_object_crop_path": "data/intervention_v1/features/crop_scene_t1_001_sugar_box.png",
   "current_geometry": {
     "relative_position": [0.02, -0.01, 0.08],
@@ -103,8 +102,9 @@ The dataset is stored as JSON Lines (`.jsonl`), where **each line is a single (s
   "causal_effect": 1,
 
   /* ================================================================
-     3. PRIVILEGED METADATA (Evaluation, Invariants, GT Oracle only)
+     3. PRIVILEGED METADATA (Evaluation, Invariants, GT Oracle, Preprocessing Assets)
      ================================================================ */
+  "pre_segmentation_path": "data/intervention_v1/scenes/scene_t1_001/pre_segmentation.png",
   "scene_id": "scene_t1_001",
   "pair_id": "pair_task_1_001",
   "query_action": "OPEN(box_B1)",
