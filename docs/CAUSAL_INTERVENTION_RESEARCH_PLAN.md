@@ -2,7 +2,7 @@
 
 > **Repository**: `/home/projects/long-horizon/infeasibiilty-latent`
 > **Branch**: `feature/context-forcing-v1-diagnostic`
-> **HEAD commit**: `f7439e2` ("Complete context_forcing_v1 diagnostic pilot")
+> **HEAD commit**: `a362018` ("docs: add causal intervention implementation plan")
 > **Audit date**: 2026-08-13
 > **Auditor**: Claude Opus 4.6 (planning-only turn)
 
@@ -40,7 +40,7 @@
 | Field | Value |
 |-------|-------|
 | Branch | `feature/context-forcing-v1-diagnostic` |
-| HEAD | `f7439e2` |
+| HEAD | `a362018` |
 | Commit message | "Complete context_forcing_v1 diagnostic pilot (Outcome 1/2 Confirmed)" |
 | Working tree | Clean (modified: `artifacts/learning_stage1/pytest.xml`; untracked: scratch image scripts) |
 | Origin/main | `feature/demo-conditioned-relational-latent` at `00e05b0` |
@@ -109,7 +109,7 @@
 #### Milestone 1 — Representation Learning (COMPLETE)
 - 30 runs: 6 model families × 5 seeds (11, 23, 42, 67, 101)
 - **Key finding**: All models achieve 0.0 reversal accuracy on Benchmark B
-- Query-only achieves high accuracy on Benchmark A → visual shortcuts
+- Query-only achieves high accuracy on Benchmark A → visual shortcuts (approaching ~0.75 visual ceiling on balanced A/B/C/D context sets)
 - Relational model: 100% logical test accuracy, but shortcut-dependent
 
 #### Milestone 2 — Context Challenge (COMPLETE)
@@ -118,7 +118,7 @@
 - Strong evidence of shortcut-permissive data, not architectural inability
 
 #### Context Forcing V1 (COMPLETE — current branch)
-- **query_only**: 0.703 val accuracy (at chance boundary for forced-context task)
+- **query_only**: 0.703 val accuracy (approaching visual-only ceiling of ~0.75 for forced-context task)
 - **pooled_multimodal**: 0.977 val accuracy
 - **relational_heatmap**: 1.000 val accuracy
 - **Conclusion**: Architectures *can* condition on context when shortcuts are removed. The earlier failure was data-driven.
@@ -226,11 +226,11 @@ Each milestone answers **one** scientific question. They are sequenced so that e
 ### M0 — CONTEXT CONDITIONING (COMPLETE)
 **Claim**: The relational cross-attention architecture can condition predictions on task/demo context when the dataset prevents visual shortcuts.
 **Evidence**: Context Forcing V1 pilot — relational model achieves 1.000 val accuracy on deconfounded data.
-**Status**: ✅ Verified at `f7439e2`.
+**Status**: ✅ Verified at `a362018`.
 
 ### M1 — INTERVENTION DATASET VALIDITY
 **Question**: Can we generate rigorously validated candidate interventions for STOP states and measure their ground-truth effect on feasibility?
-**Claim**: For each STOP scene with N candidate objects, simulator-validated interventions produce correct Δ_i ∈ {0, 1} labels, including correct=1, irrelevant=0, and hard-negative=0 cases.
+**Claim**: For each STOP scene with exactly 1 causal culprit and N distractors, simulator-validated interventions produce correct Δ_i ∈ {-1, 0, +1} labels, including correct=1, irrelevant=0, and hard-negative=0 cases.
 **Gate**: 100% agreement between programmatic Δ_i and manual inspection on smoke set; all validation tests pass.
 
 ### M2 — SHORTCUT BASELINE
@@ -251,7 +251,7 @@ Each milestone answers **one** scientific question. They are sequenced so that e
 ### M5 — CORRECTIVE REPAIR VALIDATION
 **Question**: Does the model-selected intervention actually restore feasibility when executed in MuJoCo?
 **Claim**: Oracle-selected interventions restore feasibility at near-100% rates; model-predicted interventions restore at rates significantly above random.
-**Gate**: Oracle CFR ≥ 95%; model CFR > 70%.
+**Gate**: Oracle CFR ≥ 95%; model CFR > 70% (PROVISIONAL GATES).
 
 ### M6 — IRRELEVANT INTERVENTION INVARIANCE
 **Question**: Can irrelevant interventions/distractors be correctly ignored?
@@ -326,7 +326,7 @@ For each STOP scene with candidate objects O = {o_1, ..., o_N}:
 - `RELOCATE(distractor, anywhere)` — moves a visually similar but non-causal object
 - `RELOCATE(culprit, other_obstruction_pose)` — moves culprit from one obstructing pose to another
 
-For PROCEED scenes: all candidate interventions yield Δ_i = 0 (feasibility already 1). Important control.
+For PROCEED scenes: generate Harmful interventions (Δ_i = -1) by moving distractors to obstructing poses, plus controls (Δ_i = 0) (feasibility already 1). Important control.
 
 ### 4.3 Record Schema
 
@@ -363,7 +363,7 @@ class InterventionRecord:
     intervention_idx: int           # randomized index
     intervention_object: str        # body name
     intervention_operator: str      # "NONE" / "RELOCATE"
-    intervention_target_location: str
+    intervention_target_location: str  # PRIVILEGED_GT_ONLY
     intervention_type: str          # "correct" / "irrelevant" / "hard_negative" / "none"
     intervention_parameters: dict   # destination pose, etc.
 
@@ -373,7 +373,7 @@ class InterventionRecord:
     post_feasible: bool             # F(T(s, ρ_i), a)
 
     # Causal labels
-    causal_effect: int              # Δ_i = post_feasible - pre_feasible ∈ {-1, 0, 1}
+    causal_effect: int              # Δ_i = post_feasible - pre_feasible ∈ {-1, 0, +1}
     is_culprit: bool
     culprit_object: Optional[str]
     culprit_relation: str           # "ON_TOP_OF" / "OCCUPIES" / "NONE"
@@ -453,8 +453,9 @@ INPUTS:
 INTERVENTION ENCODING:
     intervention descriptor = concat(
         object_visual_crop_feat,             # (768,) DINOv2 crop of intervened object
-        intervention_type_embed,             # (64,) learned embed for NONE/RELOCATE
-        destination_type_embed,              # (64,) learned embed for clear/still_obstructing
+        operator_embed,             # (64,) learned embed for NONE/RELOCATE
+        current_geometry_feat,               # (16,) target-relative geometry
+        proposed_destination_geometry,       # (16,) proposed target-relative geometry
     )                                        # total D_interv = 896
 
 PROJECTIONS:
@@ -488,11 +489,12 @@ Each batch contains:
 - Pre-intervention samples (intervention=NONE) with label = pre_feasible
 - Intervention samples with label = post_feasible
 
-Predicted effect: `Δ̂_i = σ(logit_post(intervention_i)) - σ(logit_post(NONE))`
+Predicted effect: `Δ̂_i = P(F_post=1 | rho_i) - P(F_post=1 | NONE)`
 
 ### 5.5 Compatibility with Baselines
 
-- **B0 Query-only**: No intervention, no context → unchanged
+- **B0 Query-only**: Pre-scene only, no intervention descriptor → unchanged
+- **B0b Simple Intervention**: MLP over (scene_global, candidate_geom, operator), no relational context.
 - **B1 Pooled multimodal**: Extended with intervention concatenation
 - **B2 Relational**: Extended as above
 - **B3 Feasibility-only**: Same architecture, no intervention loss
@@ -654,7 +656,8 @@ L_heat = BCE(heatmap, causal_mask) + DiceLoss(heatmap, causal_mask)
 ### 7.8 Total Loss (V2)
 
 ```
-L = λ_feas·L_feas + λ_rank·L_rank_interv + λ_effect·L_effect + λ_heat·L_heat
+L = λ_feas·L_feas + λ_rank·L_rank_interv
+Note: Redundant effect/heatmap losses removed or optional. Target is P(F_post=1 | rho_i).
 ```
 Recommended: λ_feas=1.0, λ_rank=0.3, λ_effect=0.5, λ_heat=0.3
 
@@ -703,7 +706,7 @@ class Intervention:
     object_name: str
     destination: str          # "safe_region" / "still_on_lid"
     destination_pose: List[float]
-    intervention_type: str    # "correct"/"irrelevant"/"hard_negative"/"none"
+    intervention_type: str    # PRIVILEGED_GT_ONLY
 ```
 
 ### 8.4 InterventionOutcome
@@ -863,7 +866,7 @@ artifacts/intervention_v1/
 - **Hypothesis**: Intervention conditioning enables better ranking and CFR.
 - **Model**: V2
 - **Metric**: Top-1, CFR, culprit top-1, AUROC
-- **Expected**: Top-1 > 80% ID; CFR > 70%
+- **Expected**: Top-1 > 80% ID; CFR > 70% (PROVISIONAL GATES)
 - **Failure**: Check gradient flow through intervention tokens
 
 ### Exp 5: Irrelevance Invariance
@@ -1075,7 +1078,7 @@ Hardware: RTX 5090 32GB, 48 CPU, 125GB RAM — more than sufficient.
 
 ```
 Phase 0: Preparation
-  [ ] Create feature branch: feature/intervention-v1
+  [ ] Create feature branch: feature/causal-intervention-v2
   [ ] Finalize this plan document
   [ ] Create companion doc: CAUSAL_INTERVENTION_DATASET_SPEC.md
   [ ] Create companion doc: CAUSAL_INTERVENTION_ARCHITECTURE.md

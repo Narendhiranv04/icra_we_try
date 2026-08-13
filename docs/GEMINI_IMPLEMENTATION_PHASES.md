@@ -9,11 +9,11 @@
 ## Phase P1: Intervention Types and Generator (No Rendering)
 
 ### Prerequisite
-- Repository at commit `f7439e2` or descendant on branch `feature/intervention-v1`
+- Repository at commit `f7439e2` or descendant on branch `feature/causal-intervention-v2`
 - MuJoCo environment functional (verified by existing tests)
 
 ### Objective
-Create the core dataclasses and the candidate intervention generator that takes a STOP scene specification and produces a set of candidate interventions (correct, irrelevant, hard-negative) without rendering any images.
+Create the core dataclasses and the candidate intervention generator that takes a STOP scene specification and produces a set of candidate interventions (correct, irrelevant, hard-negative, harmful) without rendering any images.
 
 ### Files to Create
 
@@ -37,6 +37,7 @@ Class `InterventionGenerator`:
   - For each culprit: generate RELOCATE(culprit, still_obstructing_pose) — hard negative
   - For each distractor: generate RELOCATE(distractor, safe_region) — irrelevant
   - Generate NONE — identity control
+  - For PROCEED scenes: generate RELOCATE(distractor, obstructing_pose) — harmful
   - Use scene_utils functions for sampling positions
   - For Task 1 "still_obstructing" = sample another position ON the lid
   - For Task 2 "still_obstructing" = sample another position IN the target
@@ -46,7 +47,7 @@ Class `InterventionGenerator`:
 ### Tests to Create
 
 #### `tests/test_interventions.py`
-1. `test_generate_candidates_correct_count` — For 1 culprit + 1 distractor, get exactly 4 interventions (correct, hard_neg, irrelevant, none)
+1. `test_generate_candidates_correct_count` — For 1 culprit + 1 distractor, get exactly 4 interventions for STOP (correct, hard_neg, irrelevant, none)
 2. `test_correct_intervention_safe_region` — Correct intervention destination is physically off the lid / outside target
 3. `test_hard_negative_still_obstructs` — Hard negative destination is still on lid / in target
 4. `test_none_intervention_is_identity` — NONE has zero destination change
@@ -106,8 +107,9 @@ def check_action_feasibility(model, data, task_id, **kwargs):
 
 ### Tests to Add to `tests/test_interventions.py`
 
-7. `test_correct_intervention_flips_feasibility` — Build a STOP scene for Task 1 with a blocker on lid. Apply RELOCATE(blocker, safe_region). Verify feasibility changes from False to True.
-8. `test_irrelevant_preserves_infeasibility` — Same STOP scene. Apply RELOCATE(distractor, safe_region). Verify feasibility remains False.
+7. `test_correct_intervention_flips_feasibility` — Build a STOP scene for Task 1 with a blocker on lid. Apply RELOCATE(blocker, safe_region). Verify feasibility changes from False to True (causal_effect = +1).
+8. `test_irrelevant_preserves_infeasibility` — Same STOP scene. Apply RELOCATE(distractor, safe_region). Verify feasibility remains False (causal_effect = 0).
+8b. `test_harmful_intervention_breaks_feasibility` — Build a PROCEED scene. Apply RELOCATE(distractor, onto_lid). Verify feasibility changes from True to False (causal_effect = -1).
 9. `test_hard_negative_preserves_infeasibility` — Apply RELOCATE(blocker, still_on_lid). Verify feasibility remains False.
 10. `test_none_preserves_state` — Apply NONE intervention. Verify scene state unchanged.
 11. `test_only_declared_object_changes` — After applying an intervention, verify all other objects are within tolerance of original positions.
@@ -252,10 +254,10 @@ Create the PyTorch dataset class for intervention records and extend feature ext
 #### `src/learning/intervention_dataset.py`
 Class `InterventionDataset(Dataset)`:
 - `__init__(self, index_path, features_dir, split, ...)`
-- Loads intervention JSONL records
+- Loads intervention JSONL records. Ensures post-intervention state is separate from forward inputs.
 - For each record, loads:
   - Pre-intervention query features (global + patch) — same as existing
-  - Post-intervention query features (global + patch) — new
+  - Post-intervention query features — (Note: For SUPERVISION/EVAL only, NOT model input)
   - Intervention object crop features — new
   - Text features — same as existing
   - Demo features — same as existing
@@ -314,8 +316,8 @@ Class `InterventionConditionedRelationalModel(nn.Module)`:
   - `interv_type_embed = nn.Embedding(2, 64)` — NONE/RELOCATE
   - `interv_dest_embed = nn.Embedding(4, 64)` — destination types
   - Temporal position embedding extended to `1 + K + 1`
-- `forward(self, text_feat, demo_global, query_patch, interv_object_crop, interv_type_idx, interv_dest_idx)`
-  - Builds intervention descriptor: concat(crop, type_embed, dest_embed)
+- `forward(self, text_feat, demo_global, query_patch, interv_object_crop, interv_current_geom, interv_dest_geom, interv_operator_idx)`
+  - Builds intervention descriptor: concat(crop, current_geom, dest_geom, operator_embed)
   - Projects to latent: z_int
   - Appends z_int to temporal sequence
   - Self-attention → cross-attention → classifier

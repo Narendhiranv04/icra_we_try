@@ -20,7 +20,8 @@ To isolate the source of performance, we compare several model variants:
 
 | ID | Name | Intervention Input? | Intervention Loss? | Notes |
 |----|------|--------------------|-------------------|-------|
-| B0 | Query-Only | No | No | MLP from global DINOv2 feature. Baseline for visual shortcuts. |
+| B0 | Query-Only | No | No | MLP from global DINOv2 feature. Baseline for visual shortcuts (ceiling ~0.75). |
+| B0b | Simple Intervention | Yes | No | MLP from (scene_global, candidate_geom, operator). Weak baseline for candidate ranking. |
 | B3 | Feasibility-Only | No | No | Full relational V1 model trained only on $L_{feas}$. Tests if intervention ranking emerges zero-shot. |
 | B4 | Direct Culprit | No | No | Relational model with a head predicting `is_culprit` directly from scene tokens. Tests if explicit intervention conditioning is needed for localization. |
 | **V2** | **Intervention Relational** | **Yes** | **Yes** | Proposed model. Modifies temporal context sequence with intervention descriptor. |
@@ -35,7 +36,7 @@ All core experiments are run using a 5-seed protocol (seeds: 11, 23, 42, 67, 101
 - **Goal**: Establish that the intervention prediction task cannot be solved by exploiting visual correlations or zero-shot feasibility gradients.
 - **Metric**: Intervention Top-1 Accuracy on ID split.
 - **Success Criteria**: 
-  - B0 (Query-Only) accuracy $\le 1/N + \epsilon$ (approx. random chance).
+  - B0b (Simple Intervention) accuracy $\le 1/N + \epsilon$. (Note: pure B0 pre-scene only cannot rank interventions. For context forcing, B0 accuracy approaches the visual ceiling of ~0.75, not 0.50).
   - B3 (Feasibility-Only) accuracy significantly below V2.
 
 ### Exp 2: Direct Culprit vs. Intervention Conditioning (B4 vs V2)
@@ -50,7 +51,7 @@ All core experiments are run using a 5-seed protocol (seeds: 11, 23, 42, 67, 101
 
 ### Exp 4: Irrelevance Invariance
 - **Goal**: Show that the model ignores distractors.
-- **Protocol**: Evaluate V2 on the subset of *irrelevant* interventions ($\Delta_i=0$).
+- **Protocol**: Evaluate V2 on the subset of *irrelevant* and *identity* interventions ($\Delta_i=0$).
 - **Metric**: False Relevance Rate (FRR) — proportion of irrelevant interventions where $|\hat{\Delta}_i| > \tau$ (e.g., $\tau=0.2$). Mean $|\hat{\Delta}_i|$.
 - **Success Criteria**: FRR $< 5\%$, Mean $|\hat{\Delta}_i| < 0.05$.
 
@@ -74,7 +75,7 @@ To isolate the contribution of specific architectural components and loss terms 
 | **A4** | No Ranking Loss | Set $\lambda_{rank} = 0$. | Intervention ranking metrics degrade faster than absolute feasibility accuracy. |
 | **A5** | No Effect Loss | Set $\lambda_{effect} = 0$. | $\hat{\Delta}_i$ calibration degrades. |
 | **A8** | No Object Crop | Zero out `object_crop_feature` in `z_interv`. | Model cannot identify *which* object is being intervened upon; Top-1 drops. |
-| **A9** | No Type/Dest Embeddings | Zero out embeddings in `z_interv`. | Model cannot reason about the *semantics* of the intervention; Hard Negative discrimination fails. |
+| **A9** | No Geometry/Operator Embeddings | Zero out geometric features and operator embeddings in `z_interv`. | Model cannot reason about the *semantics* of the intervention; Hard Negative discrimination fails. |
 
 ---
 

@@ -11,8 +11,8 @@ The current model (`DemoLanguageConditionedRelationalModel`) operates by embeddi
 
 1. **Vision Encoder**: Frozen DINOv2 (`ViT-B/14`). Extracts 768-d global token and $16 \times 16$ patch tokens.
 2. **Text Encoder**: Frozen `all-MiniLM-L6-v2`. Extracts 384-d sentence embedding.
-3. **Temporal Encoder**: 4-layer Transformer encoder processing `[text_token, demo_global_1, ..., demo_global_K]`.
-4. **Cross Attention**: 2-layer Transformer cross-attention where query patch tokens (Q) attend to the pooled output of the temporal encoder (K, V).
+3. **Temporal Encoder**: 2-layer Transformer encoder processing `[text_token, demo_global_1, ..., demo_global_K]`.
+4. **Cross Attention**: 2-layer Transformer cross-attention where query patch tokens (Q) attend to the full sequence output of the temporal encoder (K, V).
 5. **Output**: Mean pooling of the updated patch tokens feeds into an MLP to predict feasibility.
 
 **Limitation**: V1 can only predict *whether* a scene is feasible. It has no mechanism to reason about counterfactual interventions.
@@ -32,8 +32,9 @@ An intervention is described by the object being acted upon and the semantic des
 ```
 z_interv = concat(
     proj_visual(object_crop_feature),      # (768,) DINOv2 feature of cropped object
-    embed_operator(intervention_operator), # (64,) e.g., NONE, RELOCATE
-    embed_dest(destination_type)           # (64,) e.g., CLEAR, STILL_OBSTRUCTING
+    current_geometry_feature,              # (16,) e.g., target-relative current pose
+    proposed_destination_geometry,         # (16,) e.g., target-relative destination pose
+    embed_operator(intervention_operator)  # (64,) e.g., NONE, RELOCATE
 )
 z_int = proj_interv(z_interv)              # (256,)
 ```
