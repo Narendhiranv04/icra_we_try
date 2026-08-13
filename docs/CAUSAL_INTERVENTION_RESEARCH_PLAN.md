@@ -2,9 +2,9 @@
 
 > **Repository**: `/home/projects/long-horizon/infeasibiilty-latent`
 > **Branch**: `feature/context-forcing-v1-diagnostic`
-> **HEAD commit**: `a362018` ("docs: add causal intervention implementation plan")
-> **Audit date**: 2026-08-13
-> **Auditor**: Claude Opus 4.6 (planning-only turn)
+> **HEAD commit**: `35758b5` ("docs: finalize causal intervention plan and add demo scripts")
+> **Audit date**: 2026-08-14
+> **Auditor**: Senior Research-Engineering Planner (Packet 0)
 
 ---
 
@@ -12,7 +12,7 @@
 
 1. [Current-State Audit](#1-current-state-audit)
 2. [Freeze / Reuse Decisions](#2-freeze--reuse-decisions)
-3. [Scientific Claim Ladder](#3-scientific-claim-ladder)
+3. [Scientific Claim Ladder & Feasibility Hierarchy](#3-scientific-claim-ladder--feasibility-hierarchy)
 4. [Dataset V2 Design](#4-dataset-v2-design)
 5. [Architecture V2 Design](#5-architecture-v2-design)
 6. [Architecture V3 Design](#6-architecture-v3-design)
@@ -40,9 +40,9 @@
 | Field | Value |
 |-------|-------|
 | Branch | `feature/context-forcing-v1-diagnostic` |
-| HEAD | `a362018` |
-| Commit message | "Complete context_forcing_v1 diagnostic pilot (Outcome 1/2 Confirmed)" |
-| Working tree | Clean (modified: `artifacts/learning_stage1/pytest.xml`; untracked: scratch image scripts) |
+| HEAD | `35758b5` |
+| Commit message | "docs: finalize causal intervention plan and add demo scripts" |
+| Working tree | Clean |
 | Origin/main | `feature/demo-conditioned-relational-latent` at `00e05b0` |
 
 ### 1.2 Important Modules (Verified from Source)
@@ -95,11 +95,6 @@
 | `relational_model.py` (4.3KB) | Cross-attention: [text, demo_frames] self-attn → query_patch cross-attn → classifier + ranking score + Z_R | ✅ Validated |
 | `heatmap_decoder.py` (1.8KB) | CNN decoder: 16×16 patch tokens → 224×224 causal heatmap | ✅ Validated |
 
-### 1.3 Current Datasets
-
-| Dataset | Records | Purpose | Location |
-|---------|---------|---------|----------|
-| Smoke | 16 | CI/CD regression | `data/` (generated) |
 | Pilot | 152 (120 pairs + 32 controls) | Primary learning dataset | `data/` (generated) |
 | Context Challenge (Benchmark B) | 80 (40 physical scenes × 2 tasks) | Same-RGB context-reversal test | `data/context_challenge/` |
 | Context Forcing V1 | ~128 train + ~64 val (native splits) | Deconfounded forcing dataset | `data/context_forcing_v1/` |
@@ -219,76 +214,78 @@
 
 ---
 
-## 3. Scientific Claim Ladder
+## 3. Scientific Claim Ladder & Feasibility Hierarchy
 
-Each milestone answers **one** scientific question. They are sequenced so that each depends on the previous.
+### 3.0 Feasibility Level Hierarchy
+To prevent conflating symbolic preconditions with execution dynamics, we formally distinguish four levels:
+- **$F_R(s, a)$ — Relational Precondition Feasibility**: Relational preconditions for action $a$ (e.g., lid is clear for `OPEN(box)`, target region is unoccupied for `PLACE(object, target)`).
+- **$F_M(s, a, \theta)$ — Continuous Motion Feasibility**: Kinematic reachability, collision avoidance, and IK feasibility for execution parameter $\theta$.
+- **$F_A(s, a) = F_R(s, a) \land F_M(s, a, \theta)$ — Executable Action Feasibility**: Conjunction of relational preconditions and valid motion plan.
+- **$F_\pi(s, \pi_{\text{remaining}})$ — Residual-Plan Feasibility**: Multi-step downstream execution feasibility w.r.t. remaining plan prefix $\pi_{\text{remaining}}$.
+
+The current research phase focuses strictly on learning **intervention-grounded relational feasibility $F_R$**. Motion ($F_M$) and residual-plan ($F_\pi$) conditioning are deferred to subsequent project phases.
+
+Each milestone answers **one** scientific question:
 
 ### M0 — CONTEXT CONDITIONING (COMPLETE)
 **Claim**: The relational cross-attention architecture can condition predictions on task/demo context when the dataset prevents visual shortcuts.
 **Evidence**: Context Forcing V1 pilot — relational model achieves 1.000 val accuracy on deconfounded data.
-**Status**: ✅ Verified at `a362018`.
+**Status**: ✅ Verified at `35758b5`.
 
 ### M1 — INTERVENTION DATASET VALIDITY
-**Question**: Can we generate rigorously validated candidate interventions for STOP states and measure their ground-truth effect on feasibility?
-**Claim**: For each STOP scene with exactly 1 causal culprit and N distractors, simulator-validated interventions produce correct Δ_i ∈ {-1, 0, +1} labels, including correct=1, irrelevant=0, and hard-negative=0 cases.
-**Gate**: 100% agreement between programmatic Δ_i and manual inspection on smoke set; all validation tests pass.
+**Question**: Can we generate rigorously validated candidate interventions and measure their ground-truth effect on feasibility?
+**Claim**: For each base scene with 1 causal culprit and $N$ distractors (STOP) or $N$ distractors (PROCEED), simulator-validated interventions produce correct ground-truth $\Delta_i = F_R(T(s, \rho_i), a) - F_R(s, a) \in \{-1, 0, +1\}$ labels across all 5 semantic categories (repair=+1, hard-negative=0, irrelevant=0, identity=0, harmful=-1).
+**Gate**: 100% agreement between simulator $F_R$ evaluations and labels across the smoke dataset (6 scenes, 22 records); all validation tests pass.
 
-### M2 — SHORTCUT BASELINE
-**Question**: Can a visual-only model solve intervention ranking without actually understanding the causal structure?
-**Claim**: A query-only baseline cannot significantly exceed chance on intervention ranking when the dataset is properly deconfounded.
-**Gate**: Query-only intervention top-1 accuracy ≤ 1/N_candidates + ε.
+### M2 — SHORTCUT BASELINES (B0 & B0b)
+**Question**: Can a visual-only or simple non-relational model solve candidate ranking without relational context?
+**Claim**: A query-only baseline (B0) cannot rank candidate interventions (receives identical scene inputs for all candidates). A simple candidate-aware MLP baseline (B0b) cannot significantly exceed chance on candidate ranking when the dataset is deconfounded ($Top\text{-}1 \le 1/N + \epsilon$).
+**Gate**: B0b intervention top-1 accuracy $\le 1/N_{\text{candidates}} + \epsilon$.
 
-### M3 — CAUSAL INTERVENTION PREDICTION
-**Question**: Given scene, action, and demo context, can the model identify which candidate intervention restores feasibility?
-**Claim**: The intervention-conditioned model significantly outperforms query-only and feasibility-only baselines on intervention top-1 accuracy and CFR.
-**Gate**: Top-1 intervention accuracy > 80% on ID split; CFR > 70%.
+### M3 — INTERVENTION-GROUNDED PREDICTION (V2 vs. B3)
+**Question**: Does candidate ranking supervision improve reparative action prediction over passive feasibility training alone?
+**Claim**: The intervention-conditioned relational model trained with ranking loss (V2) significantly outperforms the feasibility-only ablation (B3, trained with $\lambda_{rank}=0$) and the non-relational candidate baseline (B0b) on Top-1 intervention accuracy and Counterfactual Repair Rate (CFR).
+**Provisional Target**: Top-1 intervention accuracy > 80% on ID split; CFR > 70%.
 
 ### M4 — CAUSAL OBJECT/RELATION LOCALIZATION
 **Question**: Can the model identify the responsible object and violated relation?
-**Claim**: High culprit top-1 accuracy and relation accuracy, exceeding direct classification baselines lacking intervention supervision.
-**Gate**: Culprit top-1 > 85% on ID; demonstrably better than B4 (no intervention supervision).
+**Claim**: High culprit top-1 accuracy and relation accuracy, exceeding direct classification baselines (B4) lacking intervention supervision.
+**Provisional Target**: Culprit top-1 > 85% on ID; demonstrably better than B4.
 
 ### M5 — CORRECTIVE REPAIR VALIDATION
 **Question**: Does the model-selected intervention actually restore feasibility when executed in MuJoCo?
-**Claim**: Oracle-selected interventions restore feasibility at near-100% rates; model-predicted interventions restore at rates significantly above random.
-**Gate**: Oracle CFR ≥ 95%; model CFR > 70% (PROVISIONAL GATES).
+**Claim**: Oracle-selected interventions restore feasibility at $\ge 95\%$ rates; model-predicted interventions restore at rates significantly above random baselines.
+**Provisional Target**: Oracle CFR $\ge 95\%$; model CFR > 70%.
 
 ### M6 — IRRELEVANT INTERVENTION INVARIANCE
-**Question**: Can irrelevant interventions/distractors be correctly ignored?
-**Claim**: Feasibility prediction and causal attribution are invariant under irrelevant interventions and distractor additions.
-**Gate**: False-relevance rate < 5%; prediction Δ under irrelevant intervention < 0.05.
+**Question**: Can irrelevant interventions and identity controls be correctly ignored?
+**Claim**: Feasibility prediction is invariant under irrelevant interventions and distractor manipulations ($|\hat{\Delta}_j| \approx 0$).
+**Provisional Target**: False-relevance rate (FRR) < 5%; mean $|\hat{\Delta}|$ for irrelevant interventions < 0.05.
 
-### M7 — OBJECT-CENTRIC REPRESENTATION
+### M7 — OBJECT-CENTRIC REPRESENTATION (V3 CONCEPT)
 **Question**: Does an object-factored model improve causal generalization over patch/global representations?
-**Claim**: Object-centric (V3) shows improved OOD generalization vs. patch-based (V2).
-**Gate**: ≥ 5% improvement on unseen-object split intervention accuracy.
+**Claim**: Object-centric relational re-encoding (V3) shows improved OOD generalization vs. patch-based V2.
+**Provisional Target**: $\ge 5\%$ improvement on unseen-object split intervention accuracy.
 
 ### M8 — TRAJECTORY DEMONSTRATION CONDITIONING
 **Question**: What does target-relative robot trajectory add beyond video-only demonstration features?
 **Claim**: EE pose/gripper trajectory features improve feasibility prediction.
-**Gate**: Statistically significant improvement on at least one OOD split.
 
 ### M9 — RESIDUAL PLAN CONDITIONING
-**Question**: Can the representation reason about feasibility w.r.t. a later action?
+**Question**: Can the representation reason about feasibility w.r.t. a later action in a multi-step plan?
 **Claim**: Plan-conditioned model correctly identifies objects affecting future subgoals.
-**Gate**: Multi-step plan accuracy > 75% on divergent immediate/residual feasibility cases.
 
 ### M10 — DISCOVERY GATING
 **Question**: Can newly discovered objects be partitioned into irrelevant, locally repairable, and replanning-relevant?
 **Claim**: Correct CONTINUE / LOCAL_REPAIR / GLOBAL_REPLAN classification.
-**Gate**: F1 > 0.8 for three-way classification.
 
 ### M11 — TAMP INTEGRATION
 **Question**: Does the learned causal module reduce unnecessary VLM/planner calls?
 **Claim**: Selective repair/replan reduces total planner calls vs. always-replan baseline.
-**Gate**: ≥ 30% reduction in planner calls; no decrease in task success rate.
 
 ### M12 — WITHIN-EPISODE EXPERIENCE REUSE
 **Question**: Can successful earlier manipulations be retrieved and adapted for local repair?
 **Claim**: Episodic experience reuse reduces motion-planning calls and repair latency.
-**Gate**: Measurable latency reduction; no decrease in repair success rate.
-
-> **Ordering revision note**: The user's proposed M3 and M2 are swapped here. Rationale: intervention ranking is the more direct output of the intervention-supervision framework and should be verified before derived culprit localization. Object localization emerges from *which intervention has the largest Δ*, so intervention prediction logically precedes localization as a separate claim.
 
 ---
 
@@ -312,84 +309,68 @@ Each candidate intervention specifies:
 
 ### 4.2 Candidate Intervention Generation Per Scene
 
-For each STOP scene with candidate objects O = {o_1, ..., o_N}:
+In early representation learning (V2/V3), each infeasible scene contains **exactly ONE causal culprit** and $N$ distractors.
 
-**Correct interventions** (Δ_i = 1):
-- `RELOCATE(culprit, safe_region)` — moves the actually-obstructing object to a location that clears the obstruction
+**STOP Scenes (1 culprit + $N$ distractors)**:
+- **Repair** ($\Delta_i = +1$): `RELOCATE(culprit, safe_region)` — moves the single culprit to a clear area, restoring feasibility ($F_R \to 1$).
+- **Hard Negative** ($\Delta_i = 0$): `RELOCATE(culprit, still_obstructing_pose)` — moves the culprit but leaves it in an obstructing configuration ($F_R \to 0$).
+- **Irrelevant** ($\Delta_i = 0$): `RELOCATE(distractor_k, safe_region)` — moves a non-causal distractor ($F_R \to 0$). ($N$ such interventions).
+- **Identity Control** ($\Delta_i = 0$): `NONE` — evaluates pre-intervention state ($F_R \to 0$).
 
-**Irrelevant interventions** (Δ_i = 0):
-- `RELOCATE(distractor, safe_region)` — moves a non-obstructing object
-- `NONE` — no intervention (identity)
+**PROCEED Scenes ($N$ distractors)**:
+- **Harmful** ($\Delta_i = -1$): `RELOCATE(distractor_k, obstructing_pose)` — moves a distractor into an obstructing pose, breaking feasibility ($F_R \to 0$).
+- **Irrelevant** ($\Delta_i = 0$): `RELOCATE(distractor_k, safe_region)` — moves a distractor to another clear area ($F_R \to 1$). ($N$ such interventions).
+- **Identity Control** ($\Delta_i = 0$): `NONE` — evaluates pre-intervention state ($F_R \to 1$).
 
-**Hard-negative interventions** (Δ_i = 0):
-- `RELOCATE(culprit, still_obstructing_pose)` — moves culprit but insufficiently (still on lid / still in target)
-- `RELOCATE(distractor, anywhere)` — moves a visually similar but non-causal object
-- `RELOCATE(culprit, other_obstruction_pose)` — moves culprit from one obstructing pose to another
+All semantic category labels (`repair`, `hard_negative`, `irrelevant`, `identity`, `harmful`) and spatial designations are `PRIVILEGED_GT_ONLY` metadata.
 
-For PROCEED scenes: generate Harmful interventions (Δ_i = -1) by moving distractors to obstructing poses, plus controls (Δ_i = 0) (feasibility already 1). Important control.
+### 4.3 Record Schema & API Partitioning
 
-### 4.3 Record Schema
-
-**Decision: One record per (scene, intervention)**. Rationale:
+**Decision: One record per (scene, candidate intervention)**. Rationale:
 1. Enables standard DataLoader batching without ragged lists
-2. Simplifies pairing logic for contrastive losses
-3. Natural for intervention ranking: model scores individual interventions
+2. Simplifies grouping logic for contrastive ranking losses
+3. Natural for scoring individual candidate interventions
+
+The schema strictly separates model inputs, supervision targets, and privileged metadata:
 
 ```python
 @dataclass
 class InterventionRecord:
-    # Scene identity
-    scene_id: str
-    pair_id: str
+    # --- MODEL INPUT FIELDS (Pre-intervention observations only) ---
     task_id: str                    # "task_1" / "task_2"
-    instruction: str
-    query_action: str               # "OPEN(box)" / "PLACE(object1, target)"
-
-    # Pre-intervention state
+    instruction: str                # e.g., "Open the box."
     pre_rgb_path: str
     pre_segmentation_path: str
-    pre_feasible: bool              # F(s, a)
-    pre_label: str                  # "STOP" / "PROCEED"
-
-    # Candidate objects
-    candidate_objects: List[CandidateObjectRecord]
-
-    # Demonstration
-    demonstration_id: str
+    candidate_crop_path: str        # DINOv2 crop of candidate object
+    current_geometry: Dict[str, Any]      # Bounding box & target-relative pose
+    destination_geometry: Dict[str, Any]  # Proposed target-relative destination pose
+    operator: str                   # "NONE" / "RELOCATE"
     demonstration_path: str
 
-    # Intervention specification
+    # --- SUPERVISION TARGETS ---
+    pre_feasible: bool              # F_R(s, a)
+    post_feasible: bool             # F_R(T(s, rho_i), a)
+    causal_effect: int              # Δ_i = post_feasible - pre_feasible in {-1, 0, +1}
+
+    # --- PRIVILEGED METADATA / EVALUATION (GT Oracle only) ---
+    scene_id: str
+    pair_id: str
+    query_action: str               # "OPEN(box_B1)" / "PLACE(object1, target)"
     intervention_id: str
-    intervention_idx: int           # randomized index
-    intervention_object: str        # body name
-    intervention_operator: str      # "NONE" / "RELOCATE"
-    intervention_target_location: str  # PRIVILEGED_GT_ONLY
-    intervention_type: str          # "correct" / "irrelevant" / "hard_negative" / "none"
-    intervention_parameters: dict   # destination pose, etc.
-
-    # Post-intervention state
-    post_rgb_path: str
-    post_segmentation_path: str
-    post_feasible: bool             # F(T(s, ρ_i), a)
-
-    # Causal labels
-    causal_effect: int              # Δ_i = post_feasible - pre_feasible ∈ {-1, 0, +1}
-    is_culprit: bool
-    culprit_object: Optional[str]
-    culprit_relation: str           # "ON_TOP_OF" / "OCCUPIES" / "NONE"
-
-    # Masks
-    causal_mask_path: str
-    candidate_mask_path: str
-    target_mask_path: str
-    object_masks: Dict[str, str]    # per-object mask paths
-
-    # Provenance
+    intervention_idx: int           # Uniformly randomized per scene
+    intervention_type: str          # PRIVILEGED_GT_ONLY ("correct", "hard_negative", etc.)
+    destination_type: str           # PRIVILEGED_GT_ONLY ("safe_region", "still_obstructing", etc.)
+    is_culprit: bool                # PRIVILEGED_GT_ONLY
+    culprit_object: str             # PRIVILEGED_GT_ONLY
+    culprit_relation: str           # PRIVILEGED_GT_ONLY
+    candidate_objects: List[Dict]   # PRIVILEGED_GT_ONLY
+    post_rgb_path: str              # PRIVILEGED_GT_ONLY (validation/visualization only)
+    post_segmentation_path: str     # PRIVILEGED_GT_ONLY
+    causal_mask_path: str           # PRIVILEGED_GT_ONLY
+    target_mask_path: str           # PRIVILEGED_GT_ONLY
     generation_seed: int
     intervention_seed: int
-    split: str
-    manifest_hash: str
-```
+    split: str                      # "id", "unseen_object", etc.
 
 ### 4.4 Counterfactual Controls
 
@@ -445,64 +426,67 @@ Architecture V2 is the **minimal modification** of the current relational model 
 
 ```
 INPUTS:
-    text_feat:           (B, 384)            # MiniLM instruction embedding
-    demo_global:         (B, K, 768)         # K=4 DINOv2 demo frame globals
-    query_patch:         (B, 256, 768)       # 16×16 DINOv2 patch tokens
-    intervention_feat:   (B, D_interv)       # intervention descriptor
+    text_feat:              (B, 384)                     # MiniLM instruction embedding
+    demo_global:            (B, K, 768)                  # K=4 DINOv2 demo frame globals
+    query_patch:            (B, 256, 768)                # 16×16 DINOv2 pre-scene patch tokens
+    interv_object_crop:     (B, D_crop)                  # D_crop=768 DINOv2 crop of candidate object
+    interv_current_geom:    (B, D_current_geom)          # Candidate localization & target-relative current pose
+    interv_dest_geom:       (B, D_dest_geom)             # Proposed target-relative destination pose
+    interv_operator_idx:    (B,) long                    # 0=NONE, 1=RELOCATE
 
 INTERVENTION ENCODING:
-    intervention descriptor = concat(
-        object_visual_crop_feat,             # (768,) DINOv2 crop of intervened object
-        operator_embed,             # (64,) learned embed for NONE/RELOCATE
-        current_geometry_feat,               # (16,) target-relative geometry
-        proposed_destination_geometry,       # (16,) proposed target-relative geometry
-    )                                        # total D_interv = 896
+    operator_embed = embed_operator(interv_operator_idx) # (B, D_operator=64)
+    z_rho_raw = concat(
+        interv_object_crop,                              # (B, 768)
+        interv_current_geom,                             # (B, D_current_geom)
+        interv_dest_geom,                                # (B, D_dest_geom)
+        operator_embed,                                  # (B, 64)
+    )                                                    # D_interv = D_crop + D_current_geom + D_dest_geom + D_operator
+                                                         # (e.g. 768 + 16 + 16 + 64 = 864 in default config)
 
 PROJECTIONS:
-    z_t   = proj_t(text_feat)               # (B, 256)
-    z_d   = proj_v_global(demo_global)      # (B, K, 256)
-    z_int = proj_interv(intervention_feat)  # (B, 256)
+    z_t   = proj_t(text_feat)                            # (B, 256)
+    z_d   = proj_v_global(demo_global)                   # (B, K, 256)
+    z_int = proj_interv(z_rho_raw)                       # (B, 256), proj_interv = nn.Linear(D_interv, 256)
 
 TEMPORAL ENCODER (self-attention over context tokens):
-    seq = [z_t, z_d_1, ..., z_d_K, z_int]  # (B, 1+K+1, 256)
-    Z_S = temporal_encoder(seq)             # (B, 1+K+1, 256)
-    z_S = mean_pool(Z_S)                    # (B, 256)
+    seq = [z_t, z_d_1, ..., z_d_K, z_int]               # (B, 1+K+1, 256)
+    Z_S = temporal_encoder(seq)                          # (B, 1+K+1, 256)
+    z_S = mean_pool(Z_S)                                 # (B, 256)
 
 CROSS-ATTENTION (query patches attend to context):
-    Z_Q = proj_v_patch(query_patch)         # (B, 256, 256)
-    Z_R = cross_attention(Z_Q, Z_S)         # (B, 256, 256)
-    z_R = mean_pool(Z_R)                    # (B, 256)
+    Z_Q = proj_v_patch(query_patch)                      # (B, 256, 256)
+    Z_R = cross_attention(Z_Q, Z_S)                      # (B, 256, 256)
+    z_R = mean_pool(Z_R)                                 # (B, 256)
 
 OUTPUTS:
-    logit_post = classifier(z_R)            # (B, 1) — predicted post-intervention feasibility
-    s = cosine_sim(z_S_norm, z_R_norm)      # (B,) — ranking score
-    Z_R                                     # (B, 256, 256) — for heatmap decoder
+    logit_post = classifier(z_R)                         # (B, 1) — predicted post-intervention feasibility
+    s = cosine_sim(z_S_norm, z_R_norm)                   # (B,) — ranking score
+    Z_R                                                  # (B, 256, 256)
 ```
 
-**Key change**: intervention descriptor token appended to temporal context sequence. Cross-attention naturally conditions query reasoning on the intervention.
+**Key property**: Neutral intervention descriptor token appended to temporal context sequence. Cross-attention conditions query patch reasoning on the candidate intervention. Pre-scene observations only; post-state images/features NEVER enter forward().
 
-For pre-intervention (no-intervention) pass: intervention = NONE with zero object crop.
+For pre-intervention (`NONE`) pass: `interv_object_crop`, `interv_current_geom`, and `interv_dest_geom` are zero tensors, and `interv_operator_idx` is `0` (`NONE`).
 
 ### 5.4 Training Protocol
 
-Each batch contains:
-- Pre-intervention samples (intervention=NONE) with label = pre_feasible
-- Intervention samples with label = post_feasible
-
-Predicted effect: `Δ̂_i = P(F_post=1 | rho_i) - P(F_post=1 | NONE)`
+Each batch contains candidate interventions scored for post-feasibility:
+- `NONE` intervention samples predict $P(F_{pre}=1 \mid s_{pre}, a)$
+- Relocation candidate samples predict $P(F_{post}=1 \mid s_{pre}, a, \rho_i)$
+- Predicted effect: $\hat{\Delta}_i = P(F_{post}=1 \mid \rho_i) - P(F_{pre}=1 \mid \text{NONE})$
 
 ### 5.5 Compatibility with Baselines
 
-- **B0 Query-only**: Pre-scene only, no intervention descriptor → unchanged
-- **B0b Simple Intervention**: MLP over (scene_global, candidate_geom, operator), no relational context.
-- **B1 Pooled multimodal**: Extended with intervention concatenation
-- **B2 Relational**: Extended as above
-- **B3 Feasibility-only**: Same architecture, no intervention loss
-- **B4 Direct culprit**: Culprit head from scene features, no interventions
+- **B0 Query-only Feasibility**: Pre-scene only, no intervention descriptor $\to$ visual feasibility baseline (cannot rank candidates).
+- **B0b Simple Intervention Baseline**: 3-layer MLP over `concat(scene_global, crop_feat, current_geom, dest_geom, operator_embed)` $\to$ post-feasibility. Weak candidate-ranking baseline without relational cross-attention.
+- **B3 Feasibility-Only Relational**: Same architecture and inputs as V2, trained with $\lambda_{rank} = 0$. Direct ablation for candidate ranking loss.
+- **B4 Direct Culprit**: Relational model with static `is_culprit` head, no intervention conditioning.
+- **V2 Intervention Relational (Proposed)**: Full model with ranking supervision ($\lambda_{rank} > 0$).
 
 ---
 
-## 6. Architecture V3 Design
+## 6. Architecture V3 Design (Future Concept)
 
 ### 6.1 Object-Centric Architecture
 
@@ -557,7 +541,7 @@ z_dt = proj_demo(d_t)            # (256,)
 tokens = concat(
     [z_a],                       # 1 action token
     [z_d1, ..., z_dK],          # K demo tokens
-    [z_o1, ..., z_oN],          # N object tokens
+    [x_1, ..., x_N],            # N raw object tokens
 )                                # (1 + K + N, 256)
 
 type_embed: action=0, demo=1, object=2
@@ -583,18 +567,18 @@ for each z_tilde_oi:
     r_i = relevance_head(concat(z_tilde_oi, z_action))  # (1,)
 ```
 
-### 6.8 Intervention Mechanism
+### 6.8 Counterfactual Relational Mechanism (Intervention Reasoning)
 
-```
-z_rho = concat(z_tilde_oi, interv_type_embed, destination_embed)
-z_rho_proj = proj_intervention(z_rho)  # (256,)
+For candidate relocation $\rho_i = \text{RELOCATE}(o_i, \text{dest\_geom}_i)$:
+1. Construct the counterfactual raw object token using proposed destination geometry:
+   $$x_i' = E_{obj}(\text{visual}_i, \text{destination\_geometry}_i)$$
+2. Replace the raw entity token in the scene set:
+   $$x_i \to x_i'$$
+3. Rerun the relational encoder over ALL entities and context tokens:
+   $$Z_{out}' = \mathcal{R}_\theta([z_a, z_{d1..K}, x_1, \dots, x_i', \dots, x_N])$$
+4. Evaluate post-intervention feasibility from $Z_{out}'$.
 
-z_objects_prime = z_objects.clone()
-z_objects_prime[i] = transition_net(z_tilde_oi, z_rho_proj)
-
-z_global_prime = mean_pool(z_objects_prime)
-logit_post = clf_head(concat(z_action, z_global_prime))
-```
+**Rationale**: Moving object $i$ physically alters pairwise geometric and clearance relations with *all other scene entities*. Rather than freezing already-contextualized latents and mutating an isolated slot via a separate transition network, replacing the raw factored entity and re-running relational encoding naturally propagates global relational updates. (Learned latent transition networks may be reserved for contact-rich dynamics where post-state geometry cannot be analytically specified).
 
 ### 6.9 Variable Object Count
 
@@ -607,66 +591,27 @@ Standard transformer masking: pad to max_objects with zeros; attention mask excl
 ### 7.1 Feasibility Loss (L_feas)
 
 ```
-L_feas = BCE(σ(logit), y_feasible)
+L_post_feas = BCEWithLogitsLoss(logit_post, y_post_feasible)
 ```
-Applied to both pre-intervention (NONE) and post-intervention samples.
+Applied to all candidate samples (recovering pre-feasibility for `NONE`).
 
 ### 7.2 Intervention Ranking Loss (L_rank_interv)
 
 ```
 For matched (correct, incorrect) interventions from same scene:
-    Δ̂_correct = σ(logit_post_correct) - σ(logit_pre)
-    Δ̂_incorrect = σ(logit_post_incorrect) - σ(logit_pre)
-    L_rank_interv = MarginRankingLoss(Δ̂_correct, Δ̂_incorrect, margin=0.3)
+    Δ̂_correct = σ(logit_post_correct) - σ(logit_none)
+    Δ̂_incorrect = σ(logit_post_incorrect) - σ(logit_none)
+    L_rank_interv = MarginRankingLoss(Δ̂_correct, Δ̂_incorrect, target=1, margin=0.3)
 ```
 
-### 7.3 Causal Relevance Loss (L_causal) — V3 only
+### 7.3 Canonical Loss (V2)
 
 ```
-L_causal = BCE(σ(r_i), 1[Δ_i > 0])
+L_V2 = L_post_feas + λ_rank · L_rank_interv
 ```
-Per-object relevance supervision from GT intervention effects.
+Default: $\lambda_{feas}=1.0$, $\lambda_{rank}=0.3$ for V2; $\lambda_{rank}=0.0$ for B3.
 
-### 7.4 Counterfactual Effect Loss (L_effect)
-
-```
-L_effect = MSE(Δ̂_i, Δ_i)
-```
-
-### 7.5 Latent Transition Consistency (L_transition) — V3 only
-
-```
-L_transition = MSE(transition_net(z_oi, z_rho), encoder(post_scene).objects[i].detach())
-```
-Applied only to intervened object's token.
-
-### 7.6 Irrelevant Intervention Invariance (L_invariance) — V3 only
-
-```
-For irrelevant intervention j (GT Δ_j = 0):
-    L_invariance = MSE(σ(logit_post_j), σ(logit_pre))
-```
-
-### 7.7 Heatmap Loss (L_heat) — V2 only
-
-```
-L_heat = BCE(heatmap, causal_mask) + DiceLoss(heatmap, causal_mask)
-```
-
-### 7.8 Total Loss (V2)
-
-```
-L = λ_feas·L_feas + λ_rank·L_rank_interv
-Note: Redundant effect/heatmap losses removed or optional. Target is P(F_post=1 | rho_i).
-```
-Recommended: λ_feas=1.0, λ_rank=0.3, λ_effect=0.5, λ_heat=0.3
-
-### 7.9 Total Loss (V3)
-
-```
-L = λ_feas·L_feas + λ_rank·L_rank_interv + λ_effect·L_effect
-  + λ_causal·L_causal + λ_transition·L_transition + λ_invariance·L_invariance
-```
+Auxiliary losses (effect MSE, heatmap, direct culprit, transition, invariance) are marked as deferred/optional ablations and are not required in the canonical V2 model.
 
 ---
 
@@ -727,19 +672,24 @@ class InterventionOutcome:
 ```python
 @dataclass
 class InterventionBatch:
-    text_feat: Tensor         # (B, 384)
-    demo_global: Tensor       # (B, K, 768)
-    query_patch: Tensor       # (B, 256, 768)
-    query_global: Tensor      # (B, 768)
-    interv_object_crop: Tensor  # (B, 768)
-    interv_type_idx: Tensor   # (B,) long
-    interv_dest_idx: Tensor   # (B,) long
-    pre_feasible: Tensor      # (B,) float
-    post_feasible: Tensor     # (B,) float
-    causal_effect: Tensor     # (B,) float
+    # --- MODEL INPUTS (Observed by forward pass) ---
+    text_feat: Tensor               # (B, 384)
+    demo_global: Tensor             # (B, K, 768)
+    query_patch: Tensor             # (B, 256, 768)
+    interv_object_crop: Tensor      # (B, 768)
+    interv_current_geom: Tensor     # (B, D_current_geom)
+    interv_dest_geom: Tensor        # (B, D_dest_geom)
+    interv_operator_idx: Tensor     # (B,) long [0=NONE, 1=RELOCATE]
+
+    # --- SUPERVISION TARGETS ---
+    pre_feasible: Tensor            # (B,) float
+    post_feasible: Tensor           # (B,) float
+    causal_effect: Tensor           # (B,) float {-1, 0, +1}
+
+    # --- PRIVILEGED METADATA (Evaluation, Invariants, GT Oracle only) ---
     scene_ids: List[str]
     intervention_ids: List[str]
-    intervention_types: List[str]
+    intervention_types: List[str]   # PRIVILEGED_GT_ONLY
     pair_ids: List[str]
     task_ids: List[str]
 ```
@@ -833,59 +783,55 @@ artifacts/intervention_v1/
 ## 10. Experiment Plan
 
 ### Exp 0: Oracle Intervention Verification
-- **Hypothesis**: Simulator-validated interventions produce correct Δ_i labels at 100%.
-- **Inputs**: Smoke intervention dataset (32 records)
-- **Model**: None (simulator)
-- **Metric**: Agreement rate
+- **Hypothesis**: Simulator-validated interventions produce correct $\Delta_i \in \{-1, 0, +1\}$ labels across all 5 semantic categories at 100%.
+- **Inputs**: Smoke intervention dataset (6 scenes, 22 records)
+- **Model**: None (MuJoCo simulator oracle)
+- **Metric**: Simulator validation agreement rate
 - **Expected**: 100%
-- **Failure**: Generation bug → fix
-- **Next**: Exp 1
+- **Failure**: Generator/validator bug $\to$ fix before learning
 
-### Exp 1: Query-Only Shortcut Baseline
-- **Hypothesis**: Query-only cannot rank interventions above chance.
-- **Model**: QueryOnlyBaseline
-- **Metric**: Intervention top-1 accuracy
-- **Expected**: ≤ 1/N + ε (≤ 35% for N=4)
-- **Failure**: Dataset has shortcuts → add controls
-- **Next**: Exp 2
+### Exp 1: Non-Relational Shortcut Baselines (B0 & B0b)
+- **Hypothesis**: Query-only (B0) cannot rank candidate interventions (pre-scene visual feature only). Simple candidate-aware MLP (B0b) cannot rank interventions significantly above chance without relational task/demo context.
+- **Model**: `QueryOnlyBaseline` (B0), `SimpleInterventionMLP` (B0b)
+- **Metric**: Intervention top-1 ranking accuracy
+- **Expected**: B0b Top-1 $\le 1/N + \epsilon$ ($\le 35\%$ on 4-candidate sets)
+- **Failure**: Shortcut in candidate crops/geometry $\to$ refine deconfounding
 
-### Exp 2: Feasibility-Only Baseline (B3)
-- **Hypothesis**: Feasibility-only model cannot rank interventions well.
-- **Model**: Relational model, L_feas only, no intervention input
-- **Metric**: Intervention top-1 accuracy
-- **Expected**: Moderate (above chance, below V2)
-- **Next**: Exp 3
+### Exp 2: Feasibility-Only Relational Baseline (B3)
+- **Hypothesis**: Relational model trained solely on post-feasibility ($\lambda_{rank}=0$) acquires some candidate awareness but lacks the margin separation needed for optimal repair ranking.
+- **Model**: `InterventionConditionedRelationalModel` with $\lambda_{rank} = 0$ (B3)
+- **Metric**: Intervention top-1 accuracy, CFR
+- **Expected**: Moderate ranking performance (exceeds B0b, below V2)
 
 ### Exp 3: Direct Culprit Classification (B4)
-- **Hypothesis**: Direct culprit without intervention supervision is inferior.
-- **Model**: Relational + culprit head, no intervention conditioning
-- **Metric**: Culprit top-1, CFR via oracle on predicted culprit
+- **Hypothesis**: Direct culprit classification without candidate intervention grounding fails to generalize to complex scene geometry.
+- **Model**: Relational model + static `is_culprit` auxiliary head
+- **Metric**: Culprit top-1, CFR via oracle execution on predicted culprit
 - **Expected**: Reasonable culprit accuracy, lower CFR than V2
 
-### Exp 4: Intervention-Conditioned Relational V2
-- **Hypothesis**: Intervention conditioning enables better ranking and CFR.
-- **Model**: V2
-- **Metric**: Top-1, CFR, culprit top-1, AUROC
-- **Expected**: Top-1 > 80% ID; CFR > 70% (PROVISIONAL GATES)
-- **Failure**: Check gradient flow through intervention tokens
+### Exp 4: Intervention-Conditioned Relational Model (V2)
+- **Hypothesis**: Intervention conditioning + grouped candidate-ranking supervision yields superior repair ranking, CFR, and OOD generalization.
+- **Model**: V2 (`InterventionConditionedRelationalModel` with $\lambda_{rank} > 0$)
+- **Metric**: Top-1 candidate accuracy, Counterfactual Repair Rate (CFR), False Relevance Rate (FRR)
+- **Provisional Targets**: Top-1 > 80% ID; CFR > 70%
 
 ### Exp 5: Irrelevance Invariance
-- **Hypothesis**: Irrelevant interventions don't change predictions.
+- **Hypothesis**: Irrelevant interventions and identity controls do not perturb feasibility predictions.
 - **Model**: Trained V2
-- **Metric**: Mean |Δ̂| for irrelevant; false-relevance rate
-- **Expected**: |Δ̂| < 0.05; FRR < 5%
+- **Metric**: Mean $|\hat{\Delta}|$ for irrelevant candidates; False-Relevance Rate (FRR)
+- **Provisional Target**: Mean $|\hat{\Delta}| < 0.05$; FRR < 5%
 
 ### Exp 6: Hard Negative Discrimination
-- **Hypothesis**: Correct vs. hard-negative separated.
-- **Metric**: Δ̂ separation
-- **Expected**: Clear separation
+- **Hypothesis**: Model distinguishes true repair interventions ($\Delta=+1$) from hard negatives ($\Delta=0$, still obstructing).
+- **Metric**: Margin separation between $\hat{\Delta}_{repair}$ and $\hat{\Delta}_{hard\_neg}$
+- **Expected**: Statistically significant margin $> 0.2$
 
-### Exp 7: 5-Seed Ablation Study
-- 10 ablations × 5 seeds (see Section 11)
+### Exp 7: 5-Seed Protocol & Ablations
+- 5 seeds (11, 23, 42, 67, 101) $\times$ 10,000 bootstrap resamples across all ablations.
 
 ### Exp 8: OOD Generalization
-- **Splits**: unseen_object, compositional
-- **Expected**: Graceful degradation
+- **Splits**: `unseen_object`, `compositional`, clutter scaling ($1 \text{ culprit} + N \text{ distractors}$)
+- **Expected**: Graceful degradation; V2 maintains statistically significant lead over B0b and B3.
 
 ---
 
@@ -894,97 +840,73 @@ artifacts/intervention_v1/
 | ID | What is removed | Expected effect |
 |----|----------------|----------------|
 | A0 | (Full V2) | Best |
-| A1 | Intervention token zeroed | Falls to B3 |
-| A2 | Text zeroed | Can't distinguish tasks |
-| A3 | Demo zeroed | No visual context |
-| A4 | λ_rank = 0 | Ranking degrades |
-| A5 | λ_effect = 0 | Δ̂ calibration degrades |
-| A6 | λ_heat = 0 | Heatmaps degrade |
-| A7 | No hard negatives in data | Easier task |
-| A8 | Object crop zeroed | Can't identify object |
-| A9 | Type/dest embed zeroed | Can't reason about semantics |
+| A1 | Intervention token zeroed | Falls to B0 pre-scene baseline |
+| A2 | Text feature zeroed | Cannot distinguish Task 1 (`OPEN`) vs Task 2 (`PLACE`) |
+| A3 | Demo features zeroed | Empirical exploration: assesses role of visual demo context in Task 1/2 |
+| A4 | $\lambda_{rank} = 0$ (B3) | Isolates contribution of candidate ranking loss |
+| A5 | Candidate crop zeroed | Cannot visually identify candidate object properties |
+| A6 | Geometry features zeroed | Cannot reason about candidate spatial displacement / target relations |
+| A7 | No hard negatives in training | Overfits to object identity heuristic; fails on hard negatives |
 
 ---
 
 ## 12. Generalization Matrix
 
-| Axis | ID | OOD |
-|------|------|-----|
-| Object identity | coffee_can, sugar_box, mug | cup, bowl |
-| Background | bg_neutral_wood | bg_blue_counter, bg_granite_dark |
-| Object count | 1 blocker | 2+, 3+ |
-| Composition | Seen factor tuples | Novel combinations |
-| Intervention dest | Seen safe regions | Novel poses |
+| Axis | In-Distribution (ID) | Out-of-Distribution (OOD) |
+|------|----------------------|---------------------------|
+| Object Identity | `coffee_can`, `sugar_box`, `mug` | `cup`, `bowl` |
+| Background / Lighting | `bg_neutral_wood`, standard lighting | `bg_blue_counter`, `bg_granite_dark`, randomized lighting |
+| Clutter Scaling | 1 culprit + 1 distractor | 1 culprit + 3+ distractors (increasing distractor count) |
+| Composition | Seen factor combinations | Novel attribute combinations |
+| Intervention Destination | Canonical safe regions | Novel safe region poses |
 
 ---
 
 ## 13. Metric Definitions
 
-### Intervention Top-1 Accuracy
-```
-For each STOP scene s: î = argmax_i Δ̂_i
-Top1 = (1/|S_stop|) Σ 1[Δ_{î} = 1]
-```
+### 13.1 Causal vs. Repair Relevance
+- **Causal Relevance**: $y_i^{causal} = \mathbb{I}[|\Delta_i| > 0]$ (identifies any candidate that alters feasibility: repair $\Delta=+1$ or harmful $\Delta=-1$).
+- **Repair Relevance**: $y_i^{repair} = \mathbb{I}[\Delta_i > 0]$ (identifies valid corrective interventions: repair $\Delta=+1$ only).
 
-### Counterfactual Repair Rate (CFR)
-```
-CFR = P(F(T(s, ρ̂), a) = 1 | F(s, a) = 0)
-where ρ̂ = argmax_i Δ̂_i, evaluated in simulator
-```
+### 13.2 Intervention Top-1 Accuracy
+For each STOP scene $s$, candidate ranking selects $\hat{i} = \arg\max_i \hat{\Delta}_i$:
+$$\text{Top1} = \frac{1}{|S_{\text{stop}}|} \sum_{s \in S_{\text{stop}}} \mathbb{I}[\Delta_{\hat{i}} = 1]$$
 
-### Culprit Top-1 Accuracy
-```
-Predicted culprit = argmax_i Δ̂_i (or argmax_i r_i)
-CulpritTop1 = (1/|S_stop|) Σ 1[pred_culprit == GT_culprit]
-```
+### 13.3 Counterfactual Repair Rate (CFR)
+$$\text{CFR} = P\left(F_R(T(s, \hat{\rho}), a) = 1 \mid F_R(s, a) = 0\right)$$
+where $\hat{\rho} = \arg\max_i \hat{\Delta}_i$, evaluated in the MuJoCo simulator.
 
-### False Relevance Rate
-```
-FRR = (1/|I_irr|) Σ 1[|Δ̂_j| > τ] for j ∈ irrelevant interventions
-```
-
-### Effect Separation (AUC)
-```
-AUC of classifying interventions as relevant vs irrelevant using |Δ̂_i|
-```
+### 13.4 False Relevance Rate (FRR)
+$$\text{FRR} = \frac{1}{|I_{\text{irr}}|} \sum_{j \in I_{\text{irr}}} \mathbb{I}[|\hat{\Delta}_j| > \tau] \quad (\tau = 0.1)$$
 
 ---
 
 ## 14. Test Plan
 
 ### Unit Tests
-
-1. `test_correct_intervention_flips_feasibility`
-2. `test_irrelevant_preserves_infeasibility`
-3. `test_hard_negative_preserves_infeasibility`
-4. `test_none_preserves_state`
-5. `test_intervention_scene_deterministic`
-6. `test_only_declared_object_changes`
-7. `test_causal_effect_matches_simulator`
-8. `test_post_rgb_matches_state`
-9. `test_no_pair_leakage_across_splits`
-10. `test_ordering_randomized`
-11. `test_ordering_not_leaked_to_labels`
-12. `test_feature_files_exist`
-13. `test_label_balance`
+1. `test_generate_candidates_stop_count`
+2. `test_generate_candidates_proceed_count`
+3. `test_correct_intervention_safe_region`
+4. `test_hard_negative_still_obstructs`
+5. `test_none_intervention_is_identity`
+6. `test_intervention_ids_unique`
+7. `test_intervention_idx_randomized`
+8. `test_correct_intervention_flips_feasibility`
+9. `test_irrelevant_preserves_infeasibility`
+10. `test_harmful_intervention_breaks_feasibility`
+11. `test_hard_negative_preserves_infeasibility`
+12. `test_none_preserves_state`
+13. `test_only_declared_object_changes`
 14. `test_v2_forward_shapes`
-15. `test_none_recovers_baseline`
-16. `test_ablation_removes_modality`
-17. `test_gradient_through_intervention`
+15. `test_v2_none_intervention`
+16. `test_v2_gradient_through_intervention`
+17. `test_no_post_state_leakage`
 
-### Integration Tests
-
-18. `test_smoke_end_to_end`
-19. `test_oracle_cfr`
-20. `test_query_only_shortcut_bound`
-
-### Scientific Tests
-
-21. `test_same_rgb_different_task`
-22. `test_culprit_matches_relation`
-23. `test_no_cache_contamination`
-24. `test_hard_negative_valid`
-25. `test_intervention_frequency_balance`
+### Integration & Baseline Tests
+18. `test_smoke_validation_passes` (6 base scenes, 22 records)
+19. `test_oracle_cfr_upper_bound` ($\ge 95\%$)
+20. `test_b0b_candidate_ranking_baseline` ($\le 1/N + \epsilon$)
+21. `test_b3_feasibility_only_ablation`
 
 ---
 
@@ -992,26 +914,23 @@ AUC of classifying interventions as relevant vs irrelevant using |Δ̂_i|
 
 | Task | Relative cost | Bottleneck | Smoke-testable? |
 |------|--------------|-----------|-----------------|
-| Intervention scene gen (60 scenes) | LOW | CPU | Yes (8) |
-| Feature extraction (~720 images) | LOW-MED | GPU | Yes (32) |
-| Single training (50 epochs, pilot) | LOW | GPU | Yes (tiny) |
+| Intervention scene gen (60 scenes) | LOW | CPU | Yes (6 scenes / 22 records) |
+| Feature extraction (~720 images) | LOW-MED | GPU | Yes (22 records) |
+| Single training (50 epochs, pilot) | LOW | GPU | Yes (smoke) |
 | 5-seed runs | MEDIUM | GPU | Yes (1 seed) |
-| Full ablation (10×5) | MED-HIGH | GPU | Yes (2×1) |
+| Full ablation (8×5) | MED-HIGH | GPU | Yes (2×1) |
 | Full dataset (400+ scenes) | MEDIUM | CPU | Yes (smoke) |
-| Full paper suite | HIGH | GPU | — |
-
-Hardware: RTX 5090 32GB, 48 CPU, 125GB RAM — more than sufficient.
 
 ---
 
-## 16. Checkpoint / Go-No-Go Gates
+## 16. Checkpoint / Go-No-Go Gates (Provisional Engineering Targets)
 
-### G1 (M1): 100% Δ_i agreement + all tests pass
-### G2 (M2): Query-only ≤ 1/N + 0.05
-### G3 (M3): V2 top-1 > 80%, CFR > 70%, significantly > B3/B4
-### G4 (M5): Model-predicted intervention → simulator CFR > 70%
-### G5 (M6): False-relevance rate < 5%
-### G6 (M7): V3 ≥ V2 on unseen-object split
+### G1 (M1): 100% $\Delta_i$ agreement on smoke set (6 scenes, 22 records)
+### G2 (M2): B0b candidate baseline $\le 1/N + 0.05$
+### G3 (M3): V2 top-1 > 80%, CFR > 70%, significantly > B0b / B3
+### G4 (M5): Model-predicted intervention $\to$ simulator CFR > 70%
+### G5 (M6): False-relevance rate (FRR) < 5%
+### G6 (M7): V3 $\ge$ V2 on unseen-object split
 
 ---
 
@@ -1026,31 +945,24 @@ Hardware: RTX 5090 32GB, 48 CPU, 125GB RAM — more than sufficient.
 | 4 | Qualitative intervention ranking results |
 | 5 | Representation probes |
 | 6 | OOD generalization |
-| 7 | (Optional) Discovery gating |
 
 ### Tables
 | # | Content |
 |---|---------|
-| 1 | Main results: all model variants |
-| 2 | Ablation matrix |
-| 3 | OOD generalization |
+| 1 | Main results: all model variants (B0, B0b, B3, B4, V2) |
+| 2 | Ablation matrix (A0-A7) |
+| 3 | OOD generalization (unseen object, clutter scaling) |
 | 4 | Irrelevant intervention invariance |
-| 5 | (Optional) TAMP integration |
 
 ---
 
 ## 18. Failure Modes
 
-1. **Visual shortcut in intervention data** — post-intervention images have systematic bias
-2. **Trivial intervention discrimination** — model uses object-type frequency heuristic
-3. **Leakage through pair structure** — model memorizes pair associations
-4. **Feasibility shortcut** — model ignores intervention tokens
-5. **Object-position heuristic** — "on lid → culprit" without relational understanding
-6. **Intervention-type leakage** — intervention encoding reveals type
-7. **Latent collapse** — object tokens converge
-8. **Simulator overfitting** — CFR high only because evaluator = data generator
-9. **Causal overclaiming** — Δ_i is operational, not Pearl-style
-10. **Publication bias** — reporting only positive results
+1. **Visual shortcut in intervention data** — post-intervention images have systematic bias (prevented by strict pre-scene forward input contract)
+2. **Trivial intervention discrimination** — model uses object-type frequency heuristic (prevented by matched culprit/distractor role swapping)
+3. **Leakage through pair structure** — model memorizes pair associations (prevented by scene-level split grouping)
+4. **Feasibility shortcut** — model ignores intervention tokens (prevented by ranking loss $\lambda_{rank} > 0$)
+5. **Simulator overfitting** — CFR evaluated on independently constructed validation environments
 
 ---
 
@@ -1058,19 +970,19 @@ Hardware: RTX 5090 32GB, 48 CPU, 125GB RAM — more than sufficient.
 
 | Phase | Objective | Prerequisite | Files | Tests | Output |
 |-------|-----------|-------------|-------|-------|--------|
-| P1 | Intervention types + generator | None | `intervention_types.py`, `intervention_generator.py` | 1-4 | Candidate interventions generated |
-| P2 | Intervention validator | P1 | `intervention_validator.py` | 5-8 | Effects validated |
-| P3 | Scene generator pipeline | P1,P2 | `intervention_scene_generator.py` | smoke | Records + images |
-| P4 | Smoke generation + validation | P3 | `generate_intervention_dataset.py`, configs | smoke pass | 32 validated records |
-| P5 | Dataset class + features | P4 | `intervention_dataset.py`, precompute | 9-13 | Loadable dataset |
-| P6 | V2 architecture | P5 | `intervention_relational.py`, `model_registry.py` | 14-17 | Forward pass correct |
-| P7 | Losses + metrics | P6 | `intervention_losses.py`, `intervention_metrics.py` | — | Loss computes |
-| P8 | Training script + smoke train | P5-P7 | `train_intervention_model.py` | convergence | Model checkpoint |
-| P9 | Evaluation + oracle verify | P8 | `evaluate_intervention_model.py` | 18-20 | Oracle CFR verified |
-| P10 | Pilot dataset | P4 | pilot config | validation | ~360 records |
-| P11 | Multi-seed + baselines | P8,P10 | — | — | Exp 1-4 results |
-| P12 | Ablation studies | P11 | — | — | Ablation table |
-| P13 | Probes + analysis | P11 | `representation_probes.py` | — | Probe results |
+| P1 | Intervention types + generator | Repo clean | `intervention_types.py`, `intervention_generator.py` | 1-7 | Candidate interventions generated |
+| P2 | Intervention validator | P1 | `intervention_validator.py`, `occupancy_checks.py` | 8-13 | Effects validated against $F_R$ |
+| P3 | Scene generator pipeline | P1, P2 | `intervention_scene_generator.py` | — | Pre/post RGB, masks, crops |
+| P4 | Smoke generation + validation | P3 | `validate_intervention_dataset.py`, `run_intervention_smoke.sh` | 14-15 | 6 scenes / 22 records validated |
+| P5 | Dataset class + features | P4 | `intervention_dataset.py`, `precompute_features.py` | 16-19 | Strict 3-way partitioned dataset |
+| P6 | V2 architecture | P5 | `intervention_relational.py`, `model_registry.py` | 20-23 | Forward pass & gradients verified |
+| P7 | Losses + metrics | P6 | `intervention_losses.py`, `intervention_metrics.py` | — | Minimal canonical loss computes |
+| P8 | Training script + smoke train | P5-P7 | `train_intervention_model.py`, configs | 24-25 | Convergence on smoke data |
+| P9 | Evaluation + oracle verify | P8 | `evaluate_intervention_model.py` | 26-28 | Oracle CFR verified $\ge 95\%$ |
+| P10 | Pilot dataset | P4 | Pilot config | — | ~360 records generated |
+| P11 | Multi-seed + baselines | P8, P10 | — | — | Exp 1-4 results (B0, B0b, B3, B4, V2) |
+| P12 | Ablation studies | P11 | — | — | Ablation table (A0-A7) |
+| P13 | Probes + analysis | P11 | `representation_probes.py` | — | Latent probe results |
 
 ---
 

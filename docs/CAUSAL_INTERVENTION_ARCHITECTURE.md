@@ -23,23 +23,30 @@ The current model (`DemoLanguageConditionedRelationalModel`) operates by embeddi
 
 **Goal**: Minimal extension to V1 that enables scoring candidate interventions $\rho_i$.
 
-**Approach**: We append an intervention descriptor token to the temporal context sequence. The cross-attention then conditions the query patch processing on *both* the task context and the proposed intervention. The model predicts the *post-intervention* feasibility.
+**Approach**: We append a neutral intervention descriptor token to the temporal context sequence. The cross-attention then conditions the query patch processing on *both* the task context and the proposed candidate intervention. The model predicts the *post-intervention* feasibility $P(F_{post}=1 \mid s_{pre}, \text{context}, \rho_i)$.
 
 ### 2.1 Intervention Descriptor Token
 
-An intervention is described by the object being acted upon and the semantic destination.
+A candidate intervention is described neutrally by the visual appearance of the acted object, its current geometry in the scene, its proposed target-relative destination geometry, and the operator type (`NONE` vs. `RELOCATE`). It contains NO privileged outcome labels or semantic destination tokens (e.g., `SAFE_REGION`, `STILL_OBSTRUCTING`, or `is_culprit` are strictly prohibited from entering `forward()`).
 
 ```
-z_interv = concat(
-    proj_visual(object_crop_feature),      # (768,) DINOv2 feature of cropped object
-    current_geometry_feature,              # (16,) e.g., target-relative current pose
-    proposed_destination_geometry,         # (16,) e.g., target-relative destination pose
-    embed_operator(intervention_operator)  # (64,) e.g., NONE, RELOCATE
+z_rho_raw = concat(
+    object_crop_feature,            # (D_crop=768,) DINOv2 feature of cropped candidate object
+    current_geometry_feature,       # (D_current_geom,) candidate localization & target-relative current pose/extent
+    proposed_destination_geometry,  # (D_dest_geom,) proposed target-relative destination pose
+    embed_operator(operator_idx)    # (D_operator=64,) learned embedding for NONE (0) / RELOCATE (1)
 )
-z_int = proj_interv(z_interv)              # (256,)
+
+D_interv = D_crop + D_current_geom + D_dest_geom + D_operator
+z_int = proj_interv(z_rho_raw)      # nn.Linear(D_interv, latent_dim=256)
 ```
 
-For the `NONE` intervention (pre-intervention state evaluation), the `object_crop_feature` is zeroed out, and the `intervention_operator` is `NONE`.
+#### Geometry Feature Semantics:
+- **`current_geometry_feature` ($D_{current\_geom}$)**: Parameterized schema carrying candidate localization in the current observation, target-relative current 3D position/orientation, and bounding extent.
+- **`proposed_destination_geometry` ($D_{dest\_geom}$)**: Parameterized schema carrying the proposed target-relative 3D destination coordinate and orientation.
+- Dimensionalities $D_{current\_geom}$ and $D_{dest\_geom}$ are schema/config-driven (e.g. 16-d each in prototype configuration), yielding $D_{interv} = 768 + 16 + 16 + 64 = 864$. In code, `interv_input_dim = vision_dim + current_geom_dim + dest_geom_dim + operator_embed_dim` dynamically defines `proj_interv = nn.Linear(interv_input_dim, latent_dim)`.
+
+For the `NONE` intervention (pre-intervention state evaluation), `object_crop_feature`, `current_geometry_feature`, and `proposed_destination_geometry` are zero-tensors, and `operator_idx` is `0` (`NONE`).
 
 ### 2.2 Sequence Assembly
 
@@ -50,19 +57,21 @@ seq = [z_t, z_d_1, ..., z_d_K, z_int]  # Shape: (1 + K + 1, 256)
 
 ### 2.3 Forward Pass
 
-1. Pass `seq` through the Temporal Encoder.
-2. Query patches attend to the updated `seq` in Cross-Attention.
+1. Pass `seq` through the Temporal Encoder (self-attention).
+2. Query image patches attend to the updated `seq` in Cross-Attention.
 3. Mean pool the updated query patches.
-4. Pass through classifier MLP to get `logit_post` (predicted post-intervention feasibility).
+4. Pass through classifier MLP to get `logit_post` (predicted post-intervention feasibility logit).
 
-The predicted causal effect of the intervention is derived by comparing it to the `NONE` intervention output:
-$\hat{\Delta}_i = \sigma(\text{logit\_post\_interv}_i) - \sigma(\text{logit\_post\_none})$
+The model forward path observes strictly pre-intervention observations. Post-intervention images/features NEVER enter inference.
+
+The predicted causal effect of candidate intervention $i$ is derived by comparing it to the `NONE` intervention output:
+$$\hat{\Delta}_i = \sigma(\text{logit\_post\_interv}_i) - \sigma(\text{logit\_post\_none})$$
 
 ---
 
-## 3. Architecture V3: Object-Centric Causal Model (Future)
+## 3. Architecture V3: Object-Centric Causal Model (Future Concept)
 
-**Goal**: Move from implicit patch-based reasoning to explicit factored object reasoning, enabling latent transitions and explicit irrelevance priors.
+**Goal**: Move from implicit patch-based reasoning to explicit factored object reasoning, enabling global relational counterfactual re-encoding and explicit irrelevance priors.
 
 ### 3.1 Tokenization
 
@@ -70,7 +79,7 @@ Instead of patch tokens, the scene is tokenized into explicit entities.
 
 **Object Tokens** ($N$ tokens):
 ```
-z_oi = proj_obj(concat(
+x_i = proj_obj(concat(
     object_crop_feature,
     bbox_geometry_features,
     relative_pose_to_target
@@ -97,11 +106,11 @@ z_dk = proj_demo(concat(
 
 ### 3.2 Relational Encoder
 
-A Transformer processes the unified set of tokens: `[z_a, z_d1..K, z_o1..N]`.
+A Transformer processes the unified set of raw tokens: `[z_a, z_d1..K, x_1..N]`.
 Through self-attention, object tokens contextualize each other relative to the action and demonstration.
 
 ```
-Z_out = relational_encoder([z_a, z_d1..K, z_o1..N])
+Z_out = relational_encoder([z_a, z_d1..K, x_1..N])
 z_action = Z_out[0]
 z_objects = Z_out[1+K:]
 ```
@@ -109,15 +118,17 @@ z_objects = Z_out[1+K:]
 ### 3.3 Output Heads
 
 1. **Feasibility**: `clf(concat(z_action, mean_pool(z_objects)))`
-2. **Causal Relevance**: For each object, `rel_clf(concat(z_action, z_objects[i]))` predicting ground-truth $\Delta_i$.
+2. **Causal Relevance**: For each object, `rel_clf(concat(z_action, z_objects[i]))` predicting ground-truth causal sensitivity $|\Delta_i| > 0$ and repair relevance $\Delta_i > 0$.
 
-### 3.4 Latent Transition (Intervention Mechanism)
+### 3.4 Counterfactual Relational Mechanism (Intervention Reasoning)
 
-To evaluate an intervention $\rho_i$ on object $i$:
-1. Update object $i$'s token using a latent transition network:
-   `z_objects_prime[i] = transition_net(z_objects[i], embed_intervention(rho_i))`
-2. Keep all other object tokens unchanged:
-   `z_objects_prime[j] = z_objects[j]` for $j \neq i$
-3. Re-evaluate feasibility using `z_objects_prime`.
+For candidate relocation $\rho_i = \text{RELOCATE}(o_i, \text{dest\_geom}_i)$ with known proposed destination geometry:
+1. Construct the counterfactual raw object token using the proposed destination geometry:
+   $$x_i' = E_{obj}(\text{visual}_i, \text{destination\_geometry}_i)$$
+2. Replace the raw entity token in the scene set:
+   $$x_i \to x_i'$$
+3. Rerun the relational encoder over ALL entities and context tokens:
+   $$Z_{out}' = \mathcal{R}_\theta([z_a, z_{d1..K}, x_1, \dots, x_i', \dots, x_N])$$
+4. Evaluate post-intervention feasibility from $Z_{out}'$.
 
-This enforces a strong architectural prior: an intervention on object $i$ only changes object $i$'s latent state, and if the overall feasibility changes, object $i$ must be causally relevant.
+**Rationale**: Moving object $i$ physically alters pairwise geometric and clearance relations with *all other scene entities*. Rather than freezing already-contextualized latents and mutating an isolated slot via a separate transition network, replacing the raw factored entity and re-running relational encoding naturally propagates global relational updates. (Learned latent transition networks may be reserved for contact-rich dynamics where post-state geometry cannot be analytically specified).
