@@ -1,0 +1,45 @@
+{
+  "schema_version": "2.1.0",
+  "feature_cache_schema_version": "1.0.0",
+  "validation_status": "PASSED",
+  "source_manifest_sha256": "5e8720a15229adc8b9dd120a29f53f792d2e523f892120b2fc60850e3e629ec4",
+  "source_generator_commit": "6fe085a86709ddcac45b6a387e6f7ba6c4fcf5eb",
+  "feature_code_commit": "23c96c42907e3214d26d1a9d7f3a2231ae50c7d8",
+  "scene_count": 6,
+  "record_count": 22,
+  "unique_pre_images": 6,
+  "unique_candidate_crops": 10,
+  "unique_instruction_strings": 2,
+  "encoders": {
+    "vision": "dinov2_vitb14",
+    "text": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "dimensions": {
+    "text_dim": 384,
+    "scene_global_dim": 768,
+    "scene_patch_shape": [
+      256,
+      768
+    ],
+    "candidate_visual_dim": 768,
+    "current_geom_dim": 3,
+    "dest_geom_dim": 3,
+    "operator_count": 2
+  },
+  "grouped_scene_sizes": [
+    4,
+    4,
+    3,
+    4,
+    4,
+    3
+  ],
+  "feature_source_hash_verification": {
+    "passed": true
+  },
+  "no_post_feature_count": 0,
+  "model_input_leakage_tests": {
+    "passed": true
+  },
+  "real_encoder_extraction": true
+}
