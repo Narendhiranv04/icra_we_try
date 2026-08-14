@@ -1,0 +1,27 @@
+{
+  "schema_version": "2.0.0",
+  "validation_status": "PASSED",
+  "manifest_path": "intervention_smoke/manifest.jsonl",
+  "manifest_sha256": "87e96ce18575cb71bc20af213f7e7beff566e79ab3d56956ba54dec2e66b6655",
+  "generator_commit": "a3395cf0d7700a128a0074b7c20cec9fb4c01ce4",
+  "scene_count": 6,
+  "record_count": 22,
+  "effect_counts": {
+    "1": 4,
+    "0": 16,
+    "-1": 2
+  },
+  "category_counts": {
+    "repair": 4,
+    "identity": 6,
+    "hard_negative": 4,
+    "irrelevant": 6,
+    "harmful": 2
+  },
+  "max_pre_rgb_rmse": 0.005511981900781393,
+  "max_none_rgb_rmse": 22.200965881347656,
+  "max_collateral_displacement_m": 0.003188244973660392,
+  "recomputed_delta_agreement": "22/22 (100%)",
+  "leakage_audit_passed": true,
+  "task2_structural_exclusion_passed": true
+}
