@@ -1,9 +1,10 @@
 {
-  "schema_version": "2.0.0",
+  "schema_version": "2.1.0",
   "validation_status": "PASSED",
+  "generator_commit": "6fe085a86709ddcac45b6a387e6f7ba6c4fcf5eb",
   "manifest_path": "intervention_smoke/manifest.jsonl",
-  "manifest_sha256": "87e96ce18575cb71bc20af213f7e7beff566e79ab3d56956ba54dec2e66b6655",
-  "generator_commit": "a3395cf0d7700a128a0074b7c20cec9fb4c01ce4",
+  "manifest_sha256": "5e8720a15229adc8b9dd120a29f53f792d2e523f892120b2fc60850e3e629ec4",
+  "config_sha256": "ead914e5ba8d9b67fa0231595e248c2383f5235d31aa09be6809fd61f4dd90d5",
   "scene_count": 6,
   "record_count": 22,
   "effect_counts": {
@@ -18,10 +19,75 @@
     "irrelevant": 6,
     "harmful": 2
   },
-  "max_pre_rgb_rmse": 0.005511981900781393,
-  "max_none_rgb_rmse": 22.200965881347656,
-  "max_collateral_displacement_m": 0.003188244973660392,
-  "recomputed_delta_agreement": "22/22 (100%)",
-  "leakage_audit_passed": true,
-  "task2_structural_exclusion_passed": true
+  "recomputed_delta": {
+    "passed_count": 22,
+    "total": 22,
+    "passed": true
+  },
+  "pre_rgb_reconstruction": {
+    "measured_max_rmse": 0.007654655259102583,
+    "threshold": 1.0,
+    "passed": true
+  },
+  "post_rgb_reconstruction": {
+    "measured_max_rmse": 0.009771699085831642,
+    "threshold": 1.0,
+    "passed_count": 22,
+    "total": 22,
+    "passed": true
+  },
+  "post_segmentation": {
+    "exact_match_count": 22,
+    "total": 22,
+    "passed": true
+  },
+  "candidate_mask_alignment": {
+    "passed_count": 16,
+    "total_relocate_records": 16,
+    "passed": true
+  },
+  "candidate_crop_alignment": {
+    "passed_count": 16,
+    "total_relocate_records": 16,
+    "passed": true
+  },
+  "current_geometry_alignment": {
+    "passed_count": 16,
+    "total_relocate_records": 16,
+    "passed": true
+  },
+  "none_control": {
+    "measured_max_rgb_rmse": 1.5428831577301025,
+    "threshold": 3.0,
+    "passed": true
+  },
+  "camera_translation": {
+    "measured_max_m": 0.0,
+    "threshold_m": 0.001,
+    "passed": true
+  },
+  "camera_rotation": {
+    "measured_max_rad": 0.0,
+    "threshold_rad": 0.005,
+    "passed": true
+  },
+  "collateral_translation": {
+    "measured_max_m": 0.00329502934582354,
+    "threshold_m": 0.05,
+    "passed": true
+  },
+  "relational_identity": {
+    "passed_count": 22,
+    "total": 22,
+    "passed": true
+  },
+  "task2_structural_exclusion": {
+    "passed": true
+  },
+  "leakage_audit": {
+    "passed": true
+  },
+  "metadata_provenance": {
+    "passed": true
+  }
 }
