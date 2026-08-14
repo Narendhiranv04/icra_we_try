@@ -79,6 +79,14 @@ class InterventionLearningDataset(Dataset):
         with open(index_file, "r", encoding="utf-8") as f:
             self.cache_index = json.load(f)
 
+        # Validate feature cache schema version
+        cache_schema = self.cache_index.get("feature_cache_schema_version")
+        if cache_schema != FEATURE_CACHE_SCHEMA_VERSION:
+            raise ValueError(
+                f"Feature cache at {self.features_dir} has schema version '{cache_schema}', "
+                f"expected exact '{FEATURE_CACHE_SCHEMA_VERSION}'."
+            )
+
         # Provenance verification: Manifest SHA256 must match cached source
         actual_manifest_sha = _compute_file_sha256(self.manifest_path)
         cached_manifest_sha = self.cache_index.get("source", {}).get("manifest_sha256") or self.cache_index.get("manifest_sha256")
@@ -146,11 +154,11 @@ class InterventionLearningDataset(Dataset):
             raise ValueError(f"Record {rec['record_id']}: Missing model_inputs.pre_rgb_path")
 
         scenes_map = self.cache_index.get("scenes", {})
-        if pre_rgb_path in scenes_map:
-            scene_feat_rel_path = scenes_map[pre_rgb_path]["feature_path"]
-            scene_feat_file = self.features_dir / scene_feat_rel_path
-        else:
-            scene_feat_file = self.features_dir / "scenes" / f"scene_{scene_id}_features.pt"
+        if pre_rgb_path not in scenes_map:
+            raise KeyError(f"Pre RGB path '{pre_rgb_path}' missing from feature cache index at {self.features_dir}.")
+
+        scene_feat_rel_path = scenes_map[pre_rgb_path]["feature_path"]
+        scene_feat_file = self.features_dir / scene_feat_rel_path
 
         if not scene_feat_file.exists():
             raise FileNotFoundError(f"Missing scene features at {scene_feat_file}")
@@ -173,13 +181,11 @@ class InterventionLearningDataset(Dataset):
                 raise ValueError(f"Record {rec['record_id']}: RELOCATE operator missing candidate_object_crop_path")
 
             crops_map = self.cache_index.get("crops", {})
-            if crop_path in crops_map:
-                crop_feat_rel_path = crops_map[crop_path]["feature_path"]
-                crop_feat_file = self.features_dir / crop_feat_rel_path
-            else:
-                # Fallback to sanitized filename
-                sanitized = crop_path.replace("/", "_").replace(".", "_")
-                crop_feat_file = self.features_dir / "crops" / f"crop_{sanitized}_features.pt"
+            if crop_path not in crops_map:
+                raise KeyError(f"Candidate crop path '{crop_path}' missing from feature cache index at {self.features_dir}.")
+
+            crop_feat_rel_path = crops_map[crop_path]["feature_path"]
+            crop_feat_file = self.features_dir / crop_feat_rel_path
 
             if not crop_feat_file.exists():
                 raise FileNotFoundError(f"Missing crop features at {crop_feat_file}")

@@ -217,3 +217,75 @@ def test_cache_invalidation_on_source_image_change(tmp_path):
     )
     # Only crop recomputed, pre scene reused
     assert vision_stub.call_count == 1
+
+
+def test_cache_invalidation_on_encoder_signature_change(tmp_path):
+    """Test that changing encoder signature invalidates cache even if source image is unchanged."""
+    dataset_root = tmp_path / "dataset"
+    dataset_root.mkdir()
+    scenes_dir = dataset_root / "scenes" / "ivs_000001"
+    scenes_dir.mkdir(parents=True)
+
+    pre_rgb_path = scenes_dir / "pre_rgb.png"
+    Image.new("RGB", (640, 480), color=(10, 20, 30)).save(pre_rgb_path)
+
+    manifest_file = dataset_root / "manifest.jsonl"
+    with open(manifest_file, "w", encoding="utf-8") as f:
+        f.write(json.dumps({
+            "schema_version": "2.1.0",
+            "record_id": "rec_000",
+            "scene_id": "ivs_000001",
+            "intervention_id": "int_000",
+            "model_inputs": {
+                "task_id": "task_1",
+                "instruction": "Open the box.",
+                "pre_rgb_path": "scenes/ivs_000001/pre_rgb.png",
+                "candidate_object_crop_path": None,
+                "intervention_operator": "NONE",
+                "current_geometry": None,
+                "destination_geometry": None,
+            },
+            "supervision_targets": {"pre_feasible": False, "post_feasible": False, "causal_effect": 0},
+        }) + "\n")
+
+    out_features_dir = tmp_path / "features"
+    vision_stub1 = StubVisionEncoder()
+    vision_stub1.model_name = "dinov2_model_v1"
+    text_stub = StubTextEncoder()
+
+    # Pass 1 with model v1
+    extract_intervention_features(
+        manifest_path=manifest_file,
+        dataset_root=dataset_root,
+        out_dir=out_features_dir,
+        vision_encoder=vision_stub1,
+        text_encoder=text_stub,
+    )
+    assert vision_stub1.call_count == 1
+
+    # Pass 2 with model v2 (same output dimensions, different encoder signature)
+    vision_stub2 = StubVisionEncoder()
+    vision_stub2.model_name = "dinov2_model_v2"
+    extract_intervention_features(
+        manifest_path=manifest_file,
+        dataset_root=dataset_root,
+        out_dir=out_features_dir,
+        vision_encoder=vision_stub2,
+        text_encoder=text_stub,
+        force=False,
+    )
+    assert vision_stub2.call_count == 1  # Must recompute due to signature mismatch
+
+
+def test_hashed_filename_collision_safety():
+    """Test that path pairs that would collide under old sanitization get distinct hashed cache filenames."""
+    from scripts.precompute_intervention_features import hash_cache_filename
+
+    path_a = "scenes/ivs_000001/crops/object_a_b.png"
+    path_b = "scenes/ivs_000001/crops/object/a_b.png"
+
+    file_a = hash_cache_filename(path_a, "crop")
+    file_b = hash_cache_filename(path_b, "crop")
+
+    assert file_a != file_b, f"Colliding cache filenames: {file_a} == {file_b}"
+

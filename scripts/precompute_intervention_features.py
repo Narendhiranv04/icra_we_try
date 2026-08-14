@@ -49,9 +49,44 @@ def compute_text_sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def sanitize_filename(rel_path: str) -> str:
-    """Sanitize a relative path to a safe, neutral cache filename."""
-    return rel_path.replace("/", "_").replace(".", "_")
+def hash_cache_filename(rel_path: str, prefix: str) -> str:
+    """Compute a neutral, injective SHA256-based cache filename from relative source path."""
+    digest = hashlib.sha256(rel_path.encode("utf-8")).hexdigest()[:24]
+    return f"{prefix}_{digest}_features.pt"
+
+
+def get_vision_extraction_signature(vision_encoder: Any) -> Dict[str, Any]:
+    """Return explicit visual feature extraction signature dictionary."""
+    model_name = getattr(vision_encoder, "model_name", "dinov2_vitb14")
+    embed_dim = SCENE_GLOBAL_DIM
+    patch_size = getattr(vision_encoder, "patch_size", 14)
+    num_patches = SCENE_PATCH_SHAPE[0]
+    transform_str = "bicubic_224_centercrop_imagenet_norm"
+    sig_str = f"{model_name}:{embed_dim}:{patch_size}:{num_patches}:{transform_str}"
+    sig_sha = hashlib.sha256(sig_str.encode("utf-8")).hexdigest()
+    return {
+        "model_name": model_name,
+        "embed_dim": embed_dim,
+        "patch_size": patch_size,
+        "num_patches": num_patches,
+        "transform": transform_str,
+        "signature_sha256": sig_sha,
+    }
+
+
+def get_text_extraction_signature(text_encoder: Any) -> Dict[str, Any]:
+    """Return explicit text feature extraction signature dictionary."""
+    model_name = getattr(text_encoder, "model_name", "sentence-transformers/all-MiniLM-L6-v2")
+    embed_dim = TEXT_DIM
+    pooling_str = "mean_attention_mask"
+    sig_str = f"{model_name}:{embed_dim}:{pooling_str}"
+    sig_sha = hashlib.sha256(sig_str.encode("utf-8")).hexdigest()
+    return {
+        "model_name": model_name,
+        "embed_dim": embed_dim,
+        "pooling": pooling_str,
+        "signature_sha256": sig_sha,
+    }
 
 
 def extract_intervention_features(
@@ -90,7 +125,7 @@ def extract_intervention_features(
             generator_commit = meta.get("generator_commit")
 
     # Group unique pre scenes, candidate crops, and text instructions strictly from model_inputs
-    unique_scenes: Dict[str, str] = {}  # pre_rgb_path -> scene_id
+    unique_scenes: Dict[str, Tuple[str, str]] = {}  # pre_rgb_path -> (scene_id, cache_filename)
     unique_crops: Dict[str, str] = {}  # candidate_crop_path -> crop_filename
     unique_instructions: Dict[str, str] = {}  # text -> text_sha256
 
@@ -101,12 +136,12 @@ def extract_intervention_features(
         # Scene pre RGB (model-visible)
         pre_rgb_path = m_in.get("pre_rgb_path")
         if pre_rgb_path and pre_rgb_path not in unique_scenes:
-            unique_scenes[pre_rgb_path] = scene_id
+            unique_scenes[pre_rgb_path] = (scene_id, hash_cache_filename(pre_rgb_path, "scene"))
 
         # Candidate crop (model-visible)
         crop_path = m_in.get("candidate_object_crop_path")
         if crop_path and crop_path not in unique_crops:
-            unique_crops[crop_path] = f"crop_{sanitize_filename(crop_path)}_features.pt"
+            unique_crops[crop_path] = hash_cache_filename(crop_path, "crop")
 
         # Instruction (model-visible)
         inst = m_in.get("instruction")
@@ -119,10 +154,13 @@ def extract_intervention_features(
     if text_encoder is None:
         text_encoder = TextEncoder(model_name="sentence-transformers/all-MiniLM-L6-v2", device=device)
 
+    vision_sig = get_vision_extraction_signature(vision_encoder)
+    text_sig = get_text_extraction_signature(text_encoder)
+
     # 1. Extract Unique Pre Scene Visual Features
     scene_index: Dict[str, Any] = {}
-    for rel_path, scene_id in unique_scenes.items():
-        scene_feat_file = out_dir / "scenes" / f"scene_{scene_id}_features.pt"
+    for rel_path, (scene_id, cache_filename) in unique_scenes.items():
+        scene_feat_file = out_dir / "scenes" / cache_filename
         abs_img_path = dataset_root / rel_path
 
         if not abs_img_path.exists():
@@ -134,8 +172,10 @@ def extract_intervention_features(
         if not needs_recompute:
             try:
                 cached = torch.load(scene_feat_file, weights_only=True)
+                cached_sig = cached.get("extraction_signature", {}).get("signature_sha256")
                 if (
                     cached.get("source_sha256") != img_sha
+                    or cached_sig != vision_sig["signature_sha256"]
                     or cached["global"].shape != (SCENE_GLOBAL_DIM,)
                     or cached["patch"].shape != SCENE_PATCH_SHAPE
                 ):
@@ -151,6 +191,7 @@ def extract_intervention_features(
                     "scene_id": scene_id,
                     "source_path": rel_path,
                     "source_sha256": img_sha,
+                    "extraction_signature": vision_sig,
                     "global": cls_token[0].cpu().to(torch.float32),
                     "patch": patch_tokens[0].cpu().to(torch.float32),
                 },
@@ -161,6 +202,7 @@ def extract_intervention_features(
             "scene_id": scene_id,
             "source_path": rel_path,
             "source_sha256": img_sha,
+            "extraction_signature": vision_sig,
             "feature_path": str(scene_feat_file.relative_to(out_dir)),
             "global_shape": [SCENE_GLOBAL_DIM],
             "patch_shape": list(SCENE_PATCH_SHAPE),
@@ -181,8 +223,10 @@ def extract_intervention_features(
         if not needs_recompute:
             try:
                 cached = torch.load(crop_feat_file, weights_only=True)
+                cached_sig = cached.get("extraction_signature", {}).get("signature_sha256")
                 if (
                     cached.get("source_sha256") != crop_sha
+                    or cached_sig != vision_sig["signature_sha256"]
                     or cached["global"].shape != (CANDIDATE_VISUAL_DIM,)
                 ):
                     needs_recompute = True
@@ -196,6 +240,7 @@ def extract_intervention_features(
                 {
                     "source_path": rel_crop_path,
                     "source_sha256": crop_sha,
+                    "extraction_signature": vision_sig,
                     "global": cls_token[0].cpu().to(torch.float32),
                 },
                 crop_feat_file,
@@ -204,6 +249,7 @@ def extract_intervention_features(
         crop_index[rel_crop_path] = {
             "source_path": rel_crop_path,
             "source_sha256": crop_sha,
+            "extraction_signature": vision_sig,
             "feature_path": str(crop_feat_file.relative_to(out_dir)),
             "global_shape": [CANDIDATE_VISUAL_DIM],
         }
@@ -216,11 +262,15 @@ def extract_intervention_features(
     if not needs_recompute_text:
         try:
             cached_text = torch.load(text_feat_file, weights_only=True)
-            feats = cached_text.get("features", {})
-            for inst in instruction_list:
-                if inst not in feats or feats[inst].shape != (TEXT_DIM,):
-                    needs_recompute_text = True
-                    break
+            cached_sig = cached_text.get("metadata", {}).get("extraction_signature", {}).get("signature_sha256")
+            if cached_sig != text_sig["signature_sha256"]:
+                needs_recompute_text = True
+            else:
+                feats = cached_text.get("features", {})
+                for inst in instruction_list:
+                    if inst not in feats or feats[inst].shape != (TEXT_DIM,):
+                        needs_recompute_text = True
+                        break
         except Exception:
             needs_recompute_text = True
 
@@ -233,8 +283,9 @@ def extract_intervention_features(
             {
                 "features": text_features_dict,
                 "metadata": {
-                    "encoder": getattr(text_encoder, "model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+                    "encoder": text_sig["model_name"],
                     "embed_dim": TEXT_DIM,
+                    "extraction_signature": text_sig,
                     "instructions": [
                         {"text": inst, "sha256": unique_instructions[inst]}
                         for inst in instruction_list
@@ -249,6 +300,7 @@ def extract_intervention_features(
             "exact_text": inst,
             "text_sha256": unique_instructions[inst],
             "feature_dim": TEXT_DIM,
+            "extraction_signature": text_sig,
         }
         for inst in instruction_list
     }
@@ -263,18 +315,22 @@ def extract_intervention_features(
             "dataset_generator_commit": generator_commit,
         },
         "feature_code_commit": commit,
+        "extraction_signatures": {
+            "vision": vision_sig,
+            "text": text_sig,
+        },
         "encoders": {
             "vision": {
-                "model_name": getattr(vision_encoder, "model_name", "dinov2_vitb14"),
+                "model_name": vision_sig["model_name"],
                 "embed_dim": SCENE_GLOBAL_DIM,
-                "patch_size": getattr(vision_encoder, "patch_size", 14),
+                "patch_size": vision_sig["patch_size"],
                 "num_patches": SCENE_PATCH_SHAPE[0],
-                "transform": "bicubic_224_centercrop_imagenet_norm",
+                "transform": vision_sig["transform"],
             },
             "text": {
-                "model_name": getattr(text_encoder, "model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+                "model_name": text_sig["model_name"],
                 "embed_dim": TEXT_DIM,
-                "pooling": "mean_attention_mask",
+                "pooling": text_sig["pooling"],
             },
         },
         "dimensions": {

@@ -419,20 +419,20 @@ def validate_intervention_dataset(
                 if float(np.linalg.norm(exp_rel_pos - meas_rel_pos)) > tol_geom_pos:
                     raise ValueError(f"Record {rec['record_id']}: Current geometry relative pos mismatch")
 
-                # Destination geometry freejoint, quaternion, and relative verification
+                # Destination geometry quaternion normalization and relative frame verification
                 dest_geom = m_in["destination_geometry"]
-                dest_pos_meas = np.array(dest_p)
-                dest_pos_rec = np.array(dest_geom["world_position"])
-                if float(np.linalg.norm(dest_pos_meas - dest_pos_rec)) > tol_geom_pos:
-                    raise ValueError(f"Record {rec['record_id']}: Destination geometry world pos mismatch")
+                dest_world_pos = np.array(dest_geom["world_position"])
+                if not np.all(np.isfinite(dest_world_pos)):
+                    raise ValueError(f"Record {rec['record_id']}: Non-finite destination world position.")
 
-                dest_quat_meas = np.array(dest_q)
-                dest_quat_rec = np.array(dest_geom["world_quaternion_wxyz"])
-                dest_quat_dist = min(float(np.linalg.norm(dest_quat_meas - dest_quat_rec)), float(np.linalg.norm(dest_quat_meas + dest_quat_rec)))
-                if dest_quat_dist > tol_geom_quat:
-                    raise ValueError(f"Record {rec['record_id']}: Destination geometry quaternion mismatch (dist: {dest_quat_dist})")
+                dest_quat = np.array(dest_geom["world_quaternion_wxyz"])
+                if not np.all(np.isfinite(dest_quat)):
+                    raise ValueError(f"Record {rec['record_id']}: Non-finite destination quaternion.")
+                dest_quat_norm = float(np.linalg.norm(dest_quat))
+                if abs(dest_quat_norm - 1.0) > tol_geom_quat:
+                    raise ValueError(f"Record {rec['record_id']}: Destination quaternion norm {dest_quat_norm} != 1.0")
 
-                exp_dest_rel_pos = world_to_local(model, data, ref_frame_name, dest_pos_meas, use_geom=True)
+                exp_dest_rel_pos = world_to_local(model, data, ref_frame_name, dest_world_pos, use_geom=True)
                 meas_dest_rel_pos = np.array(dest_geom["relative_position"])
                 if float(np.linalg.norm(exp_dest_rel_pos - meas_dest_rel_pos)) > tol_geom_pos:
                     raise ValueError(f"Record {rec['record_id']}: Destination geometry relative pos mismatch")

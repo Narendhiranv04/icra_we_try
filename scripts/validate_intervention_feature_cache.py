@@ -168,7 +168,7 @@ def validate_feature_cache(
 
         crop_passed_count += 1
 
-    # 5. Unique Instructions Verification
+    # 5. Unique Instructions Verification with Real SHA Check
     unique_instructions = sorted(list(set(r["model_inputs"]["instruction"] for r in records if r["model_inputs"].get("instruction"))))
     text_feat_file = features_dir / "text_features.pt"
     if not text_feat_file.exists():
@@ -176,6 +176,7 @@ def validate_feature_cache(
 
     text_dict = torch.load(text_feat_file, weights_only=True)
     text_features = text_dict.get("features", text_dict)
+    texts_map = cache_index.get("texts", {})
     text_passed_count = 0
 
     for inst in unique_instructions:
@@ -184,6 +185,11 @@ def validate_feature_cache(
         emb = text_features[inst]
         if emb.shape != (TEXT_DIM,) or emb.dtype != torch.float32:
             raise ValueError(f"Text feature for '{inst}' has invalid shape {emb.shape}")
+        
+        expected_sha = compute_text_sha256(inst)
+        indexed_sha = texts_map.get(inst, {}).get("text_sha256")
+        if indexed_sha != expected_sha:
+            raise ValueError(f"Text SHA mismatch for '{inst}': expected {expected_sha}, cached index has {indexed_sha}")
         text_passed_count += 1
 
     # 6. Check No POST Features Cached
@@ -197,7 +203,63 @@ def validate_feature_cache(
     if len(dataset) != len(records):
         raise ValueError(f"Dataset length {len(dataset)} != manifest records {len(records)}")
 
-    # 8. Grouped Batch Sampler
+    # Verify model_inputs contains ONLY exact 7 model-visible fields
+    allowed_model_input_keys = {
+        "text_feat", "scene_global", "scene_patch", "candidate_visual",
+        "current_geometry", "destination_geometry", "operator_idx"
+    }
+    for i in range(len(dataset)):
+        item = dataset[i]
+        m_in_keys = set(item["model_inputs"].keys())
+        if m_in_keys != allowed_model_input_keys:
+            raise ValueError(f"Record {i} model_inputs keys {m_in_keys} != expected {allowed_model_input_keys}")
+
+    # 8. Neutral NONE Tensorization Gate
+    none_passed_count = 0
+    none_total_count = 0
+    for i in range(len(dataset)):
+        item = dataset[i]
+        m_in = item["model_inputs"]
+        if m_in["operator_idx"].item() == OPERATOR_NONE_IDX:
+            none_total_count += 1
+            if (
+                torch.count_nonzero(m_in["candidate_visual"]).item() == 0
+                and torch.count_nonzero(m_in["current_geometry"]).item() == 0
+                and torch.count_nonzero(m_in["destination_geometry"]).item() == 0
+            ):
+                none_passed_count += 1
+            else:
+                raise ValueError(f"Record {i} operator NONE has non-zero candidate tensors.")
+
+    # 9. Structural Matched Candidate Consistency Gate
+    matched_groups: Dict[Tuple[str, str, Tuple[float, ...]], List[int]] = {}
+    for idx, rec in enumerate(records):
+        m_in = rec["model_inputs"]
+        if m_in.get("intervention_operator") == "RELOCATE":
+            scene_id = rec["scene_id"]
+            crop_path = m_in["candidate_object_crop_path"]
+            curr_pos = tuple(m_in["current_geometry"]["relative_position"])
+            key = (scene_id, crop_path, curr_pos)
+            matched_groups.setdefault(key, []).append(idx)
+
+    matched_pair_count = 0
+    matched_passed_count = 0
+    for key, indices in matched_groups.items():
+        if len(indices) > 1:
+            matched_pair_count += 1
+            item0 = dataset[indices[0]]["model_inputs"]
+            item1 = dataset[indices[1]]["model_inputs"]
+
+            c_vis_match = torch.equal(item0["candidate_visual"], item1["candidate_visual"])
+            c_geom_match = torch.equal(item0["current_geometry"], item1["current_geometry"])
+            d_geom_diff = not torch.equal(item0["destination_geometry"], item1["destination_geometry"])
+
+            if c_vis_match and c_geom_match and d_geom_diff:
+                matched_passed_count += 1
+            else:
+                raise ValueError(f"Matched candidate pair for group {key} failed visual/geometry consistency.")
+
+    # 10. Grouped Batch Sampler
     sampler = InterventionGroupBatchSampler(dataset=dataset, scenes_per_batch=1, shuffle=False)
     batches = list(sampler)
     grouped_scene_sizes = [len(b) for b in batches]
@@ -207,6 +269,15 @@ def validate_feature_cache(
         collated = collate_intervention_group(items)
         if collated["batch_size"] != len(batch_indices):
             raise ValueError("Collated batch size mismatch")
+
+    # Verify encoder metadata consistency against spec
+    encoders = cache_index.get("encoders", {})
+    vision_enc = encoders.get("vision", {})
+    text_enc = encoders.get("text", {})
+    encoder_meta_ok = (
+        vision_enc.get("embed_dim") == SCENE_GLOBAL_DIM
+        and text_enc.get("embed_dim") == TEXT_DIM
+    )
 
     # Compile Validation Report
     report = {
@@ -250,10 +321,20 @@ def validate_feature_cache(
             "total": len(unique_instructions),
             "passed": text_passed_count == len(unique_instructions),
         },
+        "none_tensorization_matches": {
+            "passed_count": none_passed_count,
+            "total": none_total_count,
+            "passed": none_passed_count == none_total_count and none_total_count > 0,
+        },
+        "matched_candidate_pairs": {
+            "passed_count": matched_passed_count,
+            "total": matched_pair_count,
+            "passed": matched_passed_count == matched_pair_count and matched_pair_count > 0,
+        },
         "manifest_cache_compatibility": True,
-        "privileged_free_model_resolution": True,
+        "model_feature_resolution_from_model_inputs_only": True,
         "post_feature_reference_count": 0,
-        "real_encoder_extraction": True,
+        "encoder_metadata_consistency": bool(encoder_meta_ok),
     }
 
     if report_path:

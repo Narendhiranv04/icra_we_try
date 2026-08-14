@@ -386,6 +386,41 @@ def test_wrong_manifest_sha_fails_loudly(mock_dataset_and_features):
         InterventionLearningDataset(manifest_path=wrong_manifest, features_dir=features_dir, split="all")
 
 
+def test_wrong_schema_version_fails_loudly(mock_dataset_and_features):
+    """Test that InterventionLearningDataset rejects cache with wrong schema version."""
+    manifest_file, features_dir = mock_dataset_and_features
+    index_file = features_dir / "feature_cache_index.json"
+
+    with open(index_file, "r") as f:
+        idx_data = json.load(f)
+
+    idx_data["feature_cache_schema_version"] = "1.0.0"
+    with open(index_file, "w") as f:
+        json.dump(idx_data, f, indent=2)
+
+    with pytest.raises(ValueError, match="schema version '1.0.0', expected exact '1.1.0'"):
+        InterventionLearningDataset(manifest_path=manifest_file, features_dir=features_dir, split="all")
+
+
+def test_missing_cache_index_key_raises_keyerror(mock_dataset_and_features):
+    """Test that missing pre_rgb_path or crop_path in cache index raises KeyError with no fallback guessing."""
+    manifest_file, features_dir = mock_dataset_and_features
+    index_file = features_dir / "feature_cache_index.json"
+
+    with open(index_file, "r") as f:
+        idx_data = json.load(f)
+
+    # Remove scene key from index
+    idx_data["scenes"] = {}
+    with open(index_file, "w") as f:
+        json.dump(idx_data, f, indent=2)
+
+    ds = InterventionLearningDataset(manifest_path=manifest_file, features_dir=features_dir, split="all")
+    with pytest.raises(KeyError, match="missing from feature cache index"):
+        _ = ds[0]
+
+
+
 def test_non_contiguous_scene_batch_rejected(mock_dataset_and_features):
     """Test that collate_intervention_group rejects non-contiguous scene groups."""
     manifest_file, features_dir = mock_dataset_and_features
