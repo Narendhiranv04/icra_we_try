@@ -25,12 +25,12 @@
     "passed": true
   },
   "pre_rgb_reconstruction": {
-    "measured_max_rmse": 0.007654655259102583,
+    "measured_max_rmse": 0.006505206227302551,
     "threshold": 1.0,
     "passed": true
   },
   "post_rgb_reconstruction": {
-    "measured_max_rmse": 0.009771699085831642,
+    "measured_max_rmse": 0.010152910836040974,
     "threshold": 1.0,
     "passed_count": 22,
     "total": 22,

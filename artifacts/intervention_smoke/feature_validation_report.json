@@ -4,7 +4,7 @@
   "validation_status": "PASSED",
   "source_manifest_sha256": "5e8720a15229adc8b9dd120a29f53f792d2e523f892120b2fc60850e3e629ec4",
   "source_generator_commit": "6fe085a86709ddcac45b6a387e6f7ba6c4fcf5eb",
-  "feature_code_commit": "c33a3ec4b2dd1f902639f0f289c938cae27a34bf",
+  "feature_code_commit": "8231590e4ea750591f716b9f0fe1bed987f0e578",
   "scene_count": 6,
   "record_count": 22,
   "unique_pre_images": 6,
@@ -59,8 +59,18 @@
     "total": 2,
     "passed": true
   },
+  "none_tensorization_matches": {
+    "passed_count": 6,
+    "total": 6,
+    "passed": true
+  },
+  "matched_candidate_pairs": {
+    "passed_count": 6,
+    "total": 6,
+    "passed": true
+  },
   "manifest_cache_compatibility": true,
-  "privileged_free_model_resolution": true,
+  "model_feature_resolution_from_model_inputs_only": true,
   "post_feature_reference_count": 0,
-  "real_encoder_extraction": true
+  "encoder_metadata_consistency": true
 }
