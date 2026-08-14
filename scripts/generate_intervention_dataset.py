@@ -27,18 +27,6 @@ from src.interventions.intervention_validator import InterventionValidator
 from src.interventions.intervention_generator import InterventionGenerator
 
 
-def resolve_demonstration_reference(task_id: str, repo_root: Path) -> str:
-    """Resolve an existing, verified demonstration file path or return null."""
-    if "1" in str(task_id):
-        demo_candidate = repo_root / "data/pilot_demos/demo_task1_pilot_001.mp4"
-    else:
-        demo_candidate = repo_root / "data/pilot_demos/demo_task2_pilot_001.mp4"
-
-    if demo_candidate.exists():
-        return str(demo_candidate.relative_to(repo_root))
-    return None
-
-
 def generate_dataset_from_config(config_path: Path, generator_commit: Optional[str] = None) -> Dict[str, Any]:
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)

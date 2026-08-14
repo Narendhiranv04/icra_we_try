@@ -401,17 +401,39 @@ def validate_intervention_dataset(
                     raise ValueError(f"Record {rec['record_id']}: Candidate crop mismatch against recomputed crop")
                 candidate_crop_match_count += 1
 
-                # Current geometry freejoint and relative verification
+                # Current geometry freejoint, quaternion, and relative verification
                 curr_geom = m_in["current_geometry"]
                 curr_pos_meas = np.array(canonical_poses[obj_name].position)
                 curr_pos_rec = np.array(curr_geom["world_position"])
                 if float(np.linalg.norm(curr_pos_meas - curr_pos_rec)) > tol_geom_pos:
                     raise ValueError(f"Record {rec['record_id']}: Current geometry world pos mismatch")
+
+                curr_quat_meas = np.array(canonical_poses[obj_name].quaternion_wxyz)
+                curr_quat_rec = np.array(curr_geom["world_quaternion_wxyz"])
+                if float(np.linalg.norm(curr_quat_meas - curr_quat_rec)) > tol_geom_quat:
+                    raise ValueError(f"Record {rec['record_id']}: Current geometry quaternion mismatch")
                 
                 exp_rel_pos = world_to_local(model, data, ref_frame_name, curr_pos_meas, use_geom=True)
                 meas_rel_pos = np.array(curr_geom["relative_position"])
                 if float(np.linalg.norm(exp_rel_pos - meas_rel_pos)) > tol_geom_pos:
                     raise ValueError(f"Record {rec['record_id']}: Current geometry relative pos mismatch")
+
+                # Destination geometry freejoint, quaternion, and relative verification
+                dest_geom = m_in["destination_geometry"]
+                dest_pos_meas = np.array(dest_p)
+                dest_pos_rec = np.array(dest_geom["world_position"])
+                if float(np.linalg.norm(dest_pos_meas - dest_pos_rec)) > tol_geom_pos:
+                    raise ValueError(f"Record {rec['record_id']}: Destination geometry world pos mismatch")
+
+                dest_quat_meas = np.array(dest_q)
+                dest_quat_rec = np.array(dest_geom["world_quaternion_wxyz"])
+                if float(np.linalg.norm(dest_quat_meas - dest_quat_rec)) > tol_geom_quat:
+                    raise ValueError(f"Record {rec['record_id']}: Destination geometry quaternion mismatch")
+
+                exp_dest_rel_pos = world_to_local(model, data, ref_frame_name, dest_pos_meas, use_geom=True)
+                meas_dest_rel_pos = np.array(dest_geom["relative_position"])
+                if float(np.linalg.norm(exp_dest_rel_pos - meas_dest_rel_pos)) > tol_geom_pos:
+                    raise ValueError(f"Record {rec['record_id']}: Destination geometry relative pos mismatch")
 
                 geometry_alignment_count += 1
 
