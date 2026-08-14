@@ -4,9 +4,9 @@
   "validation_status": "PASSED",
   "source_manifest_sha256": "5e8720a15229adc8b9dd120a29f53f792d2e523f892120b2fc60850e3e629ec4",
   "source_generator_commit": "6fe085a86709ddcac45b6a387e6f7ba6c4fcf5eb",
-  "feature_code_commit": "8231590e4ea750591f716b9f0fe1bed987f0e578",
-  "scene_count": 6,
+  "feature_code_commit": "a4b9a72cb7d62ba27eee5ca7346141f8d559ae10",
   "record_count": 22,
+  "scene_count": 6,
   "unique_pre_images": 6,
   "unique_candidate_crops": 10,
   "unique_instruction_strings": 2,
@@ -16,12 +16,43 @@
       "embed_dim": 768,
       "patch_size": 14,
       "num_patches": 256,
-      "transform": "bicubic_224_centercrop_imagenet_norm"
+      "resize": 224,
+      "interpolation": "bicubic"
     },
     "text": {
       "model_name": "sentence-transformers/all-MiniLM-L6-v2",
       "embed_dim": 384,
-      "pooling": "mean_attention_mask"
+      "pooling": "attention_mask_weighted_mean"
+    }
+  },
+  "extraction_signatures": {
+    "vision": {
+      "model_name": "dinov2_vitb14",
+      "embed_dim": 768,
+      "patch_size": 14,
+      "num_patches": 256,
+      "resize": 224,
+      "interpolation": "bicubic",
+      "center_crop": 224,
+      "normalization_mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "normalization_std": [
+        0.229,
+        0.224,
+        0.225
+      ],
+      "signature_sha256": "c2209cd6ddaec63091c7c88bc62946923b5a8ef575507eecafd4319f95696a7f"
+    },
+    "text": {
+      "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+      "embed_dim": 384,
+      "tokenizer": "sentence-transformers/all-MiniLM-L6-v2",
+      "truncation": true,
+      "pooling": "attention_mask_weighted_mean",
+      "signature_sha256": "c8f177df4f8df8da62fb748fb61ab015889c3ae8cc6012c061430ea925c22fbe"
     }
   },
   "dimensions": {
@@ -59,12 +90,27 @@
     "total": 2,
     "passed": true
   },
+  "scene_signature_matches": {
+    "passed_count": 6,
+    "total": 6,
+    "passed": true
+  },
+  "crop_signature_matches": {
+    "passed_count": 10,
+    "total": 10,
+    "passed": true
+  },
+  "text_signature_matches": {
+    "passed_count": 2,
+    "total": 2,
+    "passed": true
+  },
   "none_tensorization_matches": {
     "passed_count": 6,
     "total": 6,
     "passed": true
   },
-  "matched_candidate_pairs": {
+  "matched_candidate_comparisons": {
     "passed_count": 6,
     "total": 6,
     "passed": true
