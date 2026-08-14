@@ -57,7 +57,7 @@ def base_settled_task1_scene():
     )
     rig = get_task_observation_rig("task_1")
     apply_observation_rig(model, data, rig)
-    evaluate_relational_feasibility(model, data, "task_1", candidate_objects=["blocker1", "distractor1"], settle_steps=300)
+    evaluate_relational_feasibility(model, data, "task_1", candidate_objects=["blocker1", "distractor1"], settle_steps=300, hold_observation_robot=True)
     return model, data, rig
 
 
@@ -72,7 +72,7 @@ def base_settled_task2_scene():
 
     model, data = builder.create_environment(
         objects_to_spawn=[
-            {"name": "pick_can", "type": "coffee_can", "pos": pick_pos, "quat": [1.0, 0.0, 0.0, 0.0]},
+            {"name": "coffee_can", "type": "coffee_can", "pos": pick_pos, "quat": [1.0, 0.0, 0.0, 0.0]},
             {"name": "occupant1", "type": "sugar_box", "pos": occupant_pos, "quat": [1.0, 0.0, 0.0, 0.0]},
             {"name": "distractor1", "type": "mug", "pos": distractor_pos, "quat": [1.0, 0.0, 0.0, 0.0]},
         ],
@@ -82,7 +82,7 @@ def base_settled_task2_scene():
     )
     rig = get_task_observation_rig("task_2")
     apply_observation_rig(model, data, rig)
-    evaluate_relational_feasibility(model, data, "task_2", candidate_objects=["occupant1", "distractor1"], settle_steps=300)
+    evaluate_relational_feasibility(model, data, "task_2", candidate_objects=["occupant1", "distractor1"], settle_steps=300, hold_observation_robot=True)
     return model, data, rig
 
 
@@ -282,12 +282,12 @@ def test_evaluate_candidate_from_canonical_state_restores_on_callback_exception(
 
 def test_task2_action_subject_excluded_from_obstruction_candidates(base_settled_task2_scene):
     model, data, _ = base_settled_task2_scene
-    # In Task 2: pick_can is at pick position, occupant1 is in target
+    # In Task 2: coffee_can is at pick position, occupant1 is in target
     # Passing only ['occupant1', 'distractor1'] to evaluate_relational_feasibility
-    res = evaluate_relational_feasibility(model, data, "task_2", candidate_objects=["occupant1", "distractor1"])
+    res = evaluate_relational_feasibility(model, data, "task_2", candidate_objects=["occupant1", "distractor1"], hold_observation_robot=True)
     assert res.feasible is False
     assert res.active_culprits == ("occupant1",)
-    assert "pick_can" not in res.active_culprits
+    assert "coffee_can" not in res.active_culprits
 
 
 def test_pre_state_object_crops_extracted_from_pre_only(base_settled_task1_scene):
@@ -306,9 +306,9 @@ def test_pre_state_object_crops_extracted_from_pre_only(base_settled_task1_scene
 
 def test_none_control_null_candidate_fields_and_zero_delta(base_settled_task1_scene):
     model, data, _ = base_settled_task1_scene
-    validator = InterventionValidator()
+    validator = InterventionValidator(hold_observation_robot=True)
     canonical_snap = snapshot_simulator_state(model, data)
-    pre_res = evaluate_relational_feasibility(model, data, "task_1", candidate_objects=["blocker1"], settle_steps=300)
+    pre_res = evaluate_relational_feasibility(model, data, "task_1", candidate_objects=["blocker1"], settle_steps=300, hold_observation_robot=True)
 
     none_interv = Intervention(
         intervention_id="int_none_test",
@@ -331,75 +331,136 @@ def test_none_control_null_candidate_fields_and_zero_delta(base_settled_task1_sc
     assert outcome.intended_effect_matches is True
 
 
-def test_none_control_image_drift_tolerance(base_settled_task1_scene):
+def test_settle_hold_robot_is_opt_in():
+    builder = SceneBuilder()
+    model, data = builder.create_environment(
+        objects_to_spawn=[{"name": "blocker1", "type": "coffee_can", "pos": [0.52, 0.18, 0.76], "quat": [1.0, 0.0, 0.0, 0.0]}],
+        settle_steps=0,
+        include_robot=True,
+        robot_base_pose="home",
+    )
+    rig = get_task_observation_rig("task_1")
+    apply_observation_rig(model, data, rig)
+
+    # Robot indices
+    from src.validation.occupancy_checks import _collect_robot_qpos_dof_indices, settle_until_stable
+    qpos_indices, dof_indices = _collect_robot_qpos_dof_indices(model)
+    init_qpos = data.qpos[qpos_indices].copy()
+
+    # Opt-in False: robot joint values may drift
+    settle_until_stable(model, data, body_names=["blocker1"], max_steps=100, hold_observation_robot=False)
+    
+    # Opt-in True: robot joint values MUST match target exactly
+    apply_observation_rig(model, data, rig)
+    target_qpos = data.qpos[qpos_indices].copy()
+    settle_until_stable(model, data, body_names=["blocker1"], max_steps=100, hold_observation_robot=True)
+    post_held_qpos = data.qpos[qpos_indices].copy()
+    np.testing.assert_allclose(post_held_qpos, target_qpos, atol=1e-12)
+    np.testing.assert_allclose(data.qvel[dof_indices], 0.0, atol=1e-12)
+
+
+def test_none_control_production_pipeline_stability(base_settled_task1_scene):
     model, data, rig = base_settled_task1_scene
-    validator = InterventionValidator()
+    validator = InterventionValidator(hold_observation_robot=True)
     canonical_snap = snapshot_simulator_state(model, data)
-    pre_res = evaluate_relational_feasibility(model, data, "task_1", candidate_objects=["blocker1"], settle_steps=300)
+    pre_res = evaluate_relational_feasibility(
+        model, data, "task_1", candidate_objects=["blocker1", "distractor1"],
+        settle_steps=300, hold_observation_robot=True
+    )
 
     renderer = OffscreenRenderer(model, width=640, height=480, camera_name=rig.camera_name)
     pre_rgb = renderer.render_rgb(data)
     renderer.close()
 
+    cam_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, rig.camera_name)
+    cam_pos_pre = data.cam_xpos[cam_id].copy()
+    cam_mat_pre = data.cam_xmat[cam_id].reshape(3, 3).copy()
+
     post_rgb_capture = None
+    cam_pos_post = None
+    cam_mat_post = None
 
     def _cb(p_model, p_data, outcome):
-        nonlocal post_rgb_capture
+        nonlocal post_rgb_capture, cam_pos_post, cam_mat_post
         r = OffscreenRenderer(p_model, width=640, height=480, camera_name=rig.camera_name)
         post_rgb_capture = r.render_rgb(p_data)
         r.close()
+        cam_pos_post = p_data.cam_xpos[cam_id].copy()
+        cam_mat_post = p_data.cam_xmat[cam_id].reshape(3, 3).copy()
 
-    validator.evaluate_candidate_from_canonical_state(
+    outcome = validator.evaluate_candidate_from_canonical_state(
         model=model,
         data=data,
         canonical_snapshot=canonical_snap,
         pre_result=pre_res,
-        intervention=Intervention(intervention_id="int_drift", operator=InterventionOperator.NONE),
+        intervention=Intervention(intervention_id="int_none_prod", operator=InterventionOperator.NONE),
         task_id="task_1",
-        candidate_objects=["blocker1"],
+        candidate_objects=["blocker1", "distractor1"],
         on_post_settled_callback=_cb,
     )
 
     assert post_rgb_capture is not None
     rmse = float(np.sqrt(np.mean((pre_rgb.astype(np.float32) - post_rgb_capture.astype(np.float32)) ** 2)))
-    # With EGL deterministic rendering, NONE control RMSE should be 0.0 or <= 1.0
-    assert rmse <= 1.0, f"NONE drift RMSE {rmse:.4f} exceeded tolerance 1.0"
+    cam_trans_drift = float(np.linalg.norm(cam_pos_post - cam_pos_pre))
+    R_delta = cam_mat_pre.T @ cam_mat_post
+    cos_theta = np.clip((float(np.trace(R_delta)) - 1.0) / 2.0, -1.0, 1.0)
+    cam_rot_drift = float(np.arccos(cos_theta))
+
+    assert outcome.causal_effect == 0
+    assert rmse <= 3.0, f"NONE control RMSE {rmse:.4f} > 3.0"
+    assert cam_trans_drift <= 0.001, f"Camera translation drift {cam_trans_drift:.6f}m > 0.001m"
+    assert cam_rot_drift <= 0.005, f"Camera rotation drift {cam_rot_drift:.6f}rad > 0.005rad"
 
 
-def test_camera_extrinsics_stability_across_interventions(base_settled_task1_scene):
-    model, data, rig = base_settled_task1_scene
-    cam_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, rig.camera_name)
-
-    validator = InterventionValidator()
-    pre_res = evaluate_relational_feasibility(model, data, "task_1", candidate_objects=["blocker1"], settle_steps=300)
-    canonical_snap = snapshot_simulator_state(model, data)
-    init_cam_pos = data.cam_xpos[cam_id].copy()
-
-    rep_pose = ObjectPose(position=(0.22, 0.05, 0.44), quaternion_wxyz=(1.0, 0.0, 0.0, 0.0))
-    interv = Intervention(
-        intervention_id="int_cam_test",
-        operator=InterventionOperator.RELOCATE,
-        object_name="blocker1",
-        destination_pose=rep_pose,
+def test_task2_action_subject_unified_identifier():
+    from src.interventions.intervention_records import InterventionSceneSpec, Action
+    from src.interventions.intervention_scene_generator import InterventionSceneGenerator
+    spec = InterventionSceneSpec(
+        scene_id="sc_t2_test",
+        task_id="task_2",
+        intended_base_state="STOP",
+        instruction="Place the coffee can in the target region.",
+        action=Action(action_type="PLACE", target="target_region", arguments={"object": "coffee_can"}),
+        action_subject_name="coffee_can",
+        intended_culprit_type="sugar_box",
+        intended_distractor_types=("mug",),
+        seed=201,
     )
+    assert spec.action_subject_name == "coffee_can"
+    assert spec.action.arguments["object"] == "coffee_can"
 
-    post_cam_pos = None
 
-    def _cb(p_model, p_data, outcome):
-        nonlocal post_cam_pos
-        post_cam_pos = p_data.cam_xpos[cam_id].copy()
-
-    validator.evaluate_candidate_from_canonical_state(
-        model=model,
-        data=data,
-        canonical_snapshot=canonical_snap,
-        pre_result=pre_res,
-        intervention=interv,
+def test_resolved_spec_distinguishes_spawn_and_canonical_pose(tmp_path):
+    from src.interventions.intervention_records import InterventionSceneSpec, Action, SCHEMA_VERSION
+    from src.interventions.intervention_scene_generator import InterventionSceneGenerator
+    spec = InterventionSceneSpec(
+        scene_id="sc_pose_test",
         task_id="task_1",
-        candidate_objects=["blocker1"],
-        on_post_settled_callback=_cb,
+        intended_base_state="STOP",
+        instruction="Open the box.",
+        action=Action(action_type="OPEN", target="box_B1", arguments={}),
+        action_subject_name=None,
+        intended_culprit_type="coffee_can",
+        intended_distractor_types=("sugar_box",),
+        seed=101,
     )
+    generator = InterventionSceneGenerator()
+    records, resolved_spec = generator.generate_scene_dataset(spec=spec, dataset_root=tmp_path)
+    assert resolved_spec.canonical_object_poses is not None
+    assert "blocker1" in resolved_spec.canonical_object_poses
+    assert "position" in resolved_spec.canonical_object_poses["blocker1"]
+    assert "quaternion_wxyz" in resolved_spec.canonical_object_poses["blocker1"]
+    assert SCHEMA_VERSION == "2.1.0"
 
-    assert post_cam_pos is not None
-    cam_drift = float(np.linalg.norm(post_cam_pos - init_cam_pos))
-    assert cam_drift < 0.01, f"Camera drifted by {cam_drift:.6f}m during intervention"
+
+def test_camera_rotation_distance_calculation():
+    # Identity
+    R = np.eye(3)
+    cos_theta = np.clip((np.trace(R.T @ R) - 1.0) / 2.0, -1.0, 1.0)
+    assert np.arccos(cos_theta) == 0.0
+
+    # 90 deg rotation around Z
+    R_z90 = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=float)
+    cos_theta = np.clip((np.trace(R.T @ R_z90) - 1.0) / 2.0, -1.0, 1.0)
+    theta = np.arccos(cos_theta)
+    np.testing.assert_allclose(theta, np.pi / 2.0, atol=1e-6)

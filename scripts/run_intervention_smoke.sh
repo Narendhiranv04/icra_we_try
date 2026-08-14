@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# End-to-end runner for Packet 2 Intervention Smoke Dataset
+# End-to-end runner for Packet 2.5 Intervention Smoke Dataset
 
 echo "======================================================================"
-echo "Starting Packet 2 Intervention Smoke Pipeline"
+echo "Starting Packet 2.5 Intervention Smoke Pipeline"
 echo "======================================================================"
 
 # 1. Verify environment
@@ -34,6 +34,7 @@ python scripts/generate_intervention_dataset.py --config "$CONFIG_PATH"
 echo "Running independent validation..."
 python scripts/validate_intervention_dataset.py \
     --manifest "$OUTPUT_DIR/manifest.jsonl" \
+    --config "$CONFIG_PATH" \
     --report "$REPORT_PATH"
 
 echo "======================================================================"

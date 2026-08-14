@@ -114,9 +114,15 @@ class InterventionValidator:
     intervention execution, live post-state callback invocation, and authoritative observed Delta derivation.
     """
 
-    def __init__(self, settle_steps: int = 300, max_collateral_translation_m: float = 0.05):
+    def __init__(
+        self,
+        settle_steps: int = 300,
+        max_collateral_translation_m: float = 0.05,
+        hold_observation_robot: bool = True,
+    ):
         self.settle_steps = settle_steps
         self.max_collateral_translation_m = max_collateral_translation_m
+        self.hold_observation_robot = hold_observation_robot
 
     def evaluate_candidate_from_canonical_state(
         self,
@@ -144,7 +150,8 @@ class InterventionValidator:
 
             # 2. Evaluate post-intervention relational feasibility
             post_result = evaluate_relational_feasibility(
-                model, data, task_id, candidate_objects=candidate_objects, settle_steps=self.settle_steps
+                model, data, task_id, candidate_objects=candidate_objects,
+                settle_steps=self.settle_steps, hold_observation_robot=self.hold_observation_robot,
             )
             post_feasible = post_result.feasible
             pre_feasible = pre_result.feasible
@@ -236,7 +243,8 @@ class InterventionValidator:
         """
         # Step 1: Evaluate initial pre-feasibility (runs settle_until_stable)
         pre_result = evaluate_relational_feasibility(
-            model, data, task_id, candidate_objects=candidate_objects, settle_steps=self.settle_steps
+            model, data, task_id, candidate_objects=candidate_objects,
+            settle_steps=self.settle_steps, hold_observation_robot=self.hold_observation_robot,
         )
 
         # Step 2: Record canonical initial poses

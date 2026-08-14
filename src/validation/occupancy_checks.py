@@ -22,6 +22,29 @@ STABLE_LIN_SPEED_MAX: float = 0.15
 STABLE_ANG_SPEED_MAX: float = 2.00  # rad/s
 
 
+def _collect_robot_qpos_dof_indices(model: mujoco.MjModel) -> Tuple[List[int], List[int]]:
+    """Collect qpos and dof indices for all robot bodies and joints handling all MuJoCo joint types."""
+    robot_qpos_indices = []
+    robot_dof_indices = []
+    for i in range(model.njnt):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, i) or ""
+        if name.startswith("robot0:"):
+            qadr = model.jnt_qposadr[i]
+            dadr = model.jnt_dofadr[i]
+            jtype = model.jnt_type[i]
+            if jtype == mujoco.mjtJoint.mjJNT_FREE:
+                qdim, ddim = 7, 6
+            elif jtype == mujoco.mjtJoint.mjJNT_BALL:
+                qdim, ddim = 4, 3
+            elif jtype == mujoco.mjtJoint.mjJNT_SLIDE or jtype == mujoco.mjtJoint.mjJNT_HINGE:
+                qdim, ddim = 1, 1
+            else:
+                qdim, ddim = 1, 1
+            robot_qpos_indices.extend(range(qadr, qadr + qdim))
+            robot_dof_indices.extend(range(dadr, dadr + ddim))
+    return robot_qpos_indices, robot_dof_indices
+
+
 def settle_until_stable(
     model: mujoco.MjModel,
     data: mujoco.MjData,
@@ -30,8 +53,13 @@ def settle_until_stable(
     angular_threshold: float = STABLE_ANG_SPEED_MAX,
     required_consecutive_steps: int = 20,
     max_steps: int = 500,
+    hold_observation_robot: bool = False,
 ) -> Tuple[bool, int, int, Dict[str, float], Dict[str, float]]:
-    """Step simulator until all named bodies maintain speeds below thresholds for consecutive steps."""
+    """Step simulator until all named bodies maintain speeds below thresholds for consecutive steps.
+    
+    When hold_observation_robot is True, keeps all robot joints held at their canonical observation
+    posture with zero velocity before and after each physics step.
+    """
     consecutive = 0
     total_steps = 0
     final_lin_speeds: Dict[str, float] = {}
@@ -47,13 +75,39 @@ def settle_until_stable(
     hinge_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "B1_lid_joint")
     hinge_qpos_adr = model.jnt_qposadr[hinge_id] if hinge_id != -1 else -1
 
+    robot_qpos_indices: List[int] = []
+    robot_dof_indices: List[int] = []
+    initial_robot_qpos: Optional[np.ndarray] = None
+    if hold_observation_robot:
+        robot_qpos_indices, robot_dof_indices = _collect_robot_qpos_dof_indices(model)
+        if robot_qpos_indices:
+            initial_robot_qpos = data.qpos[robot_qpos_indices].copy()
+
     while total_steps < max_steps:
+        # Pre-step clamping
+        if hold_observation_robot and initial_robot_qpos is not None:
+            data.qpos[robot_qpos_indices] = initial_robot_qpos
+            data.qvel[robot_dof_indices] = 0.0
         if hinge_qpos_adr != -1:
             data.qpos[hinge_qpos_adr] = 0.0
             hinge_dof_adr = model.jnt_dofadr[hinge_id]
             data.qvel[hinge_dof_adr] = 0.0
+        if (hold_observation_robot and initial_robot_qpos is not None) or hinge_qpos_adr != -1:
+            mujoco.mj_forward(model, data)
+
         mujoco.mj_step(model, data)
         total_steps += 1
+
+        # Post-step clamping
+        if hold_observation_robot and initial_robot_qpos is not None:
+            data.qpos[robot_qpos_indices] = initial_robot_qpos
+            data.qvel[robot_dof_indices] = 0.0
+        if hinge_qpos_adr != -1:
+            data.qpos[hinge_qpos_adr] = 0.0
+            hinge_dof_adr = model.jnt_dofadr[hinge_id]
+            data.qvel[hinge_dof_adr] = 0.0
+        if (hold_observation_robot and initial_robot_qpos is not None) or hinge_qpos_adr != -1:
+            mujoco.mj_forward(model, data)
 
         all_stable = True
         for name, bid in zip(body_names, body_ids):
@@ -71,9 +125,20 @@ def settle_until_stable(
         if all_stable:
             consecutive += 1
             if consecutive >= required_consecutive_steps:
+                # Final clamping before exit
+                if hold_observation_robot and initial_robot_qpos is not None:
+                    data.qpos[robot_qpos_indices] = initial_robot_qpos
+                    data.qvel[robot_dof_indices] = 0.0
+                    mujoco.mj_forward(model, data)
                 return True, total_steps, consecutive, final_lin_speeds, final_ang_speeds
         else:
             consecutive = 0
+
+    # Final clamping on max steps exit
+    if hold_observation_robot and initial_robot_qpos is not None:
+        data.qpos[robot_qpos_indices] = initial_robot_qpos
+        data.qvel[robot_dof_indices] = 0.0
+        mujoco.mj_forward(model, data)
 
     return False, total_steps, consecutive, final_lin_speeds, final_ang_speeds
 
@@ -127,6 +192,7 @@ def check_lid_occupancy(
     lid_geom_name: str = "B1_lid_panel",
     blocker_names: List[str] = None,
     settle_steps: int = 300,
+    hold_observation_robot: bool = False,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
     """Evaluate whether B1_lid is occupied using footprint overlap, vertical gap, contact, and physical stability.
     
@@ -151,7 +217,7 @@ def check_lid_occupancy(
 
     # 1. Run actual consecutive settling loop
     settling_succeeded, tot_steps, cons_steps, lin_speeds, ang_speeds = settle_until_stable(
-        model, data, blocker_names, max_steps=settle_steps
+        model, data, blocker_names, max_steps=settle_steps, hold_observation_robot=hold_observation_robot
     )
 
     # 2. Collect direct contacts
@@ -244,6 +310,7 @@ def check_target_occupancy(
     target_center: Tuple[float, float, float] = None,
     candidate_objects: List[str] = None,
     settle_steps: int = 300,
+    hold_observation_robot: bool = False,
 ) -> Tuple[bool, List[str], Dict[str, Dict[str, Any]]]:
     """Evaluate whether target_region is occupied using footprint overlap, vertical gap, contact, and physical stability.
     
@@ -271,7 +338,7 @@ def check_target_occupancy(
 
     # 1. Run actual consecutive settling loop
     settling_succeeded, tot_steps, cons_steps, lin_speeds, ang_speeds = settle_until_stable(
-        model, data, candidate_objects, max_steps=settle_steps
+        model, data, candidate_objects, max_steps=settle_steps, hold_observation_robot=hold_observation_robot
     )
 
     # 2. Collect direct contacts
@@ -392,6 +459,7 @@ def evaluate_relational_feasibility(
     task_id: str,
     candidate_objects: Optional[List[str]] = None,
     settle_steps: int = 300,
+    hold_observation_robot: bool = False,
     **kwargs,
 ) -> RelationalFeasibilityResult:
     """Unified physical oracle dispatcher for relational precondition feasibility F_R(s, a).
@@ -402,6 +470,7 @@ def evaluate_relational_feasibility(
         task_id: Canonical task identifier ('task_1' or 'task_2')
         candidate_objects: Explicit list of movable scene object names to check for obstruction
         settle_steps: Maximum settling steps in occupancy predicates
+        hold_observation_robot: If True, keeps observation robot configuration fixed during settling.
 
     Returns:
         Structured RelationalFeasibilityResult containing feasibility bool, active culprits,
@@ -409,7 +478,8 @@ def evaluate_relational_feasibility(
     """
     if task_id == "task_1":
         is_occupied, active_culprits, measurements = check_lid_occupancy(
-            model, data, blocker_names=candidate_objects, settle_steps=settle_steps, **kwargs
+            model, data, blocker_names=candidate_objects, settle_steps=settle_steps,
+            hold_observation_robot=hold_observation_robot, **kwargs
         )
         feasible = not is_occupied
         settling_ok = all(m.get("settling_succeeded", True) for m in measurements.values()) if measurements else True
@@ -422,7 +492,8 @@ def evaluate_relational_feasibility(
         )
     elif task_id == "task_2":
         is_occupied, active_culprits, measurements = check_target_occupancy(
-            model, data, candidate_objects=candidate_objects, settle_steps=settle_steps, **kwargs
+            model, data, candidate_objects=candidate_objects, settle_steps=settle_steps,
+            hold_observation_robot=hold_observation_robot, **kwargs
         )
         feasible = not is_occupied
         settling_ok = all(m.get("settling_succeeded", True) for m in measurements.values()) if measurements else True
@@ -443,10 +514,12 @@ def check_action_feasibility(
     task_id: str,
     candidate_objects: Optional[List[str]] = None,
     settle_steps: int = 300,
+    hold_observation_robot: bool = False,
     **kwargs,
 ) -> bool:
     """Boolean-only convenience wrapper for evaluate_relational_feasibility."""
     res = evaluate_relational_feasibility(
-        model, data, task_id, candidate_objects=candidate_objects, settle_steps=settle_steps, **kwargs
+        model, data, task_id, candidate_objects=candidate_objects,
+        settle_steps=settle_steps, hold_observation_robot=hold_observation_robot, **kwargs
     )
     return res.feasible

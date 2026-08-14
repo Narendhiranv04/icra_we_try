@@ -15,7 +15,7 @@ from src.interventions.intervention_types import (
 from src.generation.background_randomization import BackgroundSpec
 
 
-SCHEMA_VERSION = "2.0.0"
+SCHEMA_VERSION = "2.1.0"
 
 # Strict allowlist of permissible keys under model_inputs
 MODEL_INPUTS_ALLOWED_KEYS: Set[str] = {
@@ -184,13 +184,14 @@ class ResolvedSceneSpec:
     requested_seed: int
     realized_base_attempt: int
     actual_base_seed: int
+    canonical_object_poses: Optional[Dict[str, Dict[str, Any]]] = None
     box_pose: Optional[Tuple[float, float, float]] = None
     box_quat: Optional[Tuple[float, float, float, float]] = None
     target_region_pos: Optional[Tuple[float, float, float]] = None
     target_region_quat: Optional[Tuple[float, float, float, float]] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d: Dict[str, Any] = {
             "scene_id": self.scene_id,
             "task_id": self.task_id,
             "intended_base_state": self.intended_base_state,
@@ -211,6 +212,9 @@ class ResolvedSceneSpec:
             "target_region_pos": list(self.target_region_pos) if self.target_region_pos else None,
             "target_region_quat": list(self.target_region_quat) if self.target_region_quat else None,
         }
+        if self.canonical_object_poses is not None:
+            d["canonical_object_poses"] = self.canonical_object_poses
+        return d
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "ResolvedSceneSpec":
@@ -230,6 +234,7 @@ class ResolvedSceneSpec:
             requested_seed=int(d["requested_seed"]),
             realized_base_attempt=int(d["realized_base_attempt"]),
             actual_base_seed=int(d["actual_base_seed"]),
+            canonical_object_poses=dict(d.get("canonical_object_poses", {})) if "canonical_object_poses" in d else None,
             box_pose=tuple(d["box_pose"]) if d.get("box_pose") else None,
             box_quat=tuple(d["box_quat"]) if d.get("box_quat") else None,
             target_region_pos=tuple(d["target_region_pos"]) if d.get("target_region_pos") else None,

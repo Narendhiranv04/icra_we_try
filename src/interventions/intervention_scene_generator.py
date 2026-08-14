@@ -116,6 +116,7 @@ class InterventionSceneGenerator:
         max_collateral_translation_m: float = 0.05,
         min_instance_pixels: int = 50,
         min_relation_target_pixels: int = 50,
+        max_torso_fraction: float = 0.25,
     ):
         self.scene_builder = scene_builder if scene_builder is not None else SceneBuilder()
         self.validator = validator if validator is not None else InterventionValidator(
@@ -127,6 +128,7 @@ class InterventionSceneGenerator:
         self.max_collateral_translation_m = max_collateral_translation_m
         self.min_instance_pixels = min_instance_pixels
         self.min_relation_target_pixels = min_relation_target_pixels
+        self.max_torso_fraction = max_torso_fraction
 
     def generate_scene_dataset(
         self,
@@ -217,7 +219,7 @@ class InterventionSceneGenerator:
 
             elif spec.task_id == "task_2":
                 # Action subject (e.g. coffee_can) placed outside target
-                subj_name = spec.action_subject_name or "pick_can"
+                subj_name = spec.action_subject_name or "coffee_can"
                 subj_type = "coffee_can"
                 subj_pos = sample_position_outside_target(ref_model, ref_data, rng_base, offset_x=-0.25, offset_y=-0.10, height_above=0.07).tolist()
                 subj_quat = [1.0, 0.0, 0.0, 0.0]
@@ -268,9 +270,10 @@ class InterventionSceneGenerator:
             # 3. Apply task observation rig (sets robot posture, pan/tilt, mj_forward)
             apply_observation_rig(model, data, rig)
 
-            # 4. Evaluate pre F_R on obstruction candidates
+            # 4. Evaluate pre F_R on obstruction candidates with held observation rig
             pre_res = evaluate_relational_feasibility(
-                model, data, spec.task_id, candidate_objects=obs_cands, settle_steps=self.validator.settle_steps
+                model, data, spec.task_id, candidate_objects=obs_cands,
+                settle_steps=self.validator.settle_steps, hold_observation_robot=True,
             )
 
             # 5. Enforce settling and state cardinality
@@ -295,7 +298,8 @@ class InterventionSceneGenerator:
             req_instances = {name: [f"{name}_visual", f"{name}_geom"] for name in all_vis}
             vis_check = renderer.validate_instance_visibility(
                 data, target_geom_names=target_geoms, required_instances=req_instances,
-                minimum_pixels=self.min_instance_pixels, min_target_pixels=self.min_relation_target_pixels
+                minimum_pixels=self.min_instance_pixels, min_target_pixels=self.min_relation_target_pixels,
+                max_torso_fraction=self.max_torso_fraction,
             )
             renderer.close()
 
@@ -487,6 +491,14 @@ class InterventionSceneGenerator:
             raise RuntimeError(f"Scene '{spec.scene_id}' failed candidate-set acceptance after {max_candidate_set_retries} attempts.")
 
         # --- STEP 4: CONSTRUCT RESOLVED SCENE SPEC & MANIFEST RECORDS ---
+        canonical_object_poses_dict = {
+            name: {
+                "position": list(pose.position),
+                "quaternion_wxyz": list(pose.quaternion_wxyz),
+            }
+            for name, pose in canonical_poses.items()
+        }
+
         resolved_spec = ResolvedSceneSpec(
             scene_id=spec.scene_id,
             task_id=spec.task_id,
@@ -503,6 +515,7 @@ class InterventionSceneGenerator:
             requested_seed=spec.seed,
             realized_base_attempt=realized_base_attempt,
             actual_base_seed=actual_base_seed,
+            canonical_object_poses=canonical_object_poses_dict,
             box_pose=spec.box_pose,
             box_quat=spec.box_quat,
             target_region_pos=spec.target_region_pos,

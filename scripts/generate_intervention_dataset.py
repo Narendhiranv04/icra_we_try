@@ -8,7 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 # Ensure repository root is in sys.path
@@ -39,7 +39,7 @@ def resolve_demonstration_reference(task_id: str, repo_root: Path) -> str:
     return None
 
 
-def generate_dataset_from_config(config_path: Path) -> Dict[str, Any]:
+def generate_dataset_from_config(config_path: Path, generator_commit: Optional[str] = None) -> Dict[str, Any]:
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
 
@@ -54,11 +54,12 @@ def generate_dataset_from_config(config_path: Path) -> Dict[str, Any]:
     max_collateral = float(cfg.get("max_collateral_translation_m", 0.05))
     min_inst_px = int(cfg.get("min_instance_pixels", 50))
     min_target_px = int(cfg.get("min_relation_target_pixels", 50))
+    max_torso_frac = float(cfg.get("max_torso_fraction", 0.25))
 
     max_base_retries = int(cfg.get("max_base_retries", 10))
     max_cand_retries = int(cfg.get("max_candidate_set_retries", 5))
 
-    validator = InterventionValidator(settle_steps=300, max_collateral_translation_m=max_collateral)
+    validator = InterventionValidator(settle_steps=300, max_collateral_translation_m=max_collateral, hold_observation_robot=True)
     generator = InterventionGenerator(min_relocation_m=min_reloc)
 
     scene_gen = InterventionSceneGenerator(
@@ -69,9 +70,8 @@ def generate_dataset_from_config(config_path: Path) -> Dict[str, Any]:
         max_collateral_translation_m=max_collateral,
         min_instance_pixels=min_inst_px,
         min_relation_target_pixels=min_target_px,
+        max_torso_fraction=max_torso_frac,
     )
-
-    repo_root = Path(__file__).resolve().parent.parent
 
     all_records: List[InterventionDatasetRecord] = []
     resolved_specs: Dict[str, Any] = {}
@@ -100,7 +100,7 @@ def generate_dataset_from_config(config_path: Path) -> Dict[str, Any]:
             background_profile=s_dict.get("background_profile", "bg_neutral_wood"),
         )
 
-        demo_ref = resolve_demonstration_reference(spec.task_id, repo_root)
+        demo_ref = s_dict.get("demonstration_reference", cfg.get("demonstration_reference", None))
         print(f"--> Generating base scene {spec.scene_id} ({spec.task_id} {spec.intended_base_state})...")
         records, resolved_spec = scene_gen.generate_scene_dataset(
             spec=spec,
@@ -131,20 +131,34 @@ def generate_dataset_from_config(config_path: Path) -> Dict[str, Any]:
         cat = rec.privileged_metadata.get("intended_category")
         category_counts[cat] = category_counts.get(cat, 0) + 1
 
+    commit_str = generator_commit or cfg.get("generator_commit")
+
     metadata = {
         "schema_version": SCHEMA_VERSION,
         "dataset_name": cfg.get("dataset_name", "intervention_smoke"),
         "manifest_path": "manifest.jsonl",
         "manifest_sha256": manifest_sha,
         "config_sha256": config_sha,
+        "generator_commit": commit_str,
+        "resolution": list(resolution),
         "scene_count": len(cfg.get("scenes", [])),
         "record_count": len(all_records),
         "effect_counts": {str(k): v for k, v in effect_counts.items()},
         "category_counts": category_counts,
+        "min_relocation_m": min_reloc,
+        "max_collateral_translation_m": max_collateral,
+        "min_instance_pixels": min_inst_px,
+        "min_relation_target_pixels": min_target_px,
+        "max_torso_fraction": max_torso_frac,
         "tolerances": {
-            "rgb_reconstruction_rmse_tolerance": cfg.get("rgb_reconstruction_rmse_tolerance", 1.0),
-            "none_rgb_rmse_tolerance": cfg.get("none_rgb_rmse_tolerance", 1.0),
-            "camera_extrinsic_tolerance_m": cfg.get("camera_extrinsic_tolerance_m", 1e-4),
+            "rgb_pre_reconstruction_rmse_tolerance": float(cfg.get("rgb_pre_reconstruction_rmse_tolerance", 1.0)),
+            "rgb_post_reconstruction_rmse_tolerance": float(cfg.get("rgb_post_reconstruction_rmse_tolerance", 1.0)),
+            "none_rgb_rmse_tolerance": float(cfg.get("none_rgb_rmse_tolerance", 1.0)),
+            "camera_translation_tolerance_m": float(cfg.get("camera_translation_tolerance_m", 0.001)),
+            "camera_rotation_tolerance_rad": float(cfg.get("camera_rotation_tolerance_rad", 0.005)),
+            "max_collateral_translation_m": max_collateral,
+            "geometry_position_tolerance_m": float(cfg.get("geometry_position_tolerance_m", 0.001)),
+            "geometry_quaternion_tolerance": float(cfg.get("geometry_quaternion_tolerance", 0.01)),
         },
         "resolved_scenes": resolved_specs,
     }
@@ -169,6 +183,7 @@ def generate_dataset_from_config(config_path: Path) -> Dict[str, Any]:
 def main():
     parser = argparse.ArgumentParser(description="Generate Intervention Dataset")
     parser.add_argument("--config", type=str, default="configs/intervention/smoke.yaml", help="Path to config YAML")
+    parser.add_argument("--commit", type=str, default=None, help="Git commit SHA of the generator implementation")
     args = parser.parse_args()
 
     config_path = Path(args.config)
@@ -176,7 +191,7 @@ def main():
         print(f"Error: Config file not found: {config_path}", file=sys.stderr)
         sys.exit(1)
 
-    generate_dataset_from_config(config_path)
+    generate_dataset_from_config(config_path, generator_commit=args.commit)
 
 
 if __name__ == "__main__":

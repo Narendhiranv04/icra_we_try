@@ -58,13 +58,23 @@ def test_smoke_scene_spec_composition():
     # Verify Task 2 coffee_can action subject invariant
     for s in task2_scenes:
         assert s["action"]["arguments"]["object"] == "coffee_can"
-        assert s["action_subject_name"] == "pick_can"
+        assert s["action_subject_name"] == "coffee_can"
+
+
+def test_smoke_demonstration_reference_is_null(shared_smoke_dataset):
+    out_dir, _ = shared_smoke_dataset
+    manifest_p = out_dir / "manifest.jsonl"
+    with open(manifest_p, "r") as f:
+        for line in f:
+            rec = json.loads(line.strip())
+            assert rec["model_inputs"]["demonstration_reference"] is None
 
 
 def test_smoke_dataset_generation_end_to_end(shared_smoke_dataset):
     out_dir, metadata = shared_smoke_dataset
     assert metadata["record_count"] == 22
     assert metadata["scene_count"] == 6
+    assert metadata["schema_version"] == "2.1.0"
     assert (out_dir / "manifest.jsonl").exists()
     assert (out_dir / "dataset_metadata.json").exists()
 
@@ -144,11 +154,20 @@ def test_independent_physical_recomputation(shared_smoke_dataset):
     report = validate_intervention_dataset(
         manifest_path=out_dir / "manifest.jsonl",
         report_output_path=out_dir / "report.json",
-        generator_commit="test_commit_sha",
+        generator_commit=None,
     )
 
     assert report["validation_status"] == "PASSED"
-    assert report["recomputed_delta_agreement"] == "22/22 (100%)"
+    assert report["recomputed_delta"]["passed"] is True
+    assert report["recomputed_delta"]["passed_count"] == 22
+    assert report["post_rgb_reconstruction"]["passed"] is True
+    assert report["post_segmentation"]["passed"] is True
+    assert report["candidate_mask_alignment"]["passed"] is True
+    assert report["candidate_crop_alignment"]["passed"] is True
+    assert report["current_geometry_alignment"]["passed"] is True
+    assert report["none_control"]["passed"] is True
+    assert report["camera_translation"]["passed"] is True
+    assert report["camera_rotation"]["passed"] is True
 
 
 def test_relational_culprit_identity_rules(shared_smoke_dataset):
@@ -183,7 +202,7 @@ def test_collateral_displacement_threshold(shared_smoke_dataset):
         manifest_path=out_dir / "manifest.jsonl",
     )
 
-    assert report["max_collateral_displacement_m"] <= 0.05
+    assert report["collateral_translation"]["measured_max_m"] <= 0.05
 
 
 def test_deterministic_dataset_regeneration(tmp_path):
@@ -224,6 +243,16 @@ def test_opaque_ids_no_semantic_leakage(shared_smoke_dataset):
                 assert term not in interv_id.lower()
 
 
+def test_validator_failure_modes(tmp_path):
+    # Test invalid schema version rejection
+    manifest_p = tmp_path / "manifest.jsonl"
+    with open(manifest_p, "w") as f:
+        f.write(json.dumps({"schema_version": "2.0.0", "record_id": "r1", "intervention_id": "i1"}) + "\n")
+    
+    with pytest.raises(ValueError, match="Invalid schema_version '2.0.0'"):
+        validate_intervention_dataset(manifest_p)
+
+
 def test_validation_cli_subprocess_success(shared_smoke_dataset):
     out_dir, _ = shared_smoke_dataset
 
@@ -243,4 +272,4 @@ def test_validation_cli_subprocess_success(shared_smoke_dataset):
     )
 
     assert res.returncode == 0
-    assert "ALL 7 VALIDATION GATES PASSED" in res.stdout
+    assert "ALL 8 VALIDATION GATES PASSED" in res.stdout
