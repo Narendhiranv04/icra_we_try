@@ -2,17 +2,17 @@
 """Independent validator for intervention feature cache and dataset interface.
 
 Validates:
-1. Manifest SHA256 provenance against cache index and dataset metadata
-2. Cache Schema 1.1.0 compatibility
-3. Source SHA256 bitwise matches for all unique pre scenes
-4. Source SHA256 bitwise matches for all unique candidate crops
-5. Exact text instruction embedding availability and dimensions
-6. Tensor dtypes and shapes against InterventionFeatureSpec
-7. Zero POST image/segmentation features referenced or cached
-8. Zero privileged metadata required for model tensor resolution
-9. Grouped candidate batching ([4, 4, 3, 4, 4, 3])
-10. Neutral NONE tensorization
-11. Matched candidate feature consistency (REPAIR vs HARD_NEGATIVE)
+1.  Manifest SHA256 provenance against cache index (no fallback).
+2.  Cache Schema exactly 1.1.0 (no 1.0.0 acceptance).
+3.  Source SHA256 bitwise matches for all unique pre scenes.
+4.  Source SHA256 bitwise matches for all unique candidate crops.
+5.  Per-entry and .pt extraction-signature matches (vision + text).
+6.  Exact text instruction embedding availability and dimensions.
+7.  Zero POST image/segmentation features referenced or cached.
+8.  Zero privileged metadata required for model tensor resolution.
+9.  Grouped candidate batching ([4, 4, 3, 4, 4, 3]).
+10. Neutral NONE tensorization.
+11. Strengthened matched candidate consistency (all pairs, all invariants).
 12. Generates evidence-based feature validation report artifact.
 """
 
@@ -22,11 +22,10 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import numpy as np
 import torch
 
 from src.learning.intervention_dataset import (
@@ -62,6 +61,17 @@ def compute_text_sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _sig_field_matches(actual: Dict, expected: Dict, fields: List[str]) -> Tuple[bool, List[str]]:
+    """Check that all specified fields in actual match expected. Return (ok, mismatches)."""
+    mismatches = []
+    for f in fields:
+        a_val = actual.get(f)
+        e_val = expected.get(f)
+        if a_val != e_val:
+            mismatches.append(f"{f}: actual={a_val!r} expected={e_val!r}")
+    return len(mismatches) == 0, mismatches
+
+
 def validate_feature_cache(
     manifest_path: Path,
     features_dir: Path,
@@ -91,85 +101,173 @@ def validate_feature_cache(
     with open(index_path, "r", encoding="utf-8") as f:
         cache_index = json.load(f)
 
-    # 1. Manifest Provenance
-    cached_manifest_sha = cache_index.get("source", {}).get("manifest_sha256") or cache_index.get("manifest_sha256")
+    # 1. Manifest Provenance (strict: no fallback key search)
+    cached_manifest_sha = cache_index.get("source", {}).get("manifest_sha256")
+    if cached_manifest_sha is None:
+        raise ValueError(
+            "feature_cache_index.json missing 'source.manifest_sha256' field. "
+            "Regenerate the feature cache from Commit A."
+        )
     if cached_manifest_sha != manifest_sha256:
-        raise ValueError(f"Manifest SHA mismatch: cache has {cached_manifest_sha}, actual is {manifest_sha256}")
+        raise ValueError(
+            f"Manifest SHA mismatch:\n"
+            f"  Actual  : {manifest_sha256}\n"
+            f"  Cached  : {cached_manifest_sha}"
+        )
 
-    # 2. Schema Versions
-    cache_schema = cache_index.get("feature_cache_schema_version", "1.0.0")
-    if cache_schema not in ("1.0.0", "1.1.0"):
-        raise ValueError(f"Unsupported cache schema version: {cache_schema}")
+    # 2. Schema Version — exact 1.1.0 only
+    cache_schema = cache_index.get("feature_cache_schema_version")
+    if cache_schema != FEATURE_CACHE_SCHEMA_VERSION:
+        raise ValueError(
+            f"Feature cache schema version mismatch: "
+            f"cache has '{cache_schema}', "
+            f"required exact '{FEATURE_CACHE_SCHEMA_VERSION}'. "
+            f"No legacy 1.0.0 fallback. Regenerate the feature cache."
+        )
+
+    # Load authoritative extraction signatures from the cache index
+    auth_vision_sig = cache_index.get("extraction_signatures", {}).get("vision", {})
+    auth_text_sig = cache_index.get("extraction_signatures", {}).get("text", {})
+
+    if not auth_vision_sig:
+        raise ValueError("cache_index missing 'extraction_signatures.vision'")
+    if not auth_text_sig:
+        raise ValueError("cache_index missing 'extraction_signatures.text'")
 
     # 3. Unique Pre Scenes Verification
-    unique_pre_paths = sorted(list(set(r["model_inputs"]["pre_rgb_path"] for r in records if r["model_inputs"].get("pre_rgb_path"))))
-    scene_passed_count = 0
+    unique_pre_paths = sorted(list(set(
+        r["model_inputs"]["pre_rgb_path"]
+        for r in records
+        if r["model_inputs"].get("pre_rgb_path")
+    )))
     scenes_map = cache_index.get("scenes", {})
+    scene_passed_count = 0
+    scene_sig_passed = 0
+
+    vision_sig_fields = ["model_name", "embed_dim", "patch_size", "signature_sha256"]
 
     for pre_rel_path in unique_pre_paths:
+        # Strict: path MUST be in scenes index (no fallback)
+        if pre_rel_path not in scenes_map:
+            raise KeyError(
+                f"Pre RGB path '{pre_rel_path}' not in cache_index['scenes']. "
+                f"No fallback filename construction. Regenerate the feature cache."
+            )
+
+        cached_scene = scenes_map[pre_rel_path]
+        feat_rel = cached_scene.get("feature_path")
+        if not feat_rel:
+            raise ValueError(f"scenes_map entry for '{pre_rel_path}' missing 'feature_path'")
+
         abs_img_path = dataset_root / pre_rel_path
         if not abs_img_path.exists():
             raise FileNotFoundError(f"Missing source pre RGB image at {abs_img_path}")
+
         actual_img_sha = compute_file_sha256(abs_img_path)
-
-        if pre_rel_path in scenes_map:
-            cached_scene = scenes_map[pre_rel_path]
-            cached_sha = cached_scene.get("source_sha256")
-            feat_rel = cached_scene.get("feature_path")
-        else:
-            # Fallback for 1.0.0
-            scene_id = pre_rel_path.split("/")[1]
-            feat_rel = f"scenes/scene_{scene_id}_features.pt"
-            cached_sha = actual_img_sha
-
         feat_file = features_dir / feat_rel
+
         if not feat_file.exists():
             raise FileNotFoundError(f"Missing cached scene feature file at {feat_file}")
 
         feat_dict = torch.load(feat_file, weights_only=True)
+
+        # Shape / dtype
         if feat_dict["global"].shape != (SCENE_GLOBAL_DIM,) or feat_dict["global"].dtype != torch.float32:
             raise ValueError(f"Scene global feature invalid shape/dtype: {feat_dict['global'].shape}")
         if feat_dict["patch"].shape != SCENE_PATCH_SHAPE or feat_dict["patch"].dtype != torch.float32:
             raise ValueError(f"Scene patch feature invalid shape/dtype: {feat_dict['patch'].shape}")
+
+        # Source SHA
         if feat_dict.get("source_sha256") != actual_img_sha:
             raise ValueError(f"Source SHA mismatch in cached scene feature: {feat_file}")
 
+        # Per-entry index extraction signature
+        entry_sig = cached_scene.get("extraction_signature", {})
+        ok, mismatches = _sig_field_matches(entry_sig, auth_vision_sig, vision_sig_fields)
+        if not ok:
+            raise ValueError(
+                f"Scene index entry signature mismatch for '{pre_rel_path}': {mismatches}"
+            )
+
+        # Per-.pt extraction signature
+        pt_sig = feat_dict.get("extraction_signature", {})
+        ok, mismatches = _sig_field_matches(pt_sig, auth_vision_sig, vision_sig_fields)
+        if not ok:
+            raise ValueError(
+                f"Scene .pt extraction_signature mismatch for '{pre_rel_path}': {mismatches}"
+            )
+
+        scene_sig_passed += 1
         scene_passed_count += 1
 
     # 4. Unique Candidate Crops Verification
-    unique_crop_paths = sorted(list(set(r["model_inputs"]["candidate_object_crop_path"] for r in records if r["model_inputs"].get("candidate_object_crop_path"))))
-    crop_passed_count = 0
+    unique_crop_paths = sorted(list(set(
+        r["model_inputs"]["candidate_object_crop_path"]
+        for r in records
+        if r["model_inputs"].get("candidate_object_crop_path")
+    )))
     crops_map = cache_index.get("crops", {})
+    crop_passed_count = 0
+    crop_sig_passed = 0
 
     for crop_rel_path in unique_crop_paths:
+        # Strict: path MUST be in crops index (no fallback)
+        if crop_rel_path not in crops_map:
+            raise KeyError(
+                f"Candidate crop path '{crop_rel_path}' not in cache_index['crops']. "
+                f"No fallback filename construction. Regenerate the feature cache."
+            )
+
+        cached_crop = crops_map[crop_rel_path]
+        feat_rel = cached_crop.get("feature_path")
+        if not feat_rel:
+            raise ValueError(f"crops_map entry for '{crop_rel_path}' missing 'feature_path'")
+
         abs_crop_path = dataset_root / crop_rel_path
         if not abs_crop_path.exists():
             raise FileNotFoundError(f"Missing source crop image at {abs_crop_path}")
+
         actual_crop_sha = compute_file_sha256(abs_crop_path)
-
-        if crop_rel_path in crops_map:
-            cached_crop = crops_map[crop_rel_path]
-            cached_sha = cached_crop.get("source_sha256")
-            feat_rel = cached_crop.get("feature_path")
-        else:
-            sanitized = crop_rel_path.replace("/", "_").replace(".", "_")
-            feat_rel = f"crops/crop_{sanitized}_features.pt"
-            cached_sha = actual_crop_sha
-
         feat_file = features_dir / feat_rel
+
         if not feat_file.exists():
             raise FileNotFoundError(f"Missing cached crop feature file at {feat_file}")
 
         feat_dict = torch.load(feat_file, weights_only=True)
+
+        # Shape / dtype
         if feat_dict["global"].shape != (CANDIDATE_VISUAL_DIM,) or feat_dict["global"].dtype != torch.float32:
             raise ValueError(f"Crop global feature invalid shape/dtype: {feat_dict['global'].shape}")
+
+        # Source SHA
         if feat_dict.get("source_sha256") != actual_crop_sha:
             raise ValueError(f"Source SHA mismatch in cached crop feature: {feat_file}")
 
+        # Per-entry index extraction signature
+        entry_sig = cached_crop.get("extraction_signature", {})
+        ok, mismatches = _sig_field_matches(entry_sig, auth_vision_sig, vision_sig_fields)
+        if not ok:
+            raise ValueError(
+                f"Crop index entry signature mismatch for '{crop_rel_path}': {mismatches}"
+            )
+
+        # Per-.pt extraction signature
+        pt_sig = feat_dict.get("extraction_signature", {})
+        ok, mismatches = _sig_field_matches(pt_sig, auth_vision_sig, vision_sig_fields)
+        if not ok:
+            raise ValueError(
+                f"Crop .pt extraction_signature mismatch for '{crop_rel_path}': {mismatches}"
+            )
+
+        crop_sig_passed += 1
         crop_passed_count += 1
 
-    # 5. Unique Instructions Verification with Real SHA Check
-    unique_instructions = sorted(list(set(r["model_inputs"]["instruction"] for r in records if r["model_inputs"].get("instruction"))))
+    # 5. Unique Instructions Verification with Real SHA + Text Signature Check
+    unique_instructions = sorted(list(set(
+        r["model_inputs"]["instruction"]
+        for r in records
+        if r["model_inputs"].get("instruction")
+    )))
     text_feat_file = features_dir / "text_features.pt"
     if not text_feat_file.exists():
         raise FileNotFoundError(f"Missing text_features.pt at {text_feat_file}")
@@ -178,6 +276,10 @@ def validate_feature_cache(
     text_features = text_dict.get("features", text_dict)
     texts_map = cache_index.get("texts", {})
     text_passed_count = 0
+    text_sig_passed = 0
+
+    # Text signature fields to verify
+    text_sig_fields = ["model_name", "embed_dim", "signature_sha256"]
 
     for inst in unique_instructions:
         if inst not in text_features:
@@ -185,12 +287,24 @@ def validate_feature_cache(
         emb = text_features[inst]
         if emb.shape != (TEXT_DIM,) or emb.dtype != torch.float32:
             raise ValueError(f"Text feature for '{inst}' has invalid shape {emb.shape}")
-        
+
         expected_sha = compute_text_sha256(inst)
         indexed_sha = texts_map.get(inst, {}).get("text_sha256")
         if indexed_sha != expected_sha:
-            raise ValueError(f"Text SHA mismatch for '{inst}': expected {expected_sha}, cached index has {indexed_sha}")
+            raise ValueError(
+                f"Text SHA mismatch for '{inst}': "
+                f"expected {expected_sha}, cached index has {indexed_sha}"
+            )
         text_passed_count += 1
+
+    # Text extraction signature: verify text_features.pt metadata
+    pt_text_meta_sig = text_dict.get("metadata", {}).get("extraction_signature", {})
+    ok, mismatches = _sig_field_matches(pt_text_meta_sig, auth_text_sig, text_sig_fields)
+    if not ok:
+        raise ValueError(
+            f"text_features.pt metadata extraction_signature mismatch: {mismatches}"
+        )
+    text_sig_passed = len(unique_instructions)
 
     # 6. Check No POST Features Cached
     all_feature_files = [str(p) for p in features_dir.rglob("*.pt")]
@@ -199,7 +313,11 @@ def validate_feature_cache(
         raise ValueError(f"POST features detected in feature cache: {post_feature_files}")
 
     # 7. Validate Dataset Loader (Zero Privileged Access)
-    dataset = InterventionLearningDataset(manifest_path=manifest_path, features_dir=features_dir, split="all")
+    dataset = InterventionLearningDataset(
+        manifest_path=manifest_path,
+        features_dir=features_dir,
+        split="all"
+    )
     if len(dataset) != len(records):
         raise ValueError(f"Dataset length {len(dataset)} != manifest records {len(records)}")
 
@@ -212,7 +330,9 @@ def validate_feature_cache(
         item = dataset[i]
         m_in_keys = set(item["model_inputs"].keys())
         if m_in_keys != allowed_model_input_keys:
-            raise ValueError(f"Record {i} model_inputs keys {m_in_keys} != expected {allowed_model_input_keys}")
+            raise ValueError(
+                f"Record {i} model_inputs keys {m_in_keys} != expected {allowed_model_input_keys}"
+            )
 
     # 8. Neutral NONE Tensorization Gate
     none_passed_count = 0
@@ -231,7 +351,8 @@ def validate_feature_cache(
             else:
                 raise ValueError(f"Record {i} operator NONE has non-zero candidate tensors.")
 
-    # 9. Structural Matched Candidate Consistency Gate
+    # 9. Strengthened Matched-Candidate Consistency Gate
+    # Group RELOCATE records by (scene_id, crop_path, current_geom)
     matched_groups: Dict[Tuple[str, str, Tuple[float, ...]], List[int]] = {}
     for idx, rec in enumerate(records):
         m_in = rec["model_inputs"]
@@ -242,25 +363,49 @@ def validate_feature_cache(
             key = (scene_id, crop_path, curr_pos)
             matched_groups.setdefault(key, []).append(idx)
 
-    matched_pair_count = 0
-    matched_passed_count = 0
+    matched_comparisons_total = 0
+    matched_comparisons_passed = 0
+
+    SAME_KEYS = [
+        "text_feat", "scene_global", "scene_patch",
+        "candidate_visual", "current_geometry", "operator_idx"
+    ]
+
     for key, indices in matched_groups.items():
-        if len(indices) > 1:
-            matched_pair_count += 1
-            item0 = dataset[indices[0]]["model_inputs"]
-            item1 = dataset[indices[1]]["model_inputs"]
+        if len(indices) < 2:
+            continue
+        ref_item = dataset[indices[0]]["model_inputs"]
+        ref_dest = ref_item["destination_geometry"]
 
-            c_vis_match = torch.equal(item0["candidate_visual"], item1["candidate_visual"])
-            c_geom_match = torch.equal(item0["current_geometry"], item1["current_geometry"])
-            d_geom_diff = not torch.equal(item0["destination_geometry"], item1["destination_geometry"])
+        for other_idx in indices[1:]:
+            matched_comparisons_total += 1
+            other_item = dataset[other_idx]["model_inputs"]
 
-            if c_vis_match and c_geom_match and d_geom_diff:
-                matched_passed_count += 1
-            else:
-                raise ValueError(f"Matched candidate pair for group {key} failed visual/geometry consistency.")
+            all_same = all(
+                torch.equal(ref_item[k], other_item[k]) for k in SAME_KEYS
+            )
+            dest_differs = not torch.equal(ref_dest, other_item["destination_geometry"])
+
+            if not all_same:
+                failing = [
+                    k for k in SAME_KEYS
+                    if not torch.equal(ref_item[k], other_item[k])
+                ]
+                raise ValueError(
+                    f"Matched candidate group {key}: "
+                    f"fields {failing} differ between indices {indices[0]} and {other_idx}."
+                )
+            if not dest_differs:
+                raise ValueError(
+                    f"Matched candidate group {key}: "
+                    f"destination_geometry identical between {indices[0]} and {other_idx}."
+                )
+            matched_comparisons_passed += 1
 
     # 10. Grouped Batch Sampler
-    sampler = InterventionGroupBatchSampler(dataset=dataset, scenes_per_batch=1, shuffle=False)
+    sampler = InterventionGroupBatchSampler(
+        dataset=dataset, scenes_per_batch=1, shuffle=False
+    )
     batches = list(sampler)
     grouped_scene_sizes = [len(b) for b in batches]
 
@@ -270,13 +415,19 @@ def validate_feature_cache(
         if collated["batch_size"] != len(batch_indices):
             raise ValueError("Collated batch size mismatch")
 
-    # Verify encoder metadata consistency against spec
-    encoders = cache_index.get("encoders", {})
-    vision_enc = encoders.get("vision", {})
-    text_enc = encoders.get("text", {})
-    encoder_meta_ok = (
-        vision_enc.get("embed_dim") == SCENE_GLOBAL_DIM
-        and text_enc.get("embed_dim") == TEXT_DIM
+    # 11. Verify authoritative extraction-signature completeness
+    # Vision: verify encoder metadata against spec constants
+    v_enc = cache_index.get("encoders", {}).get("vision", {})
+    t_enc = cache_index.get("encoders", {}).get("text", {})
+    vision_meta_ok = (
+        v_enc.get("embed_dim") == SCENE_GLOBAL_DIM
+        and auth_vision_sig.get("embed_dim") == SCENE_GLOBAL_DIM
+        and auth_vision_sig.get("signature_sha256") is not None
+    )
+    text_meta_ok = (
+        t_enc.get("embed_dim") == TEXT_DIM
+        and auth_text_sig.get("embed_dim") == TEXT_DIM
+        and auth_text_sig.get("signature_sha256") is not None
     )
 
     # Compile Validation Report
@@ -287,15 +438,16 @@ def validate_feature_cache(
         "source_manifest_sha256": manifest_sha256,
         "source_generator_commit": cache_index.get("source", {}).get("dataset_generator_commit"),
         "feature_code_commit": commit or cache_index.get("feature_code_commit"),
-        "scene_count": len(unique_pre_paths),
         "record_count": len(records),
+        "scene_count": len(unique_pre_paths),
         "unique_pre_images": len(unique_pre_paths),
         "unique_candidate_crops": len(unique_crop_paths),
         "unique_instruction_strings": len(unique_instructions),
-        "encoders": cache_index.get("encoders", {
-            "vision": "dinov2_vitb14",
-            "text": "sentence-transformers/all-MiniLM-L6-v2",
-        }),
+        "encoders": cache_index.get("encoders", {}),
+        "extraction_signatures": {
+            "vision": auth_vision_sig,
+            "text": auth_text_sig,
+        },
         "dimensions": {
             "text_dim": TEXT_DIM,
             "scene_global_dim": SCENE_GLOBAL_DIM,
@@ -321,20 +473,35 @@ def validate_feature_cache(
             "total": len(unique_instructions),
             "passed": text_passed_count == len(unique_instructions),
         },
+        "scene_signature_matches": {
+            "passed_count": scene_sig_passed,
+            "total": len(unique_pre_paths),
+            "passed": scene_sig_passed == len(unique_pre_paths),
+        },
+        "crop_signature_matches": {
+            "passed_count": crop_sig_passed,
+            "total": len(unique_crop_paths),
+            "passed": crop_sig_passed == len(unique_crop_paths),
+        },
+        "text_signature_matches": {
+            "passed_count": text_sig_passed,
+            "total": len(unique_instructions),
+            "passed": text_sig_passed == len(unique_instructions),
+        },
         "none_tensorization_matches": {
             "passed_count": none_passed_count,
             "total": none_total_count,
             "passed": none_passed_count == none_total_count and none_total_count > 0,
         },
-        "matched_candidate_pairs": {
-            "passed_count": matched_passed_count,
-            "total": matched_pair_count,
-            "passed": matched_passed_count == matched_pair_count and matched_pair_count > 0,
+        "matched_candidate_comparisons": {
+            "passed_count": matched_comparisons_passed,
+            "total": matched_comparisons_total,
+            "passed": matched_comparisons_passed == matched_comparisons_total and matched_comparisons_total > 0,
         },
         "manifest_cache_compatibility": True,
         "model_feature_resolution_from_model_inputs_only": True,
         "post_feature_reference_count": 0,
-        "encoder_metadata_consistency": bool(encoder_meta_ok),
+        "encoder_metadata_consistency": bool(vision_meta_ok and text_meta_ok),
     }
 
     if report_path:
@@ -347,11 +514,33 @@ def validate_feature_cache(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validate intervention feature cache independently.")
-    parser.add_argument("--manifest", type=str, default="data/intervention_smoke/manifest.jsonl", help="Path to manifest.jsonl")
-    parser.add_argument("--features-dir", type=str, default="data/intervention_smoke/features", help="Path to features directory")
-    parser.add_argument("--report", type=str, default="artifacts/intervention_smoke/feature_validation_report.json", help="Path to output report")
-    parser.add_argument("--commit", type=str, default=None, help="Git commit SHA of feature extractor code")
+    parser = argparse.ArgumentParser(
+        description="Validate intervention feature cache independently."
+    )
+    parser.add_argument(
+        "--manifest",
+        type=str,
+        default="data/intervention_smoke/manifest.jsonl",
+        help="Path to manifest.jsonl",
+    )
+    parser.add_argument(
+        "--features-dir",
+        type=str,
+        default="data/intervention_smoke/features",
+        help="Path to features directory",
+    )
+    parser.add_argument(
+        "--report",
+        type=str,
+        default="artifacts/intervention_smoke/feature_validation_report.json",
+        help="Path to output report",
+    )
+    parser.add_argument(
+        "--commit",
+        type=str,
+        default=None,
+        help="Git commit SHA of feature extractor code",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -364,13 +553,23 @@ def main():
         commit=args.commit,
     )
 
-    logging.info("======================================================================")
+    logging.info("=" * 70)
     logging.info("FEATURE CACHE VALIDATION PASSED (100% Validated)")
-    logging.info(f"Scenes: {report['scene_count']}, Crops: {report['unique_candidate_crops']}, Instructions: {report['unique_instruction_strings']}")
+    logging.info(
+        f"Scenes: {report['scene_count']}, "
+        f"Crops: {report['unique_candidate_crops']}, "
+        f"Instructions: {report['unique_instruction_strings']}"
+    )
     logging.info(f"Grouped scene sizes: {report['grouped_scene_sizes']}")
+    logging.info(
+        f"Signature matches — "
+        f"scenes: {report['scene_signature_matches']['passed_count']}/{report['scene_signature_matches']['total']}, "
+        f"crops: {report['crop_signature_matches']['passed_count']}/{report['crop_signature_matches']['total']}, "
+        f"text: {report['text_signature_matches']['passed_count']}/{report['text_signature_matches']['total']}"
+    )
     if args.report:
         logging.info(f"Validation report written to: {args.report}")
-    logging.info("======================================================================")
+    logging.info("=" * 70)
 
 
 if __name__ == "__main__":

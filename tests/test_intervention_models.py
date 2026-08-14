@@ -279,6 +279,32 @@ def test_parameter_counts_reported():
     print(f"\n[Packet 4 Parameter Report] B0: {p_b0:,} | B0b: {p_b0b:,} | V2: {p_v2:,}")
 
 
+def test_model_constructors_reject_unknown_kwargs():
+    """Verify that model constructors and registry dispatch loudly reject unknown kwargs."""
+    with pytest.raises(TypeError):
+        InterventionQueryOnlyBaseline(unknown_param=123)
+
+    with pytest.raises(TypeError):
+        SimpleInterventionBaseline(unknown_param=123)
+
+    with pytest.raises(TypeError):
+        InterventionRelationalModel(unknown_param=123)
+
+    with pytest.raises(TypeError):
+        get_intervention_model("intervention_relational", num_cross_layer=4)
+
+    with pytest.raises(TypeError):
+        get_intervention_model("query_only", invalid_arg=99)
+
+
+def test_b0_requires_dict_input():
+    """Verify that B0 forward rejects non-dict inputs."""
+    model = InterventionQueryOnlyBaseline()
+    raw_tensor = torch.randn(4, 768)
+    with pytest.raises(TypeError, match="requires a dict input"):
+        model(raw_tensor)
+
+
 def test_real_smoke_forward_pass_all_architectures():
     """Integration test processing all 22 real smoke dataset records through B0, B0b, and V2."""
     manifest_path = Path("data/intervention_smoke/manifest.jsonl")
@@ -317,8 +343,13 @@ def test_real_smoke_forward_pass_all_architectures():
             assert out_b0b.post_logit.shape == (b_sz,)
             assert out_v2.post_logit.shape == (b_sz,)
 
-            assert not torch.isnan(out_b0.post_logit).any()
-            assert not torch.isnan(out_b0b.post_logit).any()
-            assert not torch.isnan(out_v2.post_logit).any()
+            assert torch.isfinite(out_b0.post_logit).all()
+            assert torch.isfinite(out_b0.ranking_score).all()
+            assert torch.isfinite(out_b0b.post_logit).all()
+            assert torch.isfinite(out_b0b.ranking_score).all()
+            assert torch.isfinite(out_v2.post_logit).all()
+            assert torch.isfinite(out_v2.ranking_score).all()
+            assert torch.isfinite(out_v2.relational_embedding).all()
+            assert torch.isfinite(out_v2.relational_tokens).all()
 
     assert total_records_processed == 22

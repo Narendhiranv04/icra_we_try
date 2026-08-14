@@ -1,0 +1,38 @@
+# B0 Smoke Config — Query-Only Baseline
+# Architecture: query_only (pre-scene global only, no candidate inputs)
+# Objective: BCE only (lambda_rank=0 required for candidate-invariant B0)
+# This is a smoke infrastructure default, NOT a tuned/final hyperparameter.
+
+run_label: b0_smoke
+model_name: query_only
+
+# B0 architecture hyperparameters (ignored: latent_dim, nhead, num_*_layers)
+hidden_dim: 256
+operator_embed_dim: 64
+dropout: 0.1
+
+# Loss — B0 must have lambda_rank=0 (candidate-invariant architecture)
+lambda_feas: 1.0
+lambda_rank: 0.0
+
+# Optimizer
+optimizer: adamw
+learning_rate: 1.0e-4
+weight_decay: 0.0
+
+# Training schedule — CPU smoke diagnostic (10 epochs, all 22 records)
+num_epochs: 10
+scenes_per_batch: 1
+device: cpu
+seed: 42
+
+# Data paths (smoke dataset)
+manifest_path: data/intervention_smoke/manifest.jsonl
+features_dir: data/intervention_smoke/features
+
+# Checkpointing (disabled by default for smoke; set in CLI if needed)
+checkpoint_dir: null
+checkpoint_every_n_epochs: 5
+
+# Logging
+log_every_n_batches: 1

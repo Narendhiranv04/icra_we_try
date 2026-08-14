@@ -1,6 +1,6 @@
 """B0b — Candidate-Aware Non-Relational Baseline Model for Intervention Learning."""
 
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 import torch
 import torch.nn as nn
 
@@ -17,7 +17,6 @@ class SimpleInterventionBaseline(nn.Module):
         operator_embed_dim: int = 64,
         hidden_dim: int = 512,
         dropout: float = 0.1,
-        **kwargs: Any,
     ):
         super().__init__()
         self.spec = spec or InterventionFeatureSpec()

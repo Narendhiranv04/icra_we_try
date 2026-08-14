@@ -24,8 +24,27 @@ from src.learning.intervention_feature_spec import (
 class StubVisionEncoder:
     def __init__(self, embed_dim=768, num_patches=256):
         self.embed_dim = embed_dim
+        self.patch_size = 14
         self.num_patches = num_patches
+        self.model_name = "stub_vision_encoder"
         self.call_count = 0
+
+    def extraction_signature(self):
+        import hashlib, json
+        sig = {
+            "model_name": self.model_name,
+            "embed_dim": self.embed_dim,
+            "patch_size": self.patch_size,
+            "num_patches": self.num_patches,
+            "resize": 224,
+            "interpolation": "bicubic",
+            "center_crop": 224,
+            "normalization_mean": [0.485, 0.456, 0.406],
+            "normalization_std": [0.229, 0.224, 0.225],
+        }
+        canonical_json = json.dumps(sig, sort_keys=True, separators=(",", ":"))
+        sig["signature_sha256"] = hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+        return sig
 
     def __call__(self, images):
         self.call_count += len(images)
@@ -40,6 +59,19 @@ class StubTextEncoder:
         self.embed_dim = embed_dim
         self.model_name = "stub_text_encoder"
         self.call_count = 0
+
+    def extraction_signature(self):
+        import hashlib, json
+        sig = {
+            "model_name": self.model_name,
+            "embed_dim": self.embed_dim,
+            "tokenizer": self.model_name,
+            "truncation": True,
+            "pooling": "attention_mask_weighted_mean",
+        }
+        canonical_json = json.dumps(sig, sort_keys=True, separators=(",", ":"))
+        sig["signature_sha256"] = hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+        return sig
 
     def __call__(self, texts):
         self.call_count += len(texts)

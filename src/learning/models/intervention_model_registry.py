@@ -1,6 +1,6 @@
 """Model Registry and Dispatch for Intervention-Conditioned Architectures."""
 
-from typing import Any, Dict, Optional, Type
+from typing import Dict, Optional, Type
 import torch.nn as nn
 
 from src.learning.intervention_feature_spec import InterventionFeatureSpec
@@ -27,7 +27,6 @@ def get_intervention_model(
     num_context_layers: int = 2,
     num_cross_layers: int = 2,
     dropout: float = 0.1,
-    **kwargs: Any,
 ) -> nn.Module:
     """Instantiate an intervention learning model from registered architectural identities.
 
@@ -41,6 +40,10 @@ def get_intervention_model(
         num_context_layers: Transformer context encoder layers for V2
         num_cross_layers: Transformer cross attention layers for V2
         dropout: Dropout probability
+
+    Raises:
+        ValueError: If model_name is unknown or 'relational_feasibility_only'.
+        TypeError: If unexpected keyword arguments are passed (no **kwargs).
     """
     if model_name == "relational_feasibility_only":
         raise ValueError(

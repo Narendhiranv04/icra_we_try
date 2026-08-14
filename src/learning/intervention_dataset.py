@@ -265,6 +265,7 @@ class InterventionGroupBatchSampler(Sampler[List[int]]):
         self.scenes_per_batch = scenes_per_batch
         self.shuffle = shuffle
         self.seed = seed
+        self.epoch = 0
 
         # Group dataset indices by scene_id preserving sequential order
         scene_to_indices: Dict[str, List[int]] = {}
@@ -276,13 +277,22 @@ class InterventionGroupBatchSampler(Sampler[List[int]]):
 
         self.scene_groups = list(scene_to_indices.values())
 
+    def set_epoch(self, epoch: int) -> None:
+        """Set the epoch for deterministic epoch-aware shuffling.
+
+        For shuffle=True, the RNG is seeded with (self.seed + epoch),
+        producing a different group order each epoch while remaining
+        fully deterministic for any given (seed, epoch) pair.
+        """
+        self.epoch = epoch
+
     def __len__(self) -> int:
         return (len(self.scene_groups) + self.scenes_per_batch - 1) // self.scenes_per_batch
 
     def __iter__(self):
         groups = list(self.scene_groups)
         if self.shuffle:
-            rng = random.Random(self.seed)
+            rng = random.Random(self.seed + self.epoch)
             rng.shuffle(groups)
 
         for i in range(0, len(groups), self.scenes_per_batch):

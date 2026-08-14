@@ -1,7 +1,12 @@
+import hashlib
+import json
+from typing import Any, Dict
+
 import torch
 import torch.nn as nn
 from transformers import AutoTokenizer, AutoModel
 import logging
+
 
 class TextEncoder(nn.Module):
     def __init__(self, model_name="sentence-transformers/all-MiniLM-L6-v2", device=None):
@@ -19,6 +24,25 @@ class TextEncoder(nn.Module):
         self.model.eval()
         
         self.embed_dim = self.model.config.hidden_size
+
+    def extraction_signature(self) -> Dict[str, Any]:
+        """Return the canonicalized extraction contract for this encoder.
+
+        This is the single source of truth for text feature extraction parameters.
+        The returned dictionary is JSON-serializable and describes the exact
+        tokenization, pooling, and model configuration used for feature extraction.
+        """
+        sig = {
+            "model_name": self.model_name,
+            "embed_dim": self.embed_dim,
+            "tokenizer": self.model_name,
+            "truncation": True,
+            "pooling": "attention_mask_weighted_mean",
+        }
+        # Compute deterministic signature hash from canonicalized JSON
+        canonical_json = json.dumps(sig, sort_keys=True, separators=(",", ":"))
+        sig["signature_sha256"] = hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+        return sig
 
     @torch.no_grad()
     def forward(self, texts):

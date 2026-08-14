@@ -1,0 +1,44 @@
+# V2 Smoke Config — Intervention-Conditioned Relational Model
+# Architecture: intervention_relational (same class as B3)
+# Objective: BCE + scene-normalized grouped pairwise logistic ranking loss
+# lambda_rank=1.0 is a smoke infrastructure default, NOT a tuned hyperparameter.
+# B0b and V2 share the same lambda_rank for canonical objective ablation.
+# B3 and V2 share IDENTICAL model architecture parameters and seed.
+
+run_label: v2_smoke
+model_name: intervention_relational
+
+# V2/B3 relational architecture hyperparameters (MUST match b3_smoke.yaml exactly)
+latent_dim: 256
+operator_embed_dim: 64
+nhead: 8
+num_context_layers: 2
+num_cross_layers: 2
+dropout: 0.1
+
+# Loss — V2 uses BCE + scene-normalized grouped ranking loss
+lambda_feas: 1.0
+lambda_rank: 1.0
+
+# Optimizer
+optimizer: adamw
+learning_rate: 1.0e-4
+weight_decay: 0.0
+
+# Training schedule — CPU smoke diagnostic (10 epochs, all 22 records)
+# seed MUST match b3_smoke.yaml for identical initialization comparison
+num_epochs: 10
+scenes_per_batch: 1
+device: cpu
+seed: 42
+
+# Data paths (smoke dataset)
+manifest_path: data/intervention_smoke/manifest.jsonl
+features_dir: data/intervention_smoke/features
+
+# Checkpointing (disabled by default for smoke; set in CLI if needed)
+checkpoint_dir: null
+checkpoint_every_n_epochs: 5
+
+# Logging
+log_every_n_batches: 1

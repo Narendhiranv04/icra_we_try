@@ -298,24 +298,27 @@ Create minimal canonical intervention loss function and evaluation metrics.
 
 ### Files to Create
 
-#### `src/learning/intervention_losses.py`
+#### `src/learning/intervention_loss.py`
 Class `InterventionLoss(nn.Module)`:
-- `__init__(self, lambda_feas=1.0, lambda_rank=0.3, margin=0.3)`
-- `forward(self, predictions, batch) -> (loss, loss_dict)`
-  - $\mathcal{L}_{post\_feas}$: `BCEWithLogitsLoss(logit_post, batch["post_feasible"])`
-  - $\mathcal{L}_{rank\_interv}$: `MarginRankingLoss` between pairs of candidate interventions from the same scene
-  - Canonical loss: $\mathcal{L}_{V2} = \mathcal{L}_{post\_feas} + \lambda_{rank} \cdot \mathcal{L}_{rank\_interv}$
+- `__init__(self, lambda_feas=1.0, lambda_rank=0.0)`
+- `forward(self, output, supervision, scene_group_ptrs) -> InterventionLossOutput`
+  - $\mathcal{L}_{post\_feas}$: `BCEWithLogitsLoss(post_logit, supervision["post_feasible"])`
+  - $\mathcal{L}_{rank\_interv}$: Scene-normalized pairwise logistic ranking loss $\frac{1}{|G_{valid}|} \sum_{g \in G_{valid}} \frac{1}{|Q_g|} \sum_{(i,j) \in Q_g} \text{softplus}(-(s_i - s_j))$
+  - Canonical loss: $\mathcal{L}_{total} = \lambda_{feas} \cdot \mathcal{L}_{post\_feas} + \lambda_{rank} \cdot \mathcal{L}_{rank\_interv}$
 
 #### `src/learning/intervention_metrics.py`
-Function `compute_intervention_metrics(predictions, batch) -> dict`:
-- Post-feasibility metrics (Accuracy, F1, AUROC)
-- Intervention Top-1 accuracy (per scene candidate set)
-- Counterfactual Repair Rate (CFR)
-- False Relevance Rate (FRR) on irrelevant / identity interventions
-- Hard Negative separation AUC
+Class `InterventionMetrics`:
+- `compute(self, output, supervision, scene_group_ptrs) -> InterventionMetricsOutput`
+  - Non-privileged, tie-aware metrics with permutation invariance
+  - `post_bce`, `post_accuracy`
+  - `pairwise_ranking_accuracy` (tie-aware with 0.5 pair credit)
+  - `top1_post_feasible_rate` (tie-aware expected feasible rate over tied-maximum set)
+  - `stop_top1_feasible_rate` (STOP scenes $F_{pre}=0$)
+  - `proceed_top1_safe_rate` (PROCEED scenes $F_{pre}=1$)
+  - `counterfactual_probability_delta_mae` (diagnostic only)
 
 ### Stopping Condition
-Loss and metrics compute without error on synthetic batches.
+Loss and metrics compute without error on synthetic and real smoke batches.
 
 ---
 
@@ -325,39 +328,46 @@ Loss and metrics compute without error on synthetic batches.
 - Phases P5-P7 complete
 
 ### Objective
-Create the training script for intervention models and verify convergence on smoke data.
+Create the training script for intervention models and verify smoke training diagnostics on CPU with fixed seeds.
 
 ### Files to Create
 
 #### `scripts/train_intervention_model.py`
-- Training loop using intervention dataset interfaces
-- Dispatches model via `model_registry`
-- Handles grouped batch sampling and evaluation logging
+- Training loop using frozen precomputed features (no encoder instantiation)
+- Dispatches model via `get_intervention_model`
+- Evaluates full-dataset training diagnostics (initial and final eval)
+- Saves checkpoints with complete provenance metadata
 
-#### `configs/intervention/learning/intervention_relational.yaml`
+#### `configs/intervention/learning/v2_smoke.yaml`
 ```yaml
-model: "intervention_relational"
+run_label: "v2_smoke"
+model_name: "intervention_relational"
 latent_dim: 256
-demo_frames: 4
-batch_size: 4
-learning_rate: 1e-4
-epochs: 50
+operator_embed_dim: 64
+nhead: 8
+num_context_layers: 2
+num_cross_layers: 2
+dropout: 0.1
 lambda_feas: 1.0
-lambda_rank: 0.3
-mixed_precision: true
-index_path: "data/intervention_v1/manifests/intervention_manifest.jsonl"
-feature_cache_path: "data/intervention_v1/features"
-output_path: "learning_outputs/intervention_v1/intervention_relational"
+lambda_rank: 1.0
+optimizer: "adamw"
+learning_rate: 1.0e-4
+num_epochs: 10
+scenes_per_batch: 1
+device: "cpu"
+seed: 42
+manifest_path: "data/intervention_smoke/manifest.jsonl"
+features_dir: "data/intervention_smoke/features"
 ```
 
-#### Baseline configs:
-- `configs/intervention/learning/baseline_b0_query_only.yaml`
-- `configs/intervention/learning/baseline_b0b_simple_intervention.yaml`
-- `configs/intervention/learning/baseline_b3_feasibility_only.yaml` ($\lambda_{rank} = 0$)
+#### Baseline smoke configs:
+- `configs/intervention/learning/b0_smoke.yaml` (`model_name: "query_only"`, $\lambda_{rank} = 0.0$)
+- `configs/intervention/learning/b0b_smoke.yaml` (`model_name: "simple_intervention"`, $\lambda_{rank} = 1.0$)
+- `configs/intervention/learning/b3_smoke.yaml` (`model_name: "intervention_relational"`, $\lambda_{rank} = 0.0$, identical architecture & seed as V2)
 
 ### Tests
-24. `test_training_converges_smoke` — Training loss decreases over 10 epochs on smoke data
-25. `test_checkpoint_saves` — Checkpoint saved properly
+24. `test_optimizer_step_finite_gradients_all_models` — 1 step produces finite gradients and finite parameters for all 4 models
+25. `test_checkpoint_roundtrip` — Checkpoint saved and reloaded with identical model state and evaluation outputs
 
 ---
 

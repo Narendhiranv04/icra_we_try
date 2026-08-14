@@ -1,0 +1,39 @@
+# B0b Smoke Config — Candidate-Aware Non-Relational Baseline
+# Architecture: simple_intervention (MLP over all 7 model-visible fields)
+# Objective: BCE + scene-normalized grouped pairwise logistic ranking loss
+# lambda_rank=1.0 is a smoke infrastructure default, NOT a tuned hyperparameter.
+# B0b and V2 share the same lambda_rank for canonical objective ablation.
+
+run_label: b0b_smoke
+model_name: simple_intervention
+
+# B0b architecture hyperparameters (ignored: latent_dim, nhead, num_*_layers)
+hidden_dim: 512
+operator_embed_dim: 64
+dropout: 0.1
+
+# Loss
+lambda_feas: 1.0
+lambda_rank: 1.0
+
+# Optimizer
+optimizer: adamw
+learning_rate: 1.0e-4
+weight_decay: 0.0
+
+# Training schedule — CPU smoke diagnostic (10 epochs, all 22 records)
+num_epochs: 10
+scenes_per_batch: 1
+device: cpu
+seed: 42
+
+# Data paths (smoke dataset)
+manifest_path: data/intervention_smoke/manifest.jsonl
+features_dir: data/intervention_smoke/features
+
+# Checkpointing (disabled by default for smoke; set in CLI if needed)
+checkpoint_dir: null
+checkpoint_every_n_epochs: 5
+
+# Logging
+log_every_n_batches: 1

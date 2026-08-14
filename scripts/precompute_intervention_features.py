@@ -50,43 +50,45 @@ def compute_text_sha256(text: str) -> str:
 
 
 def hash_cache_filename(rel_path: str, prefix: str) -> str:
-    """Compute a neutral, injective SHA256-based cache filename from relative source path."""
-    digest = hashlib.sha256(rel_path.encode("utf-8")).hexdigest()[:24]
+    """Compute a deterministic SHA256-based source-path cache filename.
+
+    Uses the full 64-character hex digest for deterministic naming.
+    The feature cache index remains the authoritative source-path mapping.
+    """
+    digest = hashlib.sha256(rel_path.encode("utf-8")).hexdigest()
     return f"{prefix}_{digest}_features.pt"
 
 
 def get_vision_extraction_signature(vision_encoder: Any) -> Dict[str, Any]:
-    """Return explicit visual feature extraction signature dictionary."""
-    model_name = getattr(vision_encoder, "model_name", "dinov2_vitb14")
-    embed_dim = SCENE_GLOBAL_DIM
-    patch_size = getattr(vision_encoder, "patch_size", 14)
-    num_patches = SCENE_PATCH_SHAPE[0]
-    transform_str = "bicubic_224_centercrop_imagenet_norm"
-    sig_str = f"{model_name}:{embed_dim}:{patch_size}:{num_patches}:{transform_str}"
-    sig_sha = hashlib.sha256(sig_str.encode("utf-8")).hexdigest()
-    return {
-        "model_name": model_name,
-        "embed_dim": embed_dim,
-        "patch_size": patch_size,
-        "num_patches": num_patches,
-        "transform": transform_str,
-        "signature_sha256": sig_sha,
-    }
+    """Return the vision extraction signature from the encoder's own contract.
+
+    Delegates to the encoder's extraction_signature() method, which is
+    the single source of truth for vision feature extraction parameters.
+    For test stubs that lack extraction_signature(), raises AttributeError.
+    """
+    if not hasattr(vision_encoder, 'extraction_signature'):
+        raise AttributeError(
+            f"Vision encoder {type(vision_encoder).__name__} does not expose "
+            f"extraction_signature(). Production VisionEncoder or compatible "
+            f"test stubs must implement this interface."
+        )
+    return vision_encoder.extraction_signature()
 
 
 def get_text_extraction_signature(text_encoder: Any) -> Dict[str, Any]:
-    """Return explicit text feature extraction signature dictionary."""
-    model_name = getattr(text_encoder, "model_name", "sentence-transformers/all-MiniLM-L6-v2")
-    embed_dim = TEXT_DIM
-    pooling_str = "mean_attention_mask"
-    sig_str = f"{model_name}:{embed_dim}:{pooling_str}"
-    sig_sha = hashlib.sha256(sig_str.encode("utf-8")).hexdigest()
-    return {
-        "model_name": model_name,
-        "embed_dim": embed_dim,
-        "pooling": pooling_str,
-        "signature_sha256": sig_sha,
-    }
+    """Return the text extraction signature from the encoder's own contract.
+
+    Delegates to the encoder's extraction_signature() method, which is
+    the single source of truth for text feature extraction parameters.
+    For test stubs that lack extraction_signature(), raises AttributeError.
+    """
+    if not hasattr(text_encoder, 'extraction_signature'):
+        raise AttributeError(
+            f"Text encoder {type(text_encoder).__name__} does not expose "
+            f"extraction_signature(). Production TextEncoder or compatible "
+            f"test stubs must implement this interface."
+        )
+    return text_encoder.extraction_signature()
 
 
 def extract_intervention_features(
@@ -321,16 +323,17 @@ def extract_intervention_features(
         },
         "encoders": {
             "vision": {
-                "model_name": vision_sig["model_name"],
-                "embed_dim": SCENE_GLOBAL_DIM,
-                "patch_size": vision_sig["patch_size"],
-                "num_patches": SCENE_PATCH_SHAPE[0],
-                "transform": vision_sig["transform"],
+                "model_name": vision_sig.get("model_name", "dinov2_vitb14"),
+                "embed_dim": vision_sig.get("embed_dim", SCENE_GLOBAL_DIM),
+                "patch_size": vision_sig.get("patch_size", 14),
+                "num_patches": vision_sig.get("num_patches", SCENE_PATCH_SHAPE[0]),
+                "resize": vision_sig.get("resize", 224),
+                "interpolation": vision_sig.get("interpolation", "bicubic"),
             },
             "text": {
-                "model_name": text_sig["model_name"],
-                "embed_dim": TEXT_DIM,
-                "pooling": text_sig["pooling"],
+                "model_name": text_sig.get("model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+                "embed_dim": text_sig.get("embed_dim", TEXT_DIM),
+                "pooling": text_sig.get("pooling", "attention_mask_weighted_mean"),
             },
         },
         "dimensions": {

@@ -1,6 +1,6 @@
 """V2 — Intervention-Conditioned Relational Model."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 import torch
 import torch.nn as nn
 
@@ -29,7 +29,6 @@ class InterventionRelationalModel(nn.Module):
         num_context_layers: int = 2,
         num_cross_layers: int = 2,
         dropout: float = 0.1,
-        **kwargs: Any,
     ):
         super().__init__()
         self.spec = spec or InterventionFeatureSpec()

@@ -1,6 +1,6 @@
 """B0 — Query / Pre-Scene Only Baseline Model for Intervention Learning."""
 
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional
 import torch
 import torch.nn as nn
 
@@ -20,7 +20,6 @@ class InterventionQueryOnlyBaseline(nn.Module):
         spec: Optional[InterventionFeatureSpec] = None,
         hidden_dim: int = 256,
         dropout: float = 0.1,
-        **kwargs: Any,
     ):
         super().__init__()
         self.spec = spec or InterventionFeatureSpec()
@@ -38,20 +37,21 @@ class InterventionQueryOnlyBaseline(nn.Module):
 
     def forward(
         self,
-        model_inputs: Union[Dict[str, torch.Tensor], torch.Tensor],
+        model_inputs: Dict[str, torch.Tensor],
     ) -> InterventionModelOutput:
         """Forward pass over pre-scene global feature.
 
         Args:
-            model_inputs: Either standard model_inputs dict containing 'scene_global' (B, 768)
-                          or raw scene_global tensor (B, 768).
+            model_inputs: Standard model_inputs dict containing 'scene_global' (B, 768).
         """
-        if isinstance(model_inputs, dict):
-            if "scene_global" not in model_inputs:
-                raise KeyError("model_inputs dict missing required key 'scene_global'")
-            x = model_inputs["scene_global"]
-        else:
-            x = model_inputs
+        if not isinstance(model_inputs, dict):
+            raise TypeError(
+                "InterventionQueryOnlyBaseline.forward requires a dict input. "
+                "Raw tensor forward is not supported."
+            )
+        if "scene_global" not in model_inputs:
+            raise KeyError("model_inputs dict missing required key 'scene_global'")
+        x = model_inputs["scene_global"]
 
         logits = self.net(x).squeeze(-1)  # (B,)
 
