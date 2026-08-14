@@ -5,7 +5,7 @@ Features extracted:
 1. Unique Pre-Scene Visual Features (DINOv2 global [768] + 256x768 patch tokens)
 2. Unique Candidate Object Crop Visual Features (DINOv2 global [768])
 3. Unique Instruction Text Features (all-MiniLM-L6-v2 [384])
-4. Feature Cache Index with source-hash provenance tracking.
+4. Feature Cache Index (Schema 1.1.0) with source-hash provenance tracking.
 """
 
 import argparse
@@ -23,6 +23,7 @@ import torch
 
 from src.learning.intervention_feature_spec import (
     InterventionFeatureSpec,
+    FEATURE_CACHE_SCHEMA_VERSION,
     TEXT_DIM,
     SCENE_GLOBAL_DIM,
     SCENE_PATCH_SHAPE,
@@ -48,12 +49,18 @@ def compute_text_sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def sanitize_filename(rel_path: str) -> str:
+    """Sanitize a relative path to a safe, neutral cache filename."""
+    return rel_path.replace("/", "_").replace(".", "_")
+
+
 def extract_intervention_features(
     manifest_path: Path,
     dataset_root: Path,
     out_dir: Path,
     device: Optional[str] = None,
     force: bool = False,
+    commit: Optional[str] = None,
     vision_encoder: Optional[Any] = None,
     text_encoder: Optional[Any] = None,
 ) -> Dict[str, Any]:
@@ -74,46 +81,47 @@ def extract_intervention_features(
     manifest_sha256 = compute_file_sha256(manifest_path)
     schema_version = records[0].get("schema_version", "2.1.0")
 
-    # Group unique pre scenes, candidate crops, and text instructions
-    unique_scenes: Dict[str, str] = {}  # scene_id -> rel_pre_rgb_path
-    unique_crops: Dict[Tuple[str, str], str] = {}  # (scene_id, obj_name) -> rel_crop_path
+    # Read generator commit from dataset_metadata.json if present
+    metadata_path = dataset_root / "dataset_metadata.json"
+    generator_commit = None
+    if metadata_path.exists():
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+            generator_commit = meta.get("generator_commit")
+
+    # Group unique pre scenes, candidate crops, and text instructions strictly from model_inputs
+    unique_scenes: Dict[str, str] = {}  # pre_rgb_path -> scene_id
+    unique_crops: Dict[str, str] = {}  # candidate_crop_path -> crop_filename
     unique_instructions: Dict[str, str] = {}  # text -> text_sha256
 
     for rec in records:
         m_in = rec["model_inputs"]
-        p_meta = rec.get("privileged_metadata", {})
         scene_id = rec["scene_id"]
 
-        # Scene pre RGB
+        # Scene pre RGB (model-visible)
         pre_rgb_path = m_in.get("pre_rgb_path")
-        if pre_rgb_path and scene_id not in unique_scenes:
-            unique_scenes[scene_id] = pre_rgb_path
+        if pre_rgb_path and pre_rgb_path not in unique_scenes:
+            unique_scenes[pre_rgb_path] = scene_id
 
-        # Candidate crop
+        # Candidate crop (model-visible)
         crop_path = m_in.get("candidate_object_crop_path")
-        if crop_path:
-            obj_name = p_meta.get("candidate_object_name")
-            if not obj_name:
-                # Extract from crop filename if privileged_metadata omitted
-                obj_name = Path(crop_path).stem.replace("object_", "")
-            key = (scene_id, obj_name)
-            if key not in unique_crops:
-                unique_crops[key] = crop_path
+        if crop_path and crop_path not in unique_crops:
+            unique_crops[crop_path] = f"crop_{sanitize_filename(crop_path)}_features.pt"
 
-        # Instruction
+        # Instruction (model-visible)
         inst = m_in.get("instruction")
         if inst and inst not in unique_instructions:
             unique_instructions[inst] = compute_text_sha256(inst)
 
-    # Initialize encoders
+    # Initialize encoders on demand
     if vision_encoder is None:
         vision_encoder = VisionEncoder(model_name="dinov2_vitb14", device=device)
     if text_encoder is None:
         text_encoder = TextEncoder(model_name="sentence-transformers/all-MiniLM-L6-v2", device=device)
 
     # 1. Extract Unique Pre Scene Visual Features
-    scene_feature_paths: Dict[str, str] = {}
-    for scene_id, rel_path in unique_scenes.items():
+    scene_index: Dict[str, Any] = {}
+    for rel_path, scene_id in unique_scenes.items():
         scene_feat_file = out_dir / "scenes" / f"scene_{scene_id}_features.pt"
         abs_img_path = dataset_root / rel_path
 
@@ -122,7 +130,20 @@ def extract_intervention_features(
 
         img_sha = compute_file_sha256(abs_img_path)
 
-        if not scene_feat_file.exists() or force:
+        needs_recompute = force or not scene_feat_file.exists()
+        if not needs_recompute:
+            try:
+                cached = torch.load(scene_feat_file, weights_only=True)
+                if (
+                    cached.get("source_sha256") != img_sha
+                    or cached["global"].shape != (SCENE_GLOBAL_DIM,)
+                    or cached["patch"].shape != SCENE_PATCH_SHAPE
+                ):
+                    needs_recompute = True
+            except Exception:
+                needs_recompute = True
+
+        if needs_recompute:
             img = Image.open(abs_img_path).convert("RGB")
             cls_token, patch_tokens = vision_encoder([img])
             torch.save(
@@ -135,39 +156,76 @@ def extract_intervention_features(
                 },
                 scene_feat_file,
             )
-        scene_feature_paths[scene_id] = str(scene_feat_file.relative_to(out_dir))
+
+        scene_index[rel_path] = {
+            "scene_id": scene_id,
+            "source_path": rel_path,
+            "source_sha256": img_sha,
+            "feature_path": str(scene_feat_file.relative_to(out_dir)),
+            "global_shape": [SCENE_GLOBAL_DIM],
+            "patch_shape": list(SCENE_PATCH_SHAPE),
+        }
 
     # 2. Extract Unique Candidate Crop Visual Features
-    crop_feature_paths: Dict[str, str] = {}
-    for (scene_id, obj_name), rel_path in unique_crops.items():
-        crop_feat_file = out_dir / "crops" / f"crop_{scene_id}_{obj_name}_features.pt"
-        abs_crop_path = dataset_root / rel_path
+    crop_index: Dict[str, Any] = {}
+    for rel_crop_path, cache_filename in unique_crops.items():
+        crop_feat_file = out_dir / "crops" / cache_filename
+        abs_crop_path = dataset_root / rel_crop_path
 
         if not abs_crop_path.exists():
             raise FileNotFoundError(f"Missing candidate crop image at {abs_crop_path}")
 
         crop_sha = compute_file_sha256(abs_crop_path)
 
-        if not crop_feat_file.exists() or force:
+        needs_recompute = force or not crop_feat_file.exists()
+        if not needs_recompute:
+            try:
+                cached = torch.load(crop_feat_file, weights_only=True)
+                if (
+                    cached.get("source_sha256") != crop_sha
+                    or cached["global"].shape != (CANDIDATE_VISUAL_DIM,)
+                ):
+                    needs_recompute = True
+            except Exception:
+                needs_recompute = True
+
+        if needs_recompute:
             crop_img = Image.open(abs_crop_path).convert("RGB")
             cls_token, _ = vision_encoder([crop_img])
             torch.save(
                 {
-                    "scene_id": scene_id,
-                    "object_name": obj_name,
-                    "source_path": rel_path,
+                    "source_path": rel_crop_path,
                     "source_sha256": crop_sha,
                     "global": cls_token[0].cpu().to(torch.float32),
                 },
                 crop_feat_file,
             )
-        crop_feature_paths[f"{scene_id}_{obj_name}"] = str(crop_feat_file.relative_to(out_dir))
+
+        crop_index[rel_crop_path] = {
+            "source_path": rel_crop_path,
+            "source_sha256": crop_sha,
+            "feature_path": str(crop_feat_file.relative_to(out_dir)),
+            "global_shape": [CANDIDATE_VISUAL_DIM],
+        }
 
     # 3. Extract Unique Instruction Text Features
     text_feat_file = out_dir / "text_features.pt"
-    if not text_feat_file.exists() or force:
-        instruction_list = list(unique_instructions.keys())
-        text_embeddings = text_encoder(instruction_list)  # (N, 384)
+    instruction_list = list(unique_instructions.keys())
+
+    needs_recompute_text = force or not text_feat_file.exists()
+    if not needs_recompute_text:
+        try:
+            cached_text = torch.load(text_feat_file, weights_only=True)
+            feats = cached_text.get("features", {})
+            for inst in instruction_list:
+                if inst not in feats or feats[inst].shape != (TEXT_DIM,):
+                    needs_recompute_text = True
+                    break
+        except Exception:
+            needs_recompute_text = True
+
+    if needs_recompute_text:
+        text_embeddings = text_encoder(instruction_list)
         text_features_dict = {
             inst: text_embeddings[i].cpu().to(torch.float32) for i, inst in enumerate(instruction_list)
         }
@@ -186,15 +244,39 @@ def extract_intervention_features(
             text_feat_file,
         )
 
-    # 4. Write Feature Cache Index
+    text_index = {
+        inst: {
+            "exact_text": inst,
+            "text_sha256": unique_instructions[inst],
+            "feature_dim": TEXT_DIM,
+        }
+        for inst in instruction_list
+    }
+
+    # 4. Write Authoritative Feature Cache Index (Schema 1.1.0)
     cache_index = {
         "schema_version": schema_version,
-        "feature_cache_schema_version": "1.0.0",
-        "manifest_sha256": manifest_sha256,
-        "scene_count": len(unique_scenes),
-        "crop_count": len(unique_crops),
-        "instruction_count": len(unique_instructions),
-        "record_count": len(records),
+        "feature_cache_schema_version": FEATURE_CACHE_SCHEMA_VERSION,
+        "source": {
+            "manifest_path": str(manifest_path.name),
+            "manifest_sha256": manifest_sha256,
+            "dataset_generator_commit": generator_commit,
+        },
+        "feature_code_commit": commit,
+        "encoders": {
+            "vision": {
+                "model_name": getattr(vision_encoder, "model_name", "dinov2_vitb14"),
+                "embed_dim": SCENE_GLOBAL_DIM,
+                "patch_size": getattr(vision_encoder, "patch_size", 14),
+                "num_patches": SCENE_PATCH_SHAPE[0],
+                "transform": "bicubic_224_centercrop_imagenet_norm",
+            },
+            "text": {
+                "model_name": getattr(text_encoder, "model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+                "embed_dim": TEXT_DIM,
+                "pooling": "mean_attention_mask",
+            },
+        },
         "dimensions": {
             "text_dim": TEXT_DIM,
             "scene_global_dim": SCENE_GLOBAL_DIM,
@@ -202,10 +284,15 @@ def extract_intervention_features(
             "candidate_visual_dim": CANDIDATE_VISUAL_DIM,
             "current_geom_dim": CURRENT_GEOM_DIM,
             "dest_geom_dim": DEST_GEOM_DIM,
-            "operator_dim": 1,
+            "operator_count": 2,
         },
-        "scene_features": scene_feature_paths,
-        "crop_features": crop_feature_paths,
+        "scene_count": len(unique_scenes),
+        "crop_count": len(unique_crops),
+        "instruction_count": len(unique_instructions),
+        "record_count": len(records),
+        "scenes": scene_index,
+        "crops": crop_index,
+        "texts": text_index,
         "text_features_path": str(text_feat_file.relative_to(out_dir)),
     }
 
@@ -222,6 +309,7 @@ def main():
     parser.add_argument("--dataset-root", type=str, default="data/intervention_smoke", help="Root directory of the dataset")
     parser.add_argument("--out-dir", type=str, default="data/intervention_smoke/features", help="Output directory for features")
     parser.add_argument("--device", type=str, default=None, help="Inference device (cuda/cpu)")
+    parser.add_argument("--commit", type=str, default=None, help="Git commit SHA of feature extractor code")
     parser.add_argument("--force", action="store_true", help="Force recomputation of features")
     args = parser.parse_args()
 
@@ -234,6 +322,7 @@ def main():
         out_dir=Path(args.out_dir),
         device=args.device,
         force=args.force,
+        commit=args.commit,
     )
 
     logging.info("Feature extraction complete!")

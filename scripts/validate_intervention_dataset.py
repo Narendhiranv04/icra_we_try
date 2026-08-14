@@ -410,8 +410,9 @@ def validate_intervention_dataset(
 
                 curr_quat_meas = np.array(canonical_poses[obj_name].quaternion_wxyz)
                 curr_quat_rec = np.array(curr_geom["world_quaternion_wxyz"])
-                if float(np.linalg.norm(curr_quat_meas - curr_quat_rec)) > tol_geom_quat:
-                    raise ValueError(f"Record {rec['record_id']}: Current geometry quaternion mismatch")
+                curr_quat_dist = min(float(np.linalg.norm(curr_quat_meas - curr_quat_rec)), float(np.linalg.norm(curr_quat_meas + curr_quat_rec)))
+                if curr_quat_dist > tol_geom_quat:
+                    raise ValueError(f"Record {rec['record_id']}: Current geometry quaternion mismatch (dist: {curr_quat_dist})")
                 
                 exp_rel_pos = world_to_local(model, data, ref_frame_name, curr_pos_meas, use_geom=True)
                 meas_rel_pos = np.array(curr_geom["relative_position"])
@@ -427,8 +428,9 @@ def validate_intervention_dataset(
 
                 dest_quat_meas = np.array(dest_q)
                 dest_quat_rec = np.array(dest_geom["world_quaternion_wxyz"])
-                if float(np.linalg.norm(dest_quat_meas - dest_quat_rec)) > tol_geom_quat:
-                    raise ValueError(f"Record {rec['record_id']}: Destination geometry quaternion mismatch")
+                dest_quat_dist = min(float(np.linalg.norm(dest_quat_meas - dest_quat_rec)), float(np.linalg.norm(dest_quat_meas + dest_quat_rec)))
+                if dest_quat_dist > tol_geom_quat:
+                    raise ValueError(f"Record {rec['record_id']}: Destination geometry quaternion mismatch (dist: {dest_quat_dist})")
 
                 exp_dest_rel_pos = world_to_local(model, data, ref_frame_name, dest_pos_meas, use_geom=True)
                 meas_dest_rel_pos = np.array(dest_geom["relative_position"])

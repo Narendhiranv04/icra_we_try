@@ -22,6 +22,8 @@ OPERATOR_COUNT = 2  # NONE=0, RELOCATE=1
 OPERATOR_NONE_IDX = 0
 OPERATOR_RELOCATE_IDX = 1
 
+FEATURE_CACHE_SCHEMA_VERSION = "1.1.0"
+
 
 @dataclass(frozen=True)
 class InterventionFeatureSpec:
