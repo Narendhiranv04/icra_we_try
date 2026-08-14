@@ -1,0 +1,114 @@
+# Configuration for Packet 2 Intervention Smoke Dataset (6 scenes, 22 accepted records)
+schema_version: "2.0.0"
+dataset_name: "intervention_smoke"
+output_root: "data/intervention_smoke"
+
+resolution: [640, 480]
+min_relocation_m: 0.03
+max_collateral_translation_m: 0.05
+min_instance_pixels: 50
+min_relation_target_pixels: 50
+max_torso_fraction: 0.25
+
+max_base_retries: 10
+max_candidate_set_retries: 5
+
+# Tolerances for independent validation
+rgb_reconstruction_rmse_tolerance: 1.0
+none_rgb_rmse_tolerance: 25.0
+camera_extrinsic_tolerance_m: 0.01
+
+# Requested 6 base scenes
+scenes:
+  - scene_id: "ivs_000001"
+    task_id: "task_1"
+    intended_base_state: "STOP"
+    instruction: "Open the box."
+    action:
+      action_type: "OPEN"
+      target: "box_B1"
+      arguments: {}
+    action_subject_name: null
+    intended_culprit_type: "coffee_can"
+    intended_distractor_types: ["sugar_box"]
+    seed: 101
+    split: "id"
+    background_profile: "bg_neutral_wood"
+
+  - scene_id: "ivs_000002"
+    task_id: "task_1"
+    intended_base_state: "STOP"
+    instruction: "Open the box."
+    action:
+      action_type: "OPEN"
+      target: "box_B1"
+      arguments: {}
+    action_subject_name: null
+    intended_culprit_type: "sugar_box"
+    intended_distractor_types: ["mug"]
+    seed: 102
+    split: "id"
+    background_profile: "bg_neutral_wood"
+
+  - scene_id: "ivs_000003"
+    task_id: "task_1"
+    intended_base_state: "PROCEED"
+    instruction: "Open the box."
+    action:
+      action_type: "OPEN"
+      target: "box_B1"
+      arguments: {}
+    action_subject_name: null
+    intended_culprit_type: null
+    intended_distractor_types: ["coffee_can"]
+    seed: 103
+    split: "id"
+    background_profile: "bg_neutral_wood"
+
+  - scene_id: "ivs_000004"
+    task_id: "task_2"
+    intended_base_state: "STOP"
+    instruction: "Place the coffee can in the target region."
+    action:
+      action_type: "PLACE"
+      target: "target_region"
+      arguments:
+        object: "coffee_can"
+    action_subject_name: "pick_can"
+    intended_culprit_type: "sugar_box"
+    intended_distractor_types: ["mug"]
+    seed: 201
+    split: "id"
+    background_profile: "bg_neutral_wood"
+
+  - scene_id: "ivs_000005"
+    task_id: "task_2"
+    intended_base_state: "STOP"
+    instruction: "Place the coffee can in the target region."
+    action:
+      action_type: "PLACE"
+      target: "target_region"
+      arguments:
+        object: "coffee_can"
+    action_subject_name: "pick_can"
+    intended_culprit_type: "mug"
+    intended_distractor_types: ["sugar_box"]
+    seed: 202
+    split: "id"
+    background_profile: "bg_neutral_wood"
+
+  - scene_id: "ivs_000006"
+    task_id: "task_2"
+    intended_base_state: "PROCEED"
+    instruction: "Place the coffee can in the target region."
+    action:
+      action_type: "PLACE"
+      target: "target_region"
+      arguments:
+        object: "coffee_can"
+    action_subject_name: "pick_can"
+    intended_culprit_type: null
+    intended_distractor_types: ["sugar_box"]
+    seed: 203
+    split: "id"
+    background_profile: "bg_neutral_wood"
